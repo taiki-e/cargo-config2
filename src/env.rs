@@ -2,8 +2,8 @@
 // https://doc.rust-lang.org/nightly/cargo/reference/config.html#environment-variables
 
 use crate::{
-    Build, Config, Doc, FutureIncompatReport, Net, ResolveContext, Result, Rustflags,
-    StringOrArray, Term, TermProgress,
+    BuildConfig, Config, DocConfig, FutureIncompatReportConfig, NetConfig, ResolveContext, Result,
+    Rustflags, StringOrArray, TermConfig, TermProgress,
 };
 
 pub(crate) fn var(key: &str) -> Result<Option<String>> {
@@ -41,7 +41,7 @@ impl Config {
     }
 }
 
-impl Build {
+impl BuildConfig {
     /// Applies configuration environment variables.
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs
@@ -151,7 +151,7 @@ impl Build {
     }
 }
 
-impl Doc {
+impl DocConfig {
     /// Applies configuration environment variables.
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // doc.browser config value is prefer over BROWSER environment variable.
@@ -165,7 +165,7 @@ impl Doc {
     }
 }
 
-impl FutureIncompatReport {
+impl FutureIncompatReportConfig {
     /// Applies configuration environment variables.
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency
@@ -176,7 +176,7 @@ impl FutureIncompatReport {
     }
 }
 
-impl Net {
+impl NetConfig {
     /// Applies configuration environment variables.
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry
@@ -195,7 +195,7 @@ impl Net {
     }
 }
 
-impl Term {
+impl TermConfig {
     /// Applies configuration environment variables.
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet

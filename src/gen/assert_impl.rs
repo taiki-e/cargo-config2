@@ -8,13 +8,13 @@ use crate::*;
 const _: fn() = || {
     fn assert_auto_traits<T: ?Sized + Send + Sync + Unpin>() {}
     assert_auto_traits::<Config>();
-    assert_auto_traits::<Build>();
+    assert_auto_traits::<BuildConfig>();
     assert_auto_traits::<TargetConfig>();
-    assert_auto_traits::<Doc>();
+    assert_auto_traits::<DocConfig>();
     assert_auto_traits::<Env>();
-    assert_auto_traits::<FutureIncompatReport>();
-    assert_auto_traits::<Net>();
-    assert_auto_traits::<Term>();
+    assert_auto_traits::<FutureIncompatReportConfig>();
+    assert_auto_traits::<NetConfig>();
+    assert_auto_traits::<TermConfig>();
     assert_auto_traits::<TermProgress>();
     assert_auto_traits::<When>();
     assert_auto_traits::<Frequency>();

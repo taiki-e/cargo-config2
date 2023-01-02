@@ -84,7 +84,7 @@ mod resolve;
 pub mod toml;
 mod value;
 
-use core::{num::NonZeroI32, ops, slice, str::FromStr};
+use core::{borrow::Borrow, num::NonZeroI32, ops, slice, str::FromStr};
 use std::{
     borrow::Cow,
     collections::{BTreeMap, BTreeSet},
@@ -114,23 +114,23 @@ pub struct Config {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub alias: BTreeMap<String, StringOrArray>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "Build::is_none")]
-    pub build: Build,
+    #[serde(skip_serializing_if = "BuildConfig::is_none")]
+    pub build: BuildConfig,
     #[serde(default)]
-    #[serde(skip_serializing_if = "Doc::is_none")]
-    pub doc: Doc,
+    #[serde(skip_serializing_if = "DocConfig::is_none")]
+    pub doc: DocConfig,
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, Env>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "FutureIncompatReport::is_none")]
-    pub future_incompat_report: FutureIncompatReport,
+    #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
+    pub future_incompat_report: FutureIncompatReportConfig,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
     #[serde(default)]
-    #[serde(skip_serializing_if = "Net::is_none")]
-    pub net: Net,
+    #[serde(skip_serializing_if = "NetConfig::is_none")]
+    pub net: NetConfig,
     // TODO: patch
     // TODO: profile
     // TODO: registries
@@ -140,8 +140,8 @@ pub struct Config {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub target: BTreeMap<String, TargetConfig>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "Term::is_none")]
-    pub term: Term,
+    #[serde(skip_serializing_if = "TermConfig::is_none")]
+    pub term: TermConfig,
 
     // Load contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
@@ -333,6 +333,7 @@ impl Config {
     /// let target = targets.pop().unwrap();
     ///
     /// config.resolve(&target)?;
+    /// println!("{:?}", config[target].rustflags);
     /// # Ok(()) }
     /// ```
     ///
@@ -357,6 +358,7 @@ impl Config {
     ///
     /// for target in targets {
     ///     config.resolve(&target)?;
+    ///     println!("{:?}", config[target].rustflags);
     /// }
     /// # Ok(()) }
     /// ```
@@ -478,13 +480,20 @@ impl Config {
     }
 }
 
+impl<T: Borrow<TargetTriple>> ops::Index<T> for Config {
+    type Output = TargetConfig;
+    fn index(&self, index: T) -> &Self::Output {
+        &self.target[&index.borrow().triple]
+    }
+}
+
 /// The `[build]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct Build {
+pub struct BuildConfig {
     /// Sets the maximum number of compiler processes to run in parallel.
     /// If negative, it sets the maximum number of compiler processes to the
     /// number of logical CPUs plus provided value. Should not be 0.
@@ -554,7 +563,7 @@ pub struct Build {
     override_target_rustflags: bool,
 }
 
-impl Build {
+impl BuildConfig {
     pub fn rustc(&self) -> Option<Cow<'_, Path>> {
         Some(self.rustc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
     }
@@ -651,7 +660,7 @@ impl TargetConfig {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct Doc {
+pub struct DocConfig {
     /// This option sets the browser to be used by `cargo doc`, overriding the
     /// `BROWSER` environment variable when opening documentation with the `--open` option.
     ///
@@ -664,7 +673,7 @@ pub struct Doc {
     current_dir: Option<PathBuf>,
 }
 
-impl Doc {
+impl DocConfig {
     pub fn browser(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
         match self.browser.as_ref() {
             Some(browser) => {
@@ -703,7 +712,7 @@ pub enum Env {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct FutureIncompatReport {
+pub struct FutureIncompatReportConfig {
     /// Controls how often we display a notification to the terminal when a future incompat report is available.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency)
@@ -717,7 +726,7 @@ pub struct FutureIncompatReport {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct Net {
+pub struct NetConfig {
     /// Number of times to retry possibly spurious network errors.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry)
@@ -746,7 +755,7 @@ pub struct Net {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct Term {
+pub struct TermConfig {
     /// Controls whether or not log messages are displayed by Cargo.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet)

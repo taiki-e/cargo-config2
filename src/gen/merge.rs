@@ -18,7 +18,7 @@ impl Merge for crate::Config {
         Ok(())
     }
 }
-impl Merge for crate::Build {
+impl Merge for crate::BuildConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.jobs.merge(from.jobs, force)?;
         self.rustc.merge(from.rustc, force)?;
@@ -42,19 +42,19 @@ impl Merge for crate::TargetConfig {
         Ok(())
     }
 }
-impl Merge for crate::Doc {
+impl Merge for crate::DocConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.browser.merge(from.browser, force)?;
         Ok(())
     }
 }
-impl Merge for crate::FutureIncompatReport {
+impl Merge for crate::FutureIncompatReportConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.frequency.merge(from.frequency, force)?;
         Ok(())
     }
 }
-impl Merge for crate::Net {
+impl Merge for crate::NetConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.retry.merge(from.retry, force)?;
         self.git_fetch_with_cli.merge(from.git_fetch_with_cli, force)?;
@@ -62,7 +62,7 @@ impl Merge for crate::Net {
         Ok(())
     }
 }
-impl Merge for crate::Term {
+impl Merge for crate::TermConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.quiet.merge(from.quiet, force)?;
         self.verbose.merge(from.verbose, force)?;

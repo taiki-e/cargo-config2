@@ -4,7 +4,7 @@
 #![cfg_attr(rustfmt, rustfmt::skip)]
 #![allow(clippy::wildcard_imports)]
 
-impl crate::Build {
+impl crate::BuildConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.jobs.is_none() && self.rustc.is_none() && self.rustc_wrapper.is_none()
             && self.rustc_workspace_wrapper.is_none() && self.rustdoc.is_none()
@@ -13,23 +13,23 @@ impl crate::Build {
             && self.incremental.is_none() && self.dep_info_basedir.is_none()
     }
 }
-impl crate::Doc {
+impl crate::DocConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.browser.is_none()
     }
 }
-impl crate::FutureIncompatReport {
+impl crate::FutureIncompatReportConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.frequency.is_none()
     }
 }
-impl crate::Net {
+impl crate::NetConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.retry.is_none() && self.git_fetch_with_cli.is_none()
             && self.offline.is_none()
     }
 }
-impl crate::Term {
+impl crate::TermConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.quiet.is_none() && self.verbose.is_none() && self.color.is_none()
             && self.progress.is_none()
