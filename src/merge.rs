@@ -96,6 +96,35 @@ impl Merge for de::StringOrArray {
         Ok(())
     }
 }
+impl Merge for de::PathAndArgs {
+    fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
+        match (self.deserialized_repr, from.deserialized_repr) {
+            (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
+                if force {
+                    *self = from;
+                }
+            }
+            (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
+                // This is a bit non-intuitive, but e.g., "echo a <doc-path>/index.html"
+                // is called in the following case because they are arrays.
+                //
+                // # a/b/.cargo/config
+                // [doc]
+                // browser = ["echo"]
+                //
+                // # a/.cargo/config
+                // [doc]
+                // browser = ["a"]
+                self.args.push(from.path.val);
+                self.args.append(&mut from.args);
+            }
+            (expected, actual) => {
+                bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
+            }
+        }
+        Ok(())
+    }
+}
 impl Merge for de::StringList {
     fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, from.deserialized_repr) {

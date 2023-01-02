@@ -3,9 +3,15 @@ mod env;
 #[path = "gen/de.rs"]
 mod gen;
 
-use std::{collections::BTreeMap, num::NonZeroI32, path::PathBuf, slice, str::FromStr};
+use std::{
+    collections::BTreeMap,
+    num::NonZeroI32,
+    path::{Path, PathBuf},
+    slice,
+    str::FromStr,
+};
 
-use anyhow::{bail, Error, Result};
+use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "toml")]
@@ -66,7 +72,11 @@ pub mod toml {
     }
 }
 
-use crate::{merge, value::Value, Definition, ResolveContext, TargetTriple};
+use crate::{
+    merge,
+    value::{SetPath, Value},
+    Definition, ResolveContext, TargetTriple,
+};
 
 /// Cargo configuration that environment variables, config overrides, and
 /// target-specific configurations have not been resolved.
@@ -156,7 +166,10 @@ impl Config {
             target_linker = Some(linker);
         }
         if let Some(runner) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
-            target_runner = Some(StringOrArray::String(runner));
+            target_runner = Some(
+                PathAndArgs::from_string(&runner.val, runner.definition)
+                    .context("invalid length 0, expected at least one element")?,
+            );
         }
         if let Some(rustflags) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
             let target_rustflags = target_rustflags.get_or_insert_with(Rustflags::default);
@@ -298,7 +311,7 @@ pub struct TargetConfig {
     ///
     /// [reference (`target.<cfg>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrunner)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub runner: Option<StringOrArray>,
+    pub runner: Option<PathAndArgs>,
     /// [reference (`target.<triple>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerustflags)
     ///
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
@@ -319,7 +332,7 @@ pub struct DocConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#docbrowser)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub browser: Option<StringOrArray>,
+    pub browser: Option<PathAndArgs>,
 }
 
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
@@ -584,6 +597,80 @@ impl<'de> Deserialize<'de> for Rustflags {
     }
 }
 
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct PathAndArgs {
+    pub path: Value<String>,
+    pub args: Vec<String>,
+
+    // for merge
+    pub(crate) deserialized_repr: StringListDeserializedRepr,
+}
+
+impl Serialize for PathAndArgs {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        todo!()
+    }
+}
+impl<'de> Deserialize<'de> for PathAndArgs {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error;
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrArray {
+            String(String),
+            Array(Vec<String>),
+        }
+        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
+        let res = match v {
+            StringOrArray::String(s) => Self::from_string(&s, None),
+            StringOrArray::Array(v) => Self::from_array(v, None),
+        };
+        match res {
+            Some(path) => Ok(path),
+            None => Err(D::Error::invalid_length(0, &"at least one element")),
+        }
+    }
+}
+
+impl PathAndArgs {
+    pub(crate) fn from_string(value: &str, definition: Option<Definition>) -> Option<Self> {
+        let mut s = split_space_separated(value);
+        let path = s.next()?;
+        Some(Self {
+            path: Value { val: path.to_owned(), definition },
+            args: s.map(str::to_owned).collect(),
+            deserialized_repr: StringListDeserializedRepr::String,
+        })
+    }
+    pub(crate) fn from_array(
+        mut list: Vec<String>,
+        definition: Option<Definition>,
+    ) -> Option<Self> {
+        if list.is_empty() {
+            return None;
+        }
+        let path = list.remove(0);
+        Some(Self {
+            path: Value { val: path, definition },
+            args: list,
+            deserialized_repr: StringListDeserializedRepr::Array,
+        })
+    }
+}
+
+impl SetPath for crate::de::PathAndArgs {
+    fn set_path(&mut self, path: &Path) {
+        self.path.set_path(path);
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]
@@ -614,12 +701,6 @@ impl<'de> Deserialize<'de> for StringList {
     where
         D: serde::Deserializer<'de>,
     {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum StringOrArray {
-            String(Value<String>),
-            Array(Vec<Value<String>>),
-        }
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
             StringOrArray::String(s) => Ok(Self::from_string(&s.val, &s.definition)),

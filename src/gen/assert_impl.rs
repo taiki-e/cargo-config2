@@ -19,6 +19,7 @@ const _: fn() = || {
     assert_auto_traits::<crate::de::When>();
     assert_auto_traits::<crate::de::Frequency>();
     assert_auto_traits::<crate::de::Rustflags>();
+    assert_auto_traits::<crate::de::PathAndArgs>();
     assert_auto_traits::<crate::de::StringList>();
     assert_auto_traits::<crate::de::StringOrArray>();
     assert_auto_traits::<crate::easy::Config>();

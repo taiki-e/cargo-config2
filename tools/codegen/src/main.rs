@@ -59,8 +59,8 @@ fn write(function_name: &str, path: &Path, contents: TokenStream) -> Result<()> 
 fn gen_de() -> Result<()> {
     let files = &["src/de.rs"];
     // TODO: check if this list is outdated
-    let merge_exclude = &["Rustflags", "ResolveContext", "Env", "StringList"];
-    let set_path_exclude = &["ResolveContext"];
+    let merge_exclude = &["Rustflags", "ResolveContext", "Env", "StringList", "PathAndArgs"];
+    let set_path_exclude = &["ResolveContext", "PathAndArgs"];
 
     let workspace_root = &workspace_root();
 
@@ -87,11 +87,15 @@ fn gen_de() -> Result<()> {
                         && matches!(fields, syn::Fields::Named(..))
                         && !merge_exclude.iter().any(|&e| ident == e) =>
                 {
-                    let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                        |syn::Field { ident, .. }| {
+                    let fields = fields
+                        .iter()
+                        .filter(|f| {
+                            !serde_skip(&f.attrs)
+                                && f.ident.as_ref().unwrap() != "deserialized_repr"
+                        })
+                        .map(|syn::Field { ident, .. }| {
                             quote! { self.#ident.merge(from.#ident, force)?; }
-                        },
-                    );
+                        });
                     tokens.extend(quote! {
                         impl Merge for crate:: #(#module::)* #ident {
                             fn merge(&mut self, from: Self, force: bool) -> Result<()> {
@@ -109,11 +113,15 @@ fn gen_de() -> Result<()> {
                         && matches!(fields, syn::Fields::Named(..))
                         && !set_path_exclude.iter().any(|&e| ident == e) =>
                 {
-                    let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                        |syn::Field { ident, .. }| {
+                    let fields = fields
+                        .iter()
+                        .filter(|f| {
+                            !serde_skip(&f.attrs)
+                                && f.ident.as_ref().unwrap() != "deserialized_repr"
+                        })
+                        .map(|syn::Field { ident, .. }| {
                             quote! { self.#ident.set_path(path); }
-                        },
-                    );
+                        });
                     tokens.extend(quote! {
                         impl SetPath for crate:: #(#module::)* #ident {
                             fn set_path(&mut self, path: &Path) {

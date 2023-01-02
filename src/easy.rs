@@ -416,13 +416,10 @@ impl TargetConfig {
     ) -> Result<Self> {
         let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let runner = match de.runner {
-            Some(v) => {
-                let (path, args) = v.resolve_as_program_path_with_args(current_dir)?;
-                Some(PathAndArgs {
-                    path: path.into_owned(),
-                    args: args.into_iter().map(str::to_owned).collect(),
-                })
-            }
+            Some(v) => Some(PathAndArgs {
+                path: v.path.resolve_as_program_path(current_dir).into_owned(),
+                args: v.args,
+            }),
             None => None,
         };
         let rustflags =
@@ -454,10 +451,9 @@ impl DocConfig {
         cx: &mut ResolveContext,
     ) -> Result<()> {
         if let Some(v) = de.browser {
-            let (path, args) = v.resolve_as_program_path_with_args(current_dir)?;
             self.browser = Some(PathAndArgs {
-                path: path.into_owned(),
-                args: args.into_iter().map(str::to_owned).collect(),
+                path: v.path.resolve_as_program_path(current_dir).into_owned(),
+                args: v.args,
             });
         }
         Ok(())

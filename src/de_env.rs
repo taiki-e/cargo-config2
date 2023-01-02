@@ -1,9 +1,11 @@
 // Environment variables are prefer over config values.
 // https://doc.rust-lang.org/nightly/cargo/reference/config.html#environment-variables
 
+use anyhow::{Context as _, Result};
+
 use super::{
-    BuildConfig, Config, DocConfig, FutureIncompatReportConfig, NetConfig, ResolveContext, Result,
-    Rustflags, StringList, StringOrArray, TermConfig, TermProgress,
+    BuildConfig, Config, DocConfig, FutureIncompatReportConfig, NetConfig, PathAndArgs,
+    ResolveContext, Rustflags, StringList, StringOrArray, TermConfig, TermProgress,
 };
 use crate::{Definition, Value};
 
@@ -205,7 +207,10 @@ impl ApplyEnv for DocConfig {
         // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/ops/cargo_doc.rs#L52-L53
         if self.browser.is_none() {
             if let Some(browser) = cx.env("BROWSER")? {
-                self.browser = Some(StringOrArray::String(browser));
+                self.browser = Some(
+                    PathAndArgs::from_string(&browser.val, browser.definition)
+                        .context("invalid length 0, expected at least one element")?,
+                );
                 modified = true;
             }
         }
