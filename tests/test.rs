@@ -4,10 +4,6 @@ use anyhow::{Context as _, Result};
 use cargo_config2::*;
 use toml_edit::easy as toml;
 
-fn fixtures_path() -> &'static Path {
-    Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
-}
-
 fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     let dir = &fixtures_path().join("reference");
     let base_config = &de(dir).unwrap();
@@ -135,7 +131,7 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     // re-resolve doesn't change the result even if env changed.
     let mut env = HashMap::<String, String>::default();
     env.insert("RUSTFLAGS".into(), "a".into());
-    let cx = &mut ResolveContext::with_env(env);
+    let cx = &mut ResolveContext::from_env(env);
     config.resolve_with_context(cx, "x86_64-unknown-linux-gnu").unwrap();
     assert_eq!(
         config.target["x86_64-unknown-linux-gnu"].rustflags,
@@ -145,7 +141,7 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     let mut config = base_config.clone();
     let mut env = HashMap::<String, String>::default();
     env.insert("RUSTFLAGS".into(), "a".into());
-    let cx = &mut ResolveContext::with_env(env);
+    let cx = &mut ResolveContext::from_env(env);
     config.resolve_with_context(cx, "x86_64-unknown-linux-gnu").unwrap();
     assert_eq!(config.target["x86_64-unknown-linux-gnu"].rustflags, Some(["a"].into()));
 }
@@ -200,7 +196,7 @@ fn custom_target() {
 
         let mut config = base_config.clone();
         config
-            .resolve_with_context(ResolveContext::no_env().with_rustc("rustc"), spec_path)
+            .resolve_with_context(ResolveContext::no_env().set_rustc("rustc"), spec_path)
             .unwrap();
         assert_eq!(config.target[target].linker.as_ref().unwrap().val, "avr-gcc");
         assert_eq!(config.target[target].rustflags, Some(["-C", "opt-level=s"].into()));
@@ -241,4 +237,47 @@ fn cargo_config_json() {
     //
     let _config = de(&fixtures_path().join("reference")).unwrap();
     // assert_reference_example(de);
+}
+
+use helper::*;
+mod helper {
+    use std::path::{Path, PathBuf};
+
+    use anyhow::Result;
+    pub use fs_err as fs;
+
+    pub fn fixtures_path() -> &'static Path {
+        Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
+    }
+
+    fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
+        let tmpdir = tempfile::tempdir()?;
+        let tmpdir_path = tmpdir.path();
+
+        let model_path;
+        let workspace_root;
+        if model.contains('/') {
+            let mut model = model.splitn(2, '/');
+            model_path = fixtures_path().join(model.next().unwrap());
+            workspace_root = tmpdir_path.join(model.next().unwrap());
+            assert!(model.next().is_none());
+        } else {
+            model_path = fixtures_path().join(model);
+            workspace_root = tmpdir_path.to_path_buf();
+        }
+
+        for entry in walkdir::WalkDir::new(&model_path).into_iter().filter_map(Result::ok) {
+            let path = entry.path();
+            let tmppath = &tmpdir_path.join(path.strip_prefix(&model_path)?);
+            if !tmppath.exists() {
+                if path.is_dir() {
+                    fs::create_dir_all(tmppath)?;
+                } else {
+                    fs::copy(path, tmppath)?;
+                }
+            }
+        }
+
+        Ok((tmpdir, workspace_root))
+    }
 }

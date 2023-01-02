@@ -94,6 +94,44 @@ impl StringOrArray<Value<String>> {
         }
     }
 }
+impl de::StringOrArray {
+    // https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments
+    /// Splits this string or array of strings to program path with args.
+    fn split_for_command(&self) -> Result<(&str, Option<&Definition>, Vec<&str>)> {
+        match self {
+            Self::String(s) => {
+                let definition = s.definition.as_ref();
+                let mut s = split_space_separated(&s.val);
+                let path = s.next().context("invalid length 0, expected at least one element")?;
+                Ok((path, definition, s.collect()))
+            }
+            Self::Array(v) => {
+                let path = v.get(0).context("invalid length 0, expected at least one element")?;
+                Ok((
+                    &path.val,
+                    path.definition.as_ref(),
+                    v.iter().skip(1).map(|s| s.val.as_str()).collect(),
+                ))
+            }
+        }
+    }
+    pub(crate) fn resolve_as_program_path_with_args<'a>(
+        &'a self,
+        current_dir: Option<&Path>,
+    ) -> Result<(Cow<'a, Path>, Vec<&'a str>)> {
+        let (program, definition, args) = self.split_for_command()?;
+        if definition.is_none()
+            || Path::new(program).is_absolute()
+            || !program.contains('/') && !program.contains('\\')
+        {
+            Ok((Cow::Borrowed(Path::new(program)), args))
+        } else if let Some(root) = definition.unwrap().root_inner(current_dir) {
+            Ok((root.join(program).into(), args))
+        } else {
+            Ok((Cow::Borrowed(Path::new(program)), args))
+        }
+    }
+}
 
 /// Location where a config value is defined.
 #[derive(Clone, Debug)]

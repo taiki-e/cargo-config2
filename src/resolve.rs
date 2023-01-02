@@ -6,24 +6,23 @@ use std::{
 
 use anyhow::Result;
 use cfg_expr::{target_lexicon, Expression, Predicate};
+use serde::{Deserialize, Serialize};
 
-use crate::{Config, Definition, Value};
+use crate::{Definition, Value};
 
-#[allow(missing_debug_implementations)]
+#[derive(Debug, Clone)]
 pub struct ResolveContext {
     pub(crate) env: HashMap<String, OsString>,
     rustc: Option<OsString>,
     cfg: HashMap<TargetTriple, Cfg>,
 }
 
-impl Default for ResolveContext {
-    fn default() -> Self {
-        Self::with_env(std::env::vars_os())
-    }
-}
-
 impl ResolveContext {
-    pub fn with_env(
+    pub fn new() -> Result<Self> {
+        Ok(Self::from_env(std::env::vars_os()))
+    }
+
+    pub fn from_env(
         vars: impl IntoIterator<Item = (impl Into<OsString>, impl Into<OsString>)>,
     ) -> Self {
         let mut this = Self::no_env();
@@ -41,8 +40,8 @@ impl ResolveContext {
         Self { env: HashMap::default(), rustc: None, cfg: HashMap::default() }
     }
 
-    pub fn with_rustc(&mut self, rustc: impl AsRef<OsStr>) -> &mut Self {
-        self.rustc = Some(rustc.as_ref().to_owned());
+    pub fn set_rustc(&mut self, rustc: impl Into<OsString>) -> &mut Self {
+        self.rustc = Some(rustc.into());
         self.cfg = HashMap::default();
         self
     }
@@ -114,7 +113,7 @@ impl ResolveContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Cfg {
     target_info: TargetInfo,
     target_features: HashSet<String>,
@@ -122,7 +121,7 @@ struct Cfg {
     key_values: HashMap<String, HashSet<String>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(clippy::large_enum_variant)]
 enum TargetInfo {
     CfgExpr(cfg_expr::targets::TargetInfo),
@@ -264,9 +263,13 @@ pub(crate) fn is_spec_path(triple_or_spec_path: &str) -> bool {
         || triple_or_spec_path.contains('/')
         || triple_or_spec_path.contains('\\')
 }
-fn resolve_spec_path(spec_path: &str, definition: Option<(&Definition, &Config)>) -> String {
-    if let Some((definition, config)) = definition {
-        if let Some(root) = definition.root(config) {
+fn resolve_spec_path(
+    spec_path: &str,
+    definition: Option<&Definition>,
+    current_dir: Option<&Path>,
+) -> String {
+    if let Some(definition) = definition {
+        if let Some(root) = definition.root_inner(current_dir) {
             return root.join(spec_path).into_os_string().into_string().unwrap();
         }
     }
@@ -276,7 +279,8 @@ fn resolve_spec_path(spec_path: &str, definition: Option<(&Definition, &Config)>
 impl TargetTriple {
     pub(crate) fn new(
         triple_or_spec_path: &str,
-        definition: Option<(&Definition, &Config)>,
+        definition: Option<&Definition>,
+        current_dir: Option<&Path>,
     ) -> Self {
         // Handles custom target
         if is_spec_path(triple_or_spec_path) {
@@ -287,7 +291,7 @@ impl TargetTriple {
                     .to_str()
                     .unwrap()
                     .to_owned(),
-                spec_path: Some(resolve_spec_path(triple_or_spec_path, definition)),
+                spec_path: Some(resolve_spec_path(triple_or_spec_path, definition, current_dir)),
             }
         } else {
             Self { triple: triple_or_spec_path.to_owned(), spec_path: None }
@@ -309,17 +313,34 @@ impl From<&TargetTriple> for TargetTriple {
 }
 impl From<String> for TargetTriple {
     fn from(value: String) -> Self {
-        Self::new(&value, None)
+        Self::new(&value, None, None)
     }
 }
 impl From<&String> for TargetTriple {
     fn from(value: &String) -> Self {
-        Self::new(value, None)
+        Self::new(value, None, None)
     }
 }
 impl From<&str> for TargetTriple {
     fn from(value: &str) -> Self {
-        Self::new(value, None)
+        Self::new(value, None, None)
+    }
+}
+
+impl Serialize for TargetTriple {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.spec_path.as_ref().unwrap_or(&self.triple).serialize(serializer)
+    }
+}
+impl<'de> Deserialize<'de> for TargetTriple {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Self::new(&String::deserialize(deserializer)?, None, None))
     }
 }
 

@@ -59,7 +59,7 @@ fn write(function_name: &str, path: &Path, contents: TokenStream) -> Result<()> 
 fn gen_de() -> Result<()> {
     let files = &["src/de.rs"];
     // TODO: check if this list is outdated
-    let merge_exclude = &["Rustflags", "ResolveContext", "Env"];
+    let merge_exclude = &["Rustflags", "ResolveContext", "Env", "StringList"];
     let set_path_exclude = &["ResolveContext"];
 
     let workspace_root = &workspace_root();
@@ -233,9 +233,17 @@ fn gen_merge() -> Result<()> {
 }
 
 fn gen_is_none() -> Result<()> {
-    let files = &["src/lib.rs"];
+    let files = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
     // TODO: check if this list is outdated
-    let exclude = &["Config", "TargetConfig", "Rustflags", "ResolveContext", "Env"];
+    let exclude = &[
+        "Config",
+        "TargetConfig",
+        "Rustflags",
+        "ResolveContext",
+        "Env",
+        "StringList",
+        "PathAndArgs",
+    ];
 
     let workspace_root = &workspace_root();
 

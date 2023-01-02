@@ -11,7 +11,7 @@
 
 use std::collections::btree_map;
 
-use anyhow::{Context as _, Result};
+use anyhow::{bail, Context as _, Result};
 
 use crate::{
     de, BTreeMap, Env, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
@@ -91,6 +91,24 @@ impl Merge for de::StringOrArray {
             }
             _ => {
                 todo!()
+            }
+        }
+        Ok(())
+    }
+}
+impl Merge for de::StringList {
+    fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
+        match (self.deserialized_repr, from.deserialized_repr) {
+            (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
+                if force {
+                    *self = from;
+                }
+            }
+            (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
+                self.list.append(&mut from.list);
+            }
+            (expected, actual) => {
+                bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
             }
         }
         Ok(())

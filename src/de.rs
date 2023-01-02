@@ -1,14 +1,72 @@
+#[path = "de_env.rs"]
+mod env;
+#[path = "gen/de.rs"]
+mod gen;
+
 use std::{collections::BTreeMap, num::NonZeroI32, path::PathBuf, slice, str::FromStr};
 
 use anyhow::{bail, Error, Result};
 use serde::{Deserialize, Serialize};
 
-#[path = "de_env.rs"]
-mod de_env;
-#[path = "gen/de.rs"]
-mod gen;
+#[cfg(feature = "toml")]
+#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+pub mod toml {
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+    };
 
-use crate::{value::Value, ResolveContext, TargetTriple};
+    use anyhow::{Context, Result};
+
+    use super::Config;
+    use crate::paths::ConfigPaths;
+
+    /// Reads cargo config file at the given path.
+    ///
+    /// **Note:** This does not respect the hierarchical structure of the cargo config.
+    pub fn read(path: PathBuf) -> Result<Config> {
+        let buf =
+            fs::read(&path).with_context(|| format!("failed to read `{}`", path.display()))?;
+        let mut config: Config = toml_edit::easy::from_slice(&buf).with_context(|| {
+            format!("failed to parse `{}` as cargo configuration", path.display())
+        })?;
+        config.set_path(path);
+        Ok(config)
+    }
+
+    /// Hierarchically reads cargo config files and merge them.
+    pub fn read_hierarchical(current_dir: &Path) -> Result<Option<Config>> {
+        let mut base = None;
+        for path in ConfigPaths::new(current_dir) {
+            let mut config = read(path.clone())?;
+            config.set_cwd(current_dir.to_owned());
+            match &mut base {
+                None => base = Some(config),
+                Some(base) => base.merge(config, false).with_context(|| {
+                    format!(
+                        "failed to merge config from `{}` into `{}`",
+                        path.display(),
+                        base.path.as_ref().unwrap().display()
+                    )
+                })?,
+            }
+        }
+        Ok(base)
+    }
+
+    /// Hierarchically reads cargo config files.
+    pub fn read_hierarchical_unmerged(current_dir: &Path) -> Result<Vec<Config>> {
+        let mut v = vec![];
+        for path in ConfigPaths::new(current_dir) {
+            let mut config = read(path)?;
+            config.set_cwd(current_dir.to_owned());
+            v.push(config);
+        }
+        Ok(v)
+    }
+}
+
+use crate::{merge, value::Value, Definition, ResolveContext, TargetTriple};
 
 /// Cargo configuration that environment variables, config overrides, and
 /// target-specific configurations have not been resolved.
@@ -20,24 +78,19 @@ pub struct Config {
     /// Command aliases.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub alias: BTreeMap<String, StringOrArray>,
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<BTreeMap<String, StringOrArray>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub build: Option<BuildConfig>,
-    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub doc: Option<DocConfig>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub env: BTreeMap<String, Env>,
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub env: Option<BTreeMap<String, Env>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub future_incompat_report: Option<FutureIncompatReportConfig>,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
-    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub net: Option<NetConfig>,
     // TODO: patch
@@ -45,21 +98,30 @@ pub struct Config {
     // TODO: registries
     // TODO: registry
     // TODO: source
-    #[serde(default)]
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub target: BTreeMap<String, TargetConfig>,
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target: Option<BTreeMap<String, TargetConfig>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub term: Option<TermConfig>,
 
     // Load contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
-    current_dir: Option<PathBuf>,
+    pub(crate) current_dir: Option<PathBuf>,
     #[serde(skip)]
-    path: Option<PathBuf>,
+    pub(crate) path: Option<PathBuf>,
 }
 
 impl Config {
+    /// Merges the given config into this config.
+    ///
+    /// If `force` is `false`, this matches the way cargo [merges configs in the
+    /// parent directories](https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure).
+    ///
+    /// If `force` is `true`, this matches the way cargo's `--config` CLI option
+    /// overrides config.
+    pub fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+        merge::Merge::merge(self, from, force)
+    }
+
     pub fn set_cwd(&mut self, path: PathBuf) {
         self.current_dir = Some(path);
     }
@@ -77,7 +139,7 @@ impl Config {
         let target = &target_triple.triple;
 
         let target_u_upper = target_u_upper(target);
-        let mut target_config = self.target.get(target).cloned();
+        let mut target_config = self.target.as_ref().and_then(|t| t.get(target).cloned());
         let mut target_linker = target_config.as_mut().and_then(|c| c.linker.take());
         let mut target_runner = target_config.as_mut().and_then(|c| c.runner.take());
         let mut target_rustflags: Option<Rustflags> =
@@ -96,29 +158,32 @@ impl Config {
                 target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
             }
         }
-        for (k, v) in &self.target {
-            if !k.starts_with("cfg(") {
-                continue;
-            }
-            if cx.eval_cfg(k, target_triple)? {
-                // Priorities (as of 1.68.0-nightly (2022-12-23)):
-                // 1. CARGO_TARGET_<triple>_RUNNER
-                // 2. target.<triple>.runner
-                // 3. target.<cfg>.runner
-                if target_runner.is_none() {
-                    if let Some(runner) = v.runner.as_ref() {
-                        target_runner = Some(runner.clone());
-                    }
+        if let Some(t) = &self.target {
+            for (k, v) in t {
+                if !k.starts_with("cfg(") {
+                    continue;
                 }
-                // Applied order (as of 1.68.0-nightly (2022-12-23)):
-                // 1. target.<triple>.rustflags
-                // 2. CARGO_TARGET_<triple>_RUSTFLAGS
-                // 3. target.<cfg>.rustflags
-                if let Some(rustflags) = v.rustflags.as_ref() {
-                    let target_rustflags = target_rustflags.get_or_insert_with(Rustflags::default);
-                    target_rustflags.flags.extend_from_slice(&rustflags.flags);
-                    if target_rustflags.deserialized_repr != rustflags.deserialized_repr {
-                        target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
+                if cx.eval_cfg(k, target_triple)? {
+                    // Priorities (as of 1.68.0-nightly (2022-12-23)):
+                    // 1. CARGO_TARGET_<triple>_RUNNER
+                    // 2. target.<triple>.runner
+                    // 3. target.<cfg>.runner
+                    if target_runner.is_none() {
+                        if let Some(runner) = v.runner.as_ref() {
+                            target_runner = Some(runner.clone());
+                        }
+                    }
+                    // Applied order (as of 1.68.0-nightly (2022-12-23)):
+                    // 1. target.<triple>.rustflags
+                    // 2. CARGO_TARGET_<triple>_RUSTFLAGS
+                    // 3. target.<cfg>.rustflags
+                    if let Some(rustflags) = v.rustflags.as_ref() {
+                        let target_rustflags =
+                            target_rustflags.get_or_insert_with(Rustflags::default);
+                        target_rustflags.flags.extend_from_slice(&rustflags.flags);
+                        if target_rustflags.deserialized_repr != rustflags.deserialized_repr {
+                            target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
+                        }
                     }
                 }
             }
@@ -216,7 +281,7 @@ pub struct BuildConfig {
 
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
-    override_target_rustflags: bool,
+    pub(crate) override_target_rustflags: bool,
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
@@ -335,7 +400,7 @@ pub struct TermConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termcolor)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub color: Option<Value<When>>,
+    pub color: Option<Value<Color>>,
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub progress: Option<TermProgress>,
@@ -356,6 +421,8 @@ pub struct TermProgress {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<Value<u32>>,
 }
+
+pub use self::When as Color;
 
 #[allow(clippy::exhaustive_enums)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -516,6 +583,64 @@ impl<'de> Deserialize<'de> for Rustflags {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(transparent)]
+#[non_exhaustive]
+pub struct StringList {
+    pub list: Vec<Value<String>>,
+
+    // for merge
+    #[serde(skip)]
+    pub(crate) deserialized_repr: StringListDeserializedRepr,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StringListDeserializedRepr {
+    String,
+    Array,
+}
+impl StringListDeserializedRepr {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::String => "string",
+            Self::Array => "array",
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for StringList {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrArray {
+            String(Value<String>),
+            Array(Vec<Value<String>>),
+        }
+        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
+        match v {
+            StringOrArray::String(s) => Ok(Self::from_string(&s.val, s.definition)),
+            StringOrArray::Array(v) => Ok(Self::from_array(v)),
+        }
+    }
+}
+
+impl StringList {
+    pub(crate) fn from_string(value: &str, definition: Option<Definition>) -> Self {
+        Self {
+            list: split_space_separated(value)
+                .map(|v| Value { val: v.to_owned(), definition: definition.clone() })
+                .collect(),
+            deserialized_repr: StringListDeserializedRepr::String,
+        }
+    }
+    pub(crate) fn from_array(list: Vec<Value<String>>) -> Self {
+        Self { list, deserialized_repr: StringListDeserializedRepr::String }
+    }
+}
+
 /// A string or array of strings.
 #[allow(clippy::exhaustive_enums)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -538,10 +663,20 @@ impl StringOrArray {
             Self::Array(v) => Some(v),
         }
     }
-    fn as_array_no_split(&self) -> &[Value<String>] {
+    pub(crate) fn as_array_no_split(&self) -> &[Value<String>] {
         match self {
             Self::String(s) => slice::from_ref(s),
             Self::Array(v) => v,
+        }
+    }
+    pub(crate) fn into_easy_string_list(self) -> crate::easy::StringList {
+        match self {
+            Self::String(s) => crate::easy::StringList {
+                list: split_space_separated(&s.val).map(str::to_owned).collect(),
+            },
+            Self::Array(v) => {
+                crate::easy::StringList { list: v.into_iter().map(|v| v.val).collect() }
+            }
         }
     }
 }
