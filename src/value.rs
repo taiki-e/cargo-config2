@@ -1,16 +1,18 @@
 // Refs:
 // - https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/value.rs
 
-use core::mem;
 use std::{
     borrow::Cow,
+    collections::BTreeMap,
+    mem,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{split_space_separated, Config, StringOrArray};
+use crate::{de, split_space_separated, Config, StringOrArray};
 
 #[allow(clippy::exhaustive_structs)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -25,6 +27,9 @@ pub struct Value<T> {
 }
 
 impl Value<String> {
+    pub(crate) fn parse<T: FromStr>(self) -> Result<Value<T>, T::Err> {
+        Ok(Value { val: self.val.parse()?, definition: self.definition })
+    }
     // https://doc.rust-lang.org/nightly/cargo/reference/config.html#config-relative-paths
     pub(crate) fn resolve_as_program_path<'a>(
         &'a self,
@@ -142,6 +147,13 @@ impl<T: SetPath> SetPath for Option<T> {
         }
     }
 }
+impl<T: SetPath> SetPath for BTreeMap<String, T> {
+    fn set_path(&mut self, path: &Path) {
+        for v in self.values_mut() {
+            v.set_path(path);
+        }
+    }
+}
 impl<T> SetPath for Value<T> {
     fn set_path(&mut self, path: &Path) {
         self.definition = Some(Definition::Path(path.to_owned()));
@@ -152,6 +164,18 @@ impl<T> SetPath for StringOrArray<Value<T>> {
         match self {
             StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
             StringOrArray::Array(v) => {
+                for v in v {
+                    v.definition = Some(Definition::Path(path.to_owned()));
+                }
+            }
+        }
+    }
+}
+impl<T> SetPath for de::StringOrArray<Value<T>> {
+    fn set_path(&mut self, path: &Path) {
+        match self {
+            de::StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
+            de::StringOrArray::Array(v) => {
                 for v in v {
                     v.definition = Some(Definition::Path(path.to_owned()));
                 }

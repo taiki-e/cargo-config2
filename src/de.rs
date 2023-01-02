@@ -1,112 +1,25 @@
-/*!
-Structured access to [Cargo configuration](https://doc.rust-lang.org/nightly/cargo/reference/config.html).
-
-This library is intended to accurately emulate the actual behavior of Cargo configuration, for example, this supports the following behaviors:
-
-- [Hierarchical structure and merge](https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure)
-- Environment variables resolution.
-- `target.<triple>` and `target.<cfg>` resolution.
-
-Supported tables and fields are mainly based on [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)'s use cases, but feel free to submit an issue if you see something missing in your use case.
-
-## Examples
-
-```no_run
-# fn main() -> anyhow::Result<()> {
-// Read config files hierarchically from the current directory and merges them.
-let mut config = cargo_config2::Config::load()?;
-// Apply environment variables and resolves target-specific configuration
-// (`target.<triple>` and `target.<cfg>`).
-let target = "x86_64-unknown-linux-gnu";
-config.resolve(target)?;
-// Display resolved rustflags for `target`.
-println!("{:?}", config.target[target].rustflags);
-# Ok(()) }
-```
-
-See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/examples/get.rs) that partial re-implementation of `cargo config get` using cargo-config2.
-*/
-
-#![doc(test(
-    no_crate_inject,
-    attr(
-        deny(warnings, rust_2018_idioms, single_use_lifetimes),
-        allow(dead_code, unused_variables)
-    )
-))]
-#![forbid(unsafe_code)]
-#![warn(
-    missing_debug_implementations,
-    // missing_docs,
-    rust_2018_idioms,
-    single_use_lifetimes,
-    unreachable_pub
-)]
-#![warn(
-    clippy::pedantic,
-    // lints for public library
-    // clippy::alloc_instead_of_core,
-    clippy::exhaustive_enums,
-    clippy::exhaustive_structs,
-    // clippy::std_instead_of_alloc,
-    // clippy::std_instead_of_core,
-)]
-#![allow(
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    clippy::module_name_repetitions,
-    clippy::must_use_candidate,
-    clippy::single_match_else
-)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-
-// Refs:
-// - https://doc.rust-lang.org/nightly/cargo/reference/config.html
-
-#[cfg(test)]
-#[path = "gen/assert_impl.rs"]
-mod assert_impl;
-#[path = "gen/is_none.rs"]
-mod is_none_impl;
-#[cfg(feature = "toml")]
-#[path = "gen/merge.rs"]
-mod merge_impl;
-
-#[macro_use]
-mod process;
-
-mod command;
-pub mod de;
-mod env;
-mod merge;
-mod paths;
-mod resolve;
-#[cfg(feature = "toml")]
-pub mod toml;
-mod value;
-
 use std::{
-    borrow::{Borrow, Cow},
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeMap,
     num::NonZeroI32,
     ops,
     path::{Path, PathBuf},
     slice,
+    str::FromStr,
 };
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Error, Result};
 use serde::{Deserialize, Serialize};
 
-#[doc(no_inline)]
-pub use crate::de::{Frequency, When};
-use crate::value::SetPath;
-pub use crate::{
-    command::host_triple,
-    paths::ConfigPaths,
-    resolve::{ResolveContext, TargetTriple},
-    value::{Definition, Value},
+#[path = "env_de.rs"]
+mod env;
+
+use crate::{
+    value::{SetPath, Value},
+    ResolveContext,
 };
 
+/// Cargo configuration that environment variables, config overrides, and
+/// target-specific configurations have not been resolved.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -115,27 +28,26 @@ pub struct Config {
     /// Command aliases.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
-    #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub alias: BTreeMap<String, StringOrArray>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "BuildConfig::is_none")]
-    pub build: BuildConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build: Option<BuildConfig>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "DocConfig::is_none")]
-    pub doc: DocConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub doc: Option<DocConfig>,
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, Env>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
-    pub future_incompat_report: FutureIncompatReportConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub future_incompat_report: Option<FutureIncompatReportConfig>,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
     #[serde(default)]
-    #[serde(skip_serializing_if = "NetConfig::is_none")]
-    pub net: NetConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub net: Option<NetConfig>,
     // TODO: patch
     // TODO: profile
     // TODO: registries
@@ -145,328 +57,22 @@ pub struct Config {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub target: BTreeMap<String, TargetConfig>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "TermConfig::is_none")]
-    pub term: TermConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub term: Option<TermConfig>,
 
     // Load contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     current_dir: Option<PathBuf>,
     #[serde(skip)]
     path: Option<PathBuf>,
-    // Resolve contexts. Completely ignored in serialization and deserialization.
-    #[serde(skip)]
-    env_applied: bool,
-    #[serde(skip)]
-    resolved_targets: BTreeSet<String>,
 }
 
 impl Config {
-    /// Read config files hierarchically from the current directory and merges them.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load() -> Result<Self> {
-        Self::load_with_cwd(std::env::current_dir()?)
-    }
-
-    /// Read config files hierarchically from the given directory and merges them.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_with_cwd(current_dir: impl AsRef<Path>) -> Result<Self> {
-        Ok(toml::read_hierarchical(current_dir.as_ref())?.unwrap_or_default())
-    }
-
-    /// Read config files hierarchically from the current directory.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_unmerged() -> Result<Vec<Self>> {
-        Self::load_unmerged_with_cwd(std::env::current_dir()?)
-    }
-
-    /// Read config files hierarchically from the given directory.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_unmerged_with_cwd(current_dir: impl AsRef<Path>) -> Result<Vec<Self>> {
-        toml::read_hierarchical_unmerged(current_dir.as_ref())
-    }
-
-    /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
-    pub fn resolve(&mut self, target: impl Into<TargetTriple>) -> Result<()> {
-        let cx = &mut ResolveContext::default();
-        self.resolve_with_context(cx, target.into())
-    }
-
-    /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
-    pub fn resolve_with_context(
-        &mut self,
-        cx: &mut ResolveContext,
-        target: impl Into<TargetTriple>,
-    ) -> Result<()> {
-        self.resolve_env(cx)?;
-        self.resolve_target(cx, &target.into())?;
-        Ok(())
-    }
-
-    fn resolve_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
-        if !self.env_applied {
-            self.apply_env(cx)?;
-            self.env_applied = true;
-        }
-        Ok(())
-    }
-
-    fn resolve_target(
-        &mut self,
-        cx: &mut ResolveContext,
-        target_triple: &TargetTriple,
-    ) -> Result<()> {
-        let target = &target_triple.triple;
-
-        // In target rustflags, all occurrences are merged, so we need to avoid multiple calls.
-        if self.resolved_targets.contains(target) {
-            return Ok(());
-        }
-        self.resolved_targets.insert(target.clone());
-
-        let target_u_upper = target_u_upper(target);
-        let mut target_config = self.target.remove(target).unwrap_or_default();
-        let mut target_linker = target_config.linker.take();
-        let mut target_runner = target_config.runner.take();
-        let mut target_rustflags: Option<Rustflags> = target_config.rustflags.take();
-        if let Some(linker) = cx.env_val(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
-            target_linker = Some(linker);
-        }
-        // Priorities (as of 1.68.0-nightly (2022-12-23)):
-        // 1. CARGO_TARGET_<triple>_RUNNER
-        // 2. target.<triple>.runner
-        // 3. target.<cfg>.runner
-        if let Some(runner) = cx.env_val(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
-            target_runner = Some(StringOrArray::String(runner));
-        }
-        // Applied order (as of 1.68.0-nightly (2022-12-23)):
-        // 1. target.<triple>.rustflags
-        // 2. CARGO_TARGET_<triple>_RUSTFLAGS
-        // 3. target.<cfg>.rustflags
-        if let Some(rustflags) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
-            target_rustflags.get_or_insert_with(Rustflags::default).flags.push(rustflags);
-        }
-        for (k, v) in &self.target {
-            if cx.eval_cfg(k, target_triple)? {
-                if target_runner.is_none() {
-                    if let Some(runner) = v.runner.as_ref() {
-                        target_runner = Some(runner.clone());
-                    }
-                }
-                if let Some(rustflags) = v.rustflags.as_ref() {
-                    target_rustflags
-                        .get_or_insert_with(Rustflags::default)
-                        .flags
-                        .extend_from_slice(&rustflags.flags);
-                }
-            }
-        }
-        if let Some(linker) = target_linker {
-            target_config.linker = Some(linker);
-        }
-        if let Some(runner) = target_runner {
-            target_config.runner = Some(runner);
-        }
-        if self.build.override_target_rustflags {
-            target_config.rustflags = self.build.rustflags.clone();
-        } else if let Some(rustflags) = target_rustflags {
-            target_config.rustflags = Some(rustflags);
-        } else {
-            target_config.rustflags = self.build.rustflags.clone();
-        }
-        self.target.insert(target.clone(), target_config);
-        Ok(())
-    }
-
-    /// Selects target triples to build.
-    ///
-    /// The targets returned are based on the order of priority in which cargo
-    /// selects the target to be used for the build.
-    ///
-    /// 1. `--target` option (`targets`)
-    /// 2. `CARGO_BUILD_TARGET` environment variable
-    /// 3. `build.target` config
-    /// 4. host triple (`host`)
-    ///
-    /// **Note:** The result of this function is intended to handle target-specific
-    /// configurations and is not always appropriate to propagate directly to Cargo.
-    /// See [`build_target_for_cli`](Self::build_target_for_cli) for more.
-    ///
-    /// ## Multi-target support
-    ///
-    /// [Cargo 1.64+ supports multi-target builds](https://blog.rust-lang.org/2022/09/22/Rust-1.64.0.html#cargo-improvements-workspace-inheritance-and-multi-target-builds).
-    ///
-    /// Therefore, this function may return multiple targets if multiple targets
-    /// are specified in `targets` or `build.target` config.
-    ///
-    /// ## Custom target support
-    ///
-    /// rustc allows you to build a custom target by specifying a target-spec file.
-    /// If a target-spec file is specified as the target, rustc considers the
-    /// [file stem](Path::file_stem) of that file to be the target triple name.
-    ///
-    /// Since target-specific configs are referred by target triple name, this
-    /// function also converts the target specified in the path to a target triple name.
-    ///
-    /// ## Examples
-    ///
-    /// With single-target:
-    ///
-    /// ```no_run
-    /// # fn main() -> anyhow::Result<()> {
-    /// use anyhow::bail;
-    /// use clap::Parser;
-    ///
-    /// #[derive(Parser)]
-    /// struct Args {
-    ///     #[clap(long)]
-    ///     target: Option<String>,
-    /// }
-    ///
-    /// let args = Args::parse();
-    /// let mut config = cargo_config2::Config::load()?;
-    ///
-    /// let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    /// let host = cargo_config2::host_triple(cargo)?;
-    /// let mut targets = config.build_target_for_config(args.target.as_ref(), &host)?;
-    /// if targets.len() != 1 {
-    ///     bail!("multi-target build is not supported: {targets:?}");
-    /// }
-    /// let target = targets.pop().unwrap();
-    ///
-    /// config.resolve(&target)?;
-    /// println!("{:?}", config[target].rustflags);
-    /// # Ok(()) }
-    /// ```
-    ///
-    /// With multi-target:
-    ///
-    /// ```no_run
-    /// # fn main() -> anyhow::Result<()> {
-    /// use clap::Parser;
-    ///
-    /// #[derive(Parser)]
-    /// struct Args {
-    ///     #[clap(long)]
-    ///     target: Vec<String>,
-    /// }
-    ///
-    /// let args = Args::parse();
-    /// let mut config = cargo_config2::Config::load()?;
-    ///
-    /// let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    /// let host = cargo_config2::host_triple(cargo)?;
-    /// let targets = config.build_target_for_config(&args.target, &host)?;
-    ///
-    /// for target in targets {
-    ///     config.resolve(&target)?;
-    ///     println!("{:?}", config[target].rustflags);
-    /// }
-    /// # Ok(()) }
-    /// ```
-    pub fn build_target_for_config(
-        &self,
-        targets: impl IntoIterator<Item = impl Into<TargetTriple>>,
-        host: impl Into<TargetTriple>,
-    ) -> Result<Vec<TargetTriple>> {
-        let targets: Vec<_> = targets.into_iter().map(Into::into).collect();
-        if !targets.is_empty() {
-            return Ok(targets);
-        }
-        if !self.env_applied {
-            if let Some(target) = env::var("CARGO_BUILD_TARGET")? {
-                return Ok(vec![target.into()]);
-            }
-        }
-        let config_targets =
-            self.build.target.as_ref().map(StringOrArray::as_array_no_split).unwrap_or_default();
-        if !config_targets.is_empty() {
-            return Ok(config_targets
-                .iter()
-                .map(|v| TargetTriple::new(&v.val, v.definition.as_ref().map(|d| (d, self))))
-                .collect());
-        }
-        Ok(vec![host.into()])
-    }
-
-    /// Selects target triples to pass to CLI.
-    ///
-    /// The targets returned are based on the order of priority in which cargo
-    /// selects the target to be used for the build.
-    ///
-    /// 1. `--target` option (`targets`)
-    /// 2. `CARGO_BUILD_TARGET` environment variable
-    /// 3. `build.target` config
-    ///
-    /// Unlike [`build_target_for_config`](Self::build_target_for_config),
-    /// host triple is not referenced. This is because the behavior of Cargo
-    /// changes depending on whether or not `--target` option (or one of the
-    /// above) is set.
-    /// Also, Unlike [`build_target_for_config`](Self::build_target_for_config)
-    /// the target name specified in path is preserved.
-    pub fn build_target_for_cli(
-        &self,
-        targets: impl IntoIterator<Item = impl AsRef<str>>,
-    ) -> Result<Vec<String>> {
-        let targets: Vec<_> = targets.into_iter().map(|t| t.as_ref().to_owned()).collect();
-        if !targets.is_empty() {
-            return Ok(targets);
-        }
-        if !self.env_applied {
-            if let Some(target) = env::var("CARGO_BUILD_TARGET")? {
-                return Ok(vec![target]);
-            }
-        }
-        let config_targets =
-            self.build.target.as_ref().map(StringOrArray::as_array_no_split).unwrap_or_default();
-        if !config_targets.is_empty() {
-            return Ok(config_targets
-                .iter()
-                .map(|v| {
-                    let t = TargetTriple::new(&v.val, v.definition.as_ref().map(|d| (d, self)));
-                    t.spec_path.unwrap_or(t.triple)
-                })
-                .collect());
-        }
-        Ok(vec![])
-    }
-
-    /// Merges the given config into this config.
-    ///
-    /// If `force` is `false`, this matches the way cargo [merges configs in the
-    /// parent directories](https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure).
-    ///
-    /// If `force` is `true`, this matches the way cargo's `--config` CLI option
-    /// overrides config.
-    pub fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        merge::Merge::merge(self, from, force)
-    }
-
-    pub fn path(&self) -> Option<&Path> {
-        self.path.as_deref()
-    }
-
-    fn set_cwd(&mut self, path: PathBuf) {
-        // for alias in self.alias.values_mut() {
-        //     alias.set_cwd(&path);
-        // }
-        self.build.set_cwd(&path);
-        self.doc.set_cwd(&path);
-        // for env in self.env.values_mut() {
-        //     env.set_cwd(&path);
-        // }
-        // self.future_incompat_report.set_cwd(&path);
-        // self.net.set_cwd(&path);
-        for target in self.target.values_mut() {
-            target.set_cwd(&path);
-        }
-        // self.term.set_cwd(&path);
+    pub fn set_cwd(&mut self, path: PathBuf) {
         self.current_dir = Some(path);
     }
-    fn set_path(&mut self, path: PathBuf) {
+
+    pub fn set_path(&mut self, path: PathBuf) {
         // for alias in self.alias.values_mut() {
         //     alias.set_path(&path);
         // }
@@ -477,18 +83,9 @@ impl Config {
         }
         // self.future_incompat_report.set_path(&path);
         // self.net.set_path(&path);
-        for target in self.target.values_mut() {
-            target.set_path(&path);
-        }
+        self.target.set_path(&path);
         // self.term.set_path(&path);
         self.path = Some(path);
-    }
-}
-
-impl<T: Borrow<TargetTriple>> ops::Index<T> for Config {
-    type Output = TargetConfig;
-    fn index(&self, index: T) -> &Self::Output {
-        &self.target[&index.borrow().triple]
     }
 }
 
@@ -505,7 +102,7 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub jobs: Option<NonZeroI32>,
+    pub jobs: Option<Value<NonZeroI32>>,
     /// Sets the executable to use for `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)
@@ -553,50 +150,21 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildincremental)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub incremental: Option<bool>,
+    pub incremental: Option<Value<bool>>,
     /// Strips the given path prefix from dep info file paths.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dep_info_basedir: Option<Value<String>>,
 
-    // Load contexts. Completely ignored in serialization and deserialization.
-    #[serde(skip)]
-    current_dir: Option<PathBuf>,
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     override_target_rustflags: bool,
 }
 
-impl BuildConfig {
-    pub fn rustc(&self) -> Option<Cow<'_, Path>> {
-        Some(self.rustc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn rustc_wrapper(&self) -> Option<Cow<'_, Path>> {
-        Some(self.rustc_wrapper.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn rustc_workspace_wrapper(&self) -> Option<Cow<'_, Path>> {
-        Some(
-            self.rustc_workspace_wrapper
-                .as_ref()?
-                .resolve_as_program_path(self.current_dir.as_deref()),
-        )
-    }
-    pub fn rustdoc(&self) -> Option<Cow<'_, Path>> {
-        Some(self.rustdoc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn target_dir(&self) -> Option<Cow<'_, Path>> {
-        Some(self.target_dir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
-    }
-    pub fn dep_info_basedir(&self) -> Option<Cow<'_, Path>> {
-        Some(self.dep_info_basedir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
-    }
-
-    fn set_cwd(&mut self, path: &Path) {
-        self.current_dir = Some(path.to_owned());
-    }
+impl SetPath for BuildConfig {
     fn set_path(&mut self, path: &Path) {
-        // self.jobs.set_path(path);
+        self.jobs.set_path(path);
         self.rustc.set_path(path);
         self.rustc_wrapper.set_path(path);
         self.rustc_workspace_wrapper.set_path(path);
@@ -605,7 +173,7 @@ impl BuildConfig {
         self.target_dir.set_path(path);
         // self.rustflags.set_path(&path);
         // self.rustdocflags.set_path(&path);
-        // self.incremental.set_path(&path);
+        self.incremental.set_path(&path);
         self.dep_info_basedir.set_path(path);
     }
 }
@@ -630,28 +198,9 @@ pub struct TargetConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustflags: Option<Rustflags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
-
-    // Load contexts. Completely ignored in serialization and deserialization.
-    #[serde(skip)]
-    current_dir: Option<PathBuf>,
 }
 
-impl TargetConfig {
-    pub fn linker(&self) -> Option<Cow<'_, Path>> {
-        Some(self.linker.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn runner(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
-        match self.runner.as_ref() {
-            Some(runner) => {
-                Ok(Some(runner.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
-            }
-            None => Ok(None),
-        }
-    }
-
-    fn set_cwd(&mut self, path: &Path) {
-        self.current_dir = Some(path.to_owned());
-    }
+impl SetPath for TargetConfig {
     fn set_path(&mut self, path: &Path) {
         self.linker.set_path(path);
         self.runner.set_path(path);
@@ -672,25 +221,9 @@ pub struct DocConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#docbrowser)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub browser: Option<StringOrArray<Value<String>>>,
-
-    // Load contexts. Completely ignored in serialization and deserialization.
-    #[serde(skip)]
-    current_dir: Option<PathBuf>,
 }
 
-impl DocConfig {
-    pub fn browser(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
-        match self.browser.as_ref() {
-            Some(browser) => {
-                Ok(Some(browser.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
-            }
-            None => Ok(None),
-        }
-    }
-
-    fn set_cwd(&mut self, path: &Path) {
-        self.current_dir = Some(path.to_owned());
-    }
+impl SetPath for DocConfig {
     fn set_path(&mut self, path: &Path) {
         self.browser.set_path(path);
     }
@@ -703,11 +236,11 @@ pub struct Env {
     pub value: Value<String>,
     pub force: Option<bool>,
     pub relative: Option<bool>,
-    deserialized_repr: EnvDeserializedRepr,
+    pub(crate) deserialized_repr: EnvDeserializedRepr,
 }
 
 #[derive(Debug, Clone, Copy)]
-enum EnvDeserializedRepr {
+pub(crate) enum EnvDeserializedRepr {
     Value,
     Table,
 }
@@ -771,7 +304,7 @@ impl<'de> Deserialize<'de> for Env {
     }
 }
 
-impl Env {
+impl SetPath for Env {
     fn set_path(&mut self, path: &Path) {
         self.value.set_path(path);
     }
@@ -843,8 +376,8 @@ pub struct TermConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<When>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "TermProgress::is_none")]
-    pub progress: TermProgress,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress: Option<TermProgress>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -862,6 +395,80 @@ pub struct TermProgress {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<u32>,
 }
+
+#[allow(clippy::exhaustive_enums)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum When {
+    Auto,
+    Always,
+    Never,
+}
+
+impl When {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Always => "always",
+            Self::Never => "never",
+        }
+    }
+}
+
+impl Default for When {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
+
+impl FromStr for When {
+    type Err = Error;
+
+    fn from_str(color: &str) -> Result<Self, Self::Err> {
+        match color {
+            "auto" => Ok(Self::Auto),
+            "always" => Ok(Self::Always),
+            "never" => Ok(Self::Never),
+            other => bail!("must be auto, always, or never, but found `{other}`"),
+        }
+    }
+}
+
+#[allow(clippy::exhaustive_enums)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Frequency {
+    Always,
+    Never,
+}
+
+impl Frequency {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Always => "always",
+            Self::Never => "never",
+        }
+    }
+}
+
+impl Default for Frequency {
+    fn default() -> Self {
+        Self::Always
+    }
+}
+
+impl FromStr for Frequency {
+    type Err = Error;
+
+    fn from_str(color: &str) -> Result<Self, Self::Err> {
+        match color {
+            "always" => Ok(Self::Always),
+            "never" => Ok(Self::Never),
+            other => bail!("must be always or never, but found `{other}`"),
+        }
+    }
+}
+
 /// A representation of rustflags and rustdocflags.
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(transparent)]
