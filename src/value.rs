@@ -147,6 +147,13 @@ impl<T: SetPath> SetPath for Option<T> {
         }
     }
 }
+impl<T: SetPath> SetPath for Vec<T> {
+    fn set_path(&mut self, path: &Path) {
+        for v in self {
+            v.set_path(path);
+        }
+    }
+}
 impl<T: SetPath> SetPath for BTreeMap<String, T> {
     fn set_path(&mut self, path: &Path) {
         for v in self.values_mut() {
@@ -164,18 +171,6 @@ impl<T> SetPath for StringOrArray<Value<T>> {
         match self {
             StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
             StringOrArray::Array(v) => {
-                for v in v {
-                    v.definition = Some(Definition::Path(path.to_owned()));
-                }
-            }
-        }
-    }
-}
-impl<T> SetPath for de::StringOrArray<Value<T>> {
-    fn set_path(&mut self, path: &Path) {
-        match self {
-            de::StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
-            de::StringOrArray::Array(v) => {
                 for v in v {
                     v.definition = Some(Definition::Path(path.to_owned()));
                 }

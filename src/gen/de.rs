@@ -4,7 +4,8 @@
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
 
-use crate::{merge::Merge, Result};
+use std::path::Path;
+use crate::{merge::Merge, value::SetPath, Result};
 impl Merge for crate::de::Config {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.alias.merge(from.alias, force)?;
@@ -16,6 +17,18 @@ impl Merge for crate::de::Config {
         self.target.merge(from.target, force)?;
         self.term.merge(from.term, force)?;
         Ok(())
+    }
+}
+impl SetPath for crate::de::Config {
+    fn set_path(&mut self, path: &Path) {
+        self.alias.set_path(path);
+        self.build.set_path(path);
+        self.doc.set_path(path);
+        self.env.set_path(path);
+        self.future_incompat_report.set_path(path);
+        self.net.set_path(path);
+        self.target.set_path(path);
+        self.term.set_path(path);
     }
 }
 impl Merge for crate::de::BuildConfig {
@@ -34,6 +47,21 @@ impl Merge for crate::de::BuildConfig {
         Ok(())
     }
 }
+impl SetPath for crate::de::BuildConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.jobs.set_path(path);
+        self.rustc.set_path(path);
+        self.rustc_wrapper.set_path(path);
+        self.rustc_workspace_wrapper.set_path(path);
+        self.rustdoc.set_path(path);
+        self.target.set_path(path);
+        self.target_dir.set_path(path);
+        self.rustflags.set_path(path);
+        self.rustdocflags.set_path(path);
+        self.incremental.set_path(path);
+        self.dep_info_basedir.set_path(path);
+    }
+}
 impl Merge for crate::de::TargetConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.linker.merge(from.linker, force)?;
@@ -42,19 +70,36 @@ impl Merge for crate::de::TargetConfig {
         Ok(())
     }
 }
+impl SetPath for crate::de::TargetConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.linker.set_path(path);
+        self.runner.set_path(path);
+        self.rustflags.set_path(path);
+    }
+}
 impl Merge for crate::de::DocConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.browser.merge(from.browser, force)?;
         Ok(())
     }
 }
-impl Merge for crate::de::Env {
-    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        self.value.merge(from.value, force)?;
-        self.force.merge(from.force, force)?;
-        self.relative.merge(from.relative, force)?;
-        self.deserialized_repr.merge(from.deserialized_repr, force)?;
-        Ok(())
+impl SetPath for crate::de::DocConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.browser.set_path(path);
+    }
+}
+impl SetPath for crate::de::Env {
+    fn set_path(&mut self, path: &Path) {
+        match self {
+            Self::Value(v) => {
+                v.set_path(path);
+            }
+            Self::Table { value, force, relative } => {
+                value.set_path(path);
+                force.set_path(path);
+                relative.set_path(path);
+            }
+        }
     }
 }
 impl Merge for crate::de::FutureIncompatReportConfig {
@@ -63,12 +108,24 @@ impl Merge for crate::de::FutureIncompatReportConfig {
         Ok(())
     }
 }
+impl SetPath for crate::de::FutureIncompatReportConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.frequency.set_path(path);
+    }
+}
 impl Merge for crate::de::NetConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.retry.merge(from.retry, force)?;
         self.git_fetch_with_cli.merge(from.git_fetch_with_cli, force)?;
         self.offline.merge(from.offline, force)?;
         Ok(())
+    }
+}
+impl SetPath for crate::de::NetConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.retry.set_path(path);
+        self.git_fetch_with_cli.set_path(path);
+        self.offline.set_path(path);
     }
 }
 impl Merge for crate::de::TermConfig {
@@ -80,10 +137,41 @@ impl Merge for crate::de::TermConfig {
         Ok(())
     }
 }
+impl SetPath for crate::de::TermConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.quiet.set_path(path);
+        self.verbose.set_path(path);
+        self.color.set_path(path);
+        self.progress.set_path(path);
+    }
+}
 impl Merge for crate::de::TermProgress {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.when.merge(from.when, force)?;
         self.width.merge(from.width, force)?;
         Ok(())
+    }
+}
+impl SetPath for crate::de::TermProgress {
+    fn set_path(&mut self, path: &Path) {
+        self.when.set_path(path);
+        self.width.set_path(path);
+    }
+}
+impl SetPath for crate::de::Rustflags {
+    fn set_path(&mut self, path: &Path) {
+        self.flags.set_path(path);
+    }
+}
+impl SetPath for crate::de::StringOrArray {
+    fn set_path(&mut self, path: &Path) {
+        match self {
+            Self::String(v) => {
+                v.set_path(path);
+            }
+            Self::Array(v) => {
+                v.set_path(path);
+            }
+        }
     }
 }

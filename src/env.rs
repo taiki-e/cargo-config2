@@ -46,7 +46,7 @@ impl BuildConfig {
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs
         if let Some(jobs) = cx.env("CARGO_BUILD_JOBS")? {
-            self.jobs = Some(jobs.parse()?);
+            self.jobs = Some(jobs.val.parse()?);
         }
 
         // The following priorities are not documented, but at as of cargo
@@ -54,40 +54,40 @@ impl BuildConfig {
         // 1. RUSTC
         // 2. build.rustc (CARGO_BUILD_RUSTC)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc
-        if let Some(rustc) = cx.env_val("RUSTC")? {
+        if let Some(rustc) = cx.env("RUSTC")? {
             self.rustc = Some(rustc);
-        } else if let Some(rustc) = cx.env_val("CARGO_BUILD_RUSTC")? {
+        } else if let Some(rustc) = cx.env("CARGO_BUILD_RUSTC")? {
             self.rustc = Some(rustc);
         }
         // 1. RUSTC_WRAPPER
         // 2. build.rustc-wrapper (CARGO_BUILD_RUSTC_WRAPPER)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper
-        if let Some(rustc_wrapper) = cx.env_val("RUSTC_WRAPPER")? {
+        if let Some(rustc_wrapper) = cx.env("RUSTC_WRAPPER")? {
             self.rustc_wrapper = Some(rustc_wrapper);
-        } else if let Some(rustc_wrapper) = cx.env_val("CARGO_BUILD_RUSTC_WRAPPER")? {
+        } else if let Some(rustc_wrapper) = cx.env("CARGO_BUILD_RUSTC_WRAPPER")? {
             self.rustc_wrapper = Some(rustc_wrapper);
         }
         // 1. RUSTC_WORKSPACE_WRAPPER
         // 2. build.rustc-workspace-wrapper (CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper
-        if let Some(rustc_workspace_wrapper) = cx.env_val("RUSTC_WORKSPACE_WRAPPER")? {
+        if let Some(rustc_workspace_wrapper) = cx.env("RUSTC_WORKSPACE_WRAPPER")? {
             self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
         } else if let Some(rustc_workspace_wrapper) =
-            cx.env_val("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER")?
+            cx.env("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER")?
         {
             self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
         }
         // 1. RUSTDOC
         // 2. build.rustdoc (CARGO_BUILD_RUSTDOC)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdoc
-        if let Some(rustdoc) = cx.env_val("RUSTDOC")? {
+        if let Some(rustdoc) = cx.env("RUSTDOC")? {
             self.rustdoc = Some(rustdoc);
-        } else if let Some(rustdoc) = cx.env_val("CARGO_BUILD_RUSTDOC")? {
+        } else if let Some(rustdoc) = cx.env("CARGO_BUILD_RUSTDOC")? {
             self.rustdoc = Some(rustdoc);
         }
 
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget
-        if let Some(target) = cx.env_val("CARGO_BUILD_TARGET")? {
+        if let Some(target) = cx.env("CARGO_BUILD_TARGET")? {
             self.target = Some(StringOrArray::String(target));
         }
 
@@ -96,9 +96,9 @@ impl BuildConfig {
         // 1. CARGO_TARGET_DIR
         // 2. CARGO_BUILD_TARGET_DIR
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget
-        if let Some(target_dir) = cx.env_val("CARGO_TARGET_DIR")? {
+        if let Some(target_dir) = cx.env("CARGO_TARGET_DIR")? {
             self.target_dir = Some(target_dir);
-        } else if let Some(target_dir) = cx.env_val("CARGO_BUILD_TARGET_DIR")? {
+        } else if let Some(target_dir) = cx.env("CARGO_BUILD_TARGET_DIR")? {
             self.target_dir = Some(target_dir);
         }
 
@@ -111,23 +111,23 @@ impl BuildConfig {
         self.override_target_rustflags = false;
         if let Some(rustflags) = cx.env("CARGO_ENCODED_RUSTFLAGS")? {
             self.override_target_rustflags = true;
-            self.rustflags = Some(Rustflags::from_encoded(&rustflags));
+            self.rustflags = Some(Rustflags::from_encoded(&rustflags.val));
         } else if let Some(rustflags) = cx.env("RUSTFLAGS")? {
             self.override_target_rustflags = true;
-            self.rustflags = Some(Rustflags::from_space_separated(&rustflags));
+            self.rustflags = Some(Rustflags::from_space_separated(&rustflags.val));
         } else if let Some(rustflags) = cx.env("CARGO_BUILD_RUSTFLAGS")? {
-            self.rustflags = Some(Rustflags::from_space_separated(&rustflags));
+            self.rustflags = Some(Rustflags::from_space_separated(&rustflags.val));
         }
         // 1. CARGO_ENCODED_RUSTDOCFLAGS
         // 2. RUSTDOCFLAGS
         // 3. build.rustdocflags (CARGO_BUILD_RUSTDOCFLAGS)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags
         if let Some(rustdocflags) = cx.env("CARGO_ENCODED_RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_encoded(&rustdocflags));
+            self.rustdocflags = Some(Rustflags::from_encoded(&rustdocflags.val));
         } else if let Some(rustdocflags) = cx.env("RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_space_separated(&rustdocflags));
+            self.rustdocflags = Some(Rustflags::from_space_separated(&rustdocflags.val));
         } else if let Some(rustdocflags) = cx.env("CARGO_BUILD_RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_space_separated(&rustdocflags));
+            self.rustdocflags = Some(Rustflags::from_space_separated(&rustdocflags.val));
         }
 
         // The following priorities are not documented, but at as of cargo
@@ -137,13 +137,13 @@ impl BuildConfig {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildincremental
         if let Some(incremental) = cx.env("CARGO_INCREMENTAL")? {
             // As of cargo 1.68.0-nightly (2022-12-23), cargo handles invalid value like 0.
-            self.incremental = Some(incremental == "1");
+            self.incremental = Some(incremental.val == "1");
         } else if let Some(incremental) = cx.env("CARGO_BUILD_INCREMENTAL")? {
-            self.incremental = Some(incremental.parse()?);
+            self.incremental = Some(incremental.val.parse()?);
         }
 
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir
-        if let Some(dep_info_basedir) = cx.env_val("CARGO_BUILD_DEP_INFO_BASEDIR")? {
+        if let Some(dep_info_basedir) = cx.env("CARGO_BUILD_DEP_INFO_BASEDIR")? {
             self.dep_info_basedir = Some(dep_info_basedir);
         }
 
@@ -157,7 +157,7 @@ impl DocConfig {
         // doc.browser config value is prefer over BROWSER environment variable.
         // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/ops/cargo_doc.rs#L52-L53
         if self.browser.is_none() {
-            if let Some(browser) = cx.env_val("BROWSER")? {
+            if let Some(browser) = cx.env("BROWSER")? {
                 self.browser = Some(StringOrArray::String(browser));
             }
         }
@@ -170,7 +170,7 @@ impl FutureIncompatReportConfig {
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency
         if let Some(frequency) = cx.env("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY")? {
-            self.frequency = Some(frequency.parse()?);
+            self.frequency = Some(frequency.val.parse()?);
         }
         Ok(())
     }
@@ -181,15 +181,15 @@ impl NetConfig {
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry
         if let Some(retry) = cx.env("CARGO_NET_RETRY")? {
-            self.retry = Some(retry.parse()?);
+            self.retry = Some(retry.val.parse()?);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netgit-fetch-with-cli
         if let Some(git_fetch_with_cli) = cx.env("CARGO_NET_GIT_FETCH_WITH_CLI")? {
-            self.git_fetch_with_cli = Some(git_fetch_with_cli.parse()?);
+            self.git_fetch_with_cli = Some(git_fetch_with_cli.val.parse()?);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline
         if let Some(offline) = cx.env("CARGO_NET_OFFLINE")? {
-            self.offline = Some(offline.parse()?);
+            self.offline = Some(offline.val.parse()?);
         }
         Ok(())
     }
@@ -200,15 +200,15 @@ impl TermConfig {
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet
         if let Some(quiet) = cx.env("CARGO_TERM_QUIET")? {
-            self.quiet = Some(quiet.parse()?);
+            self.quiet = Some(quiet.val.parse()?);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termverbose
         if let Some(verbose) = cx.env("CARGO_TERM_VERBOSE")? {
-            self.verbose = Some(verbose.parse()?);
+            self.verbose = Some(verbose.val.parse()?);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termcolor
         if let Some(color) = cx.env("CARGO_TERM_COLOR")? {
-            self.color = Some(color.parse()?);
+            self.color = Some(color.val.parse()?);
         }
         self.progress.apply_env(cx)?;
         Ok(())
@@ -220,11 +220,11 @@ impl TermProgress {
     fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswhen
         if let Some(when) = cx.env("CARGO_TERM_PROGRESS_WHEN")? {
-            self.when = Some(when.parse()?);
+            self.when = Some(when.val.parse()?);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswidth
         if let Some(width) = cx.env("CARGO_TERM_PROGRESS_WIDTH")? {
-            self.width = Some(width.parse()?);
+            self.width = Some(width.val.parse()?);
         }
         Ok(())
     }

@@ -232,14 +232,14 @@ impl Config {
         let mut target_linker = target_config.linker.take();
         let mut target_runner = target_config.runner.take();
         let mut target_rustflags: Option<Rustflags> = target_config.rustflags.take();
-        if let Some(linker) = cx.env_val(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
+        if let Some(linker) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
             target_linker = Some(linker);
         }
         // Priorities (as of 1.68.0-nightly (2022-12-23)):
         // 1. CARGO_TARGET_<triple>_RUNNER
         // 2. target.<triple>.runner
         // 3. target.<cfg>.runner
-        if let Some(runner) = cx.env_val(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
+        if let Some(runner) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
             target_runner = Some(StringOrArray::String(runner));
         }
         // Applied order (as of 1.68.0-nightly (2022-12-23)):
@@ -247,7 +247,7 @@ impl Config {
         // 2. CARGO_TARGET_<triple>_RUSTFLAGS
         // 3. target.<cfg>.rustflags
         if let Some(rustflags) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
-            target_rustflags.get_or_insert_with(Rustflags::default).flags.push(rustflags);
+            target_rustflags.get_or_insert_with(Rustflags::default).flags.push(rustflags.val);
         }
         for (k, v) in &self.target {
             if cx.eval_cfg(k, target_triple)? {

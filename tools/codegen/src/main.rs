@@ -9,7 +9,10 @@ use anyhow::Result;
 use fs_err as fs;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::visit_mut::{self, VisitMut};
+use syn::{
+    visit_mut::{self, VisitMut},
+    Fields,
+};
 use walkdir::WalkDir;
 
 fn main() -> Result<()> {
@@ -56,13 +59,14 @@ fn write(function_name: &str, path: &Path, contents: TokenStream) -> Result<()> 
 fn gen_de() -> Result<()> {
     let files = &["src/de.rs"];
     // TODO: check if this list is outdated
-    let merge_exclude = &["Rustflags", "ResolveContext"];
-    let set_path_merge_exclude = &["Rustflags", "ResolveContext"];
+    let merge_exclude = &["Rustflags", "ResolveContext", "Env"];
+    let set_path_exclude = &["ResolveContext"];
 
     let workspace_root = &workspace_root();
 
     let mut tokens = quote! {
-        use crate::{merge::Merge, Result};
+        use std::path::Path;
+        use crate::{merge::Merge, value::SetPath, Result};
     };
 
     for &f in files {
@@ -76,27 +80,97 @@ fn gen_de() -> Result<()> {
             vec![name.into()]
         };
 
-        ItemVisitor::new(module, |item, module| match item {
-            syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
-                if matches!(vis, syn::Visibility::Public(..))
-                    && matches!(fields, syn::Fields::Named(..))
-                    && !merge_exclude.iter().any(|&e| ident == e) =>
-            {
-                let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                    |syn::Field { ident, .. }| {
-                        quote! { self.#ident.merge(from.#ident, force)?; }
-                    },
-                );
-                tokens.extend(quote! {
-                    impl Merge for crate:: #(#module::)* #ident {
-                        fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-                            #(#fields)*
-                            Ok(())
+        ItemVisitor::new(module, |item, module| {
+            match item {
+                syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
+                    if matches!(vis, syn::Visibility::Public(..))
+                        && matches!(fields, syn::Fields::Named(..))
+                        && !merge_exclude.iter().any(|&e| ident == e) =>
+                {
+                    let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
+                        |syn::Field { ident, .. }| {
+                            quote! { self.#ident.merge(from.#ident, force)?; }
+                        },
+                    );
+                    tokens.extend(quote! {
+                        impl Merge for crate:: #(#module::)* #ident {
+                            fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+                                #(#fields)*
+                                Ok(())
+                            }
+                        }
+                    });
+                }
+                _ => {}
+            }
+            match item {
+                syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
+                    if matches!(vis, syn::Visibility::Public(..))
+                        && matches!(fields, syn::Fields::Named(..))
+                        && !set_path_exclude.iter().any(|&e| ident == e) =>
+                {
+                    let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
+                        |syn::Field { ident, .. }| {
+                            quote! { self.#ident.set_path(path); }
+                        },
+                    );
+                    tokens.extend(quote! {
+                        impl SetPath for crate:: #(#module::)* #ident {
+                            fn set_path(&mut self, path: &Path) {
+                                #(#fields)*
+                            }
+                        }
+                    });
+                }
+                syn::Item::Enum(syn::ItemEnum { vis, ident, variants, .. })
+                    if matches!(vis, syn::Visibility::Public(..))
+                        && variants.iter().all(|v| !v.fields.is_empty())
+                        && set_path_exclude.iter().all(|&e| ident != e) =>
+                {
+                    let mut arms = vec![];
+                    for syn::Variant { ident, fields, .. } in variants {
+                        match fields {
+                            Fields::Named(fields) => {
+                                let pat = fields
+                                    .named
+                                    .iter()
+                                    .filter(|f| !serde_skip(&f.attrs))
+                                    .map(|syn::Field { ident, .. }| ident);
+                                let calls =
+                                    fields.named.iter().filter(|f| !serde_skip(&f.attrs)).map(
+                                        |syn::Field { ident, .. }| {
+                                            quote! { #ident.set_path(path); }
+                                        },
+                                    );
+                                arms.push(quote! {
+                                    Self::#ident { #(#pat),* } => {
+                                        #(#calls)*
+                                    }
+                                });
+                            }
+                            Fields::Unnamed(fields) => {
+                                assert_eq!(fields.unnamed.len(), 1);
+                                arms.push(quote! {
+                                    Self::#ident(v) => {
+                                        v.set_path(path);
+                                    }
+                                });
+                            }
+                            Fields::Unit => unreachable!(),
                         }
                     }
-                });
+                    tokens.extend(quote! {
+                        impl SetPath for crate:: #(#module::)* #ident {
+                            fn set_path(&mut self, path: &Path) {
+                                match self {
+                                    #(#arms,)*
+                                }
+                            }
+                        }
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         })
         .visit_file_mut(&mut ast);
     }

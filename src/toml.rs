@@ -12,7 +12,7 @@ use crate::{paths::ConfigPaths, Config};
 /// **Note:** This does not respect the hierarchical structure of the cargo config.
 pub fn read(path: PathBuf) -> Result<Config> {
     let buf = fs::read(&path).with_context(|| format!("failed to read `{}`", path.display()))?;
-    let mut config: Config = toml_crate::from_slice(&buf)
+    let mut config: Config = toml_edit::easy::from_slice(&buf)
         .with_context(|| format!("failed to parse `{}` as cargo configuration", path.display()))?;
     config.set_path(path);
     Ok(config)

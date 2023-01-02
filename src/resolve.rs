@@ -47,13 +47,7 @@ impl ResolveContext {
         self
     }
 
-    pub(crate) fn env(&self, name: &str) -> Result<Option<String>> {
-        match self.env.get(name) {
-            None => Ok(None),
-            Some(v) => Ok(Some(v.clone().into_string().map_err(std::env::VarError::NotUnicode)?)),
-        }
-    }
-    pub(crate) fn env_val(&self, name: &str) -> Result<Option<Value<String>>> {
+    pub(crate) fn env(&self, name: &str) -> Result<Option<Value<String>>> {
         match self.env.get(name) {
             None => Ok(None),
             Some(v) => Ok(Some(Value {

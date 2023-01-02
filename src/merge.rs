@@ -14,7 +14,7 @@ use std::collections::btree_map;
 use anyhow::{Context as _, Result};
 
 use crate::{
-    BTreeMap, Env, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
+    de, BTreeMap, Env, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
     RustflagsDeserializedRepr, StringOrArray, Value, When,
 };
 
@@ -33,13 +33,20 @@ macro_rules! merge_non_container {
                 Ok(())
             }
         }
+        impl Merge for Value<$($ty)*> {
+            fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+                if force {
+                    *self = from;
+                }
+                Ok(())
+            }
+        }
     };
 }
 merge_non_container!(bool);
 merge_non_container!(u32);
 merge_non_container!(NonZeroI32);
 merge_non_container!(String);
-merge_non_container!(Value<String>);
 merge_non_container!(Frequency);
 merge_non_container!(When);
 
@@ -62,6 +69,24 @@ impl<T> Merge for StringOrArray<T> {
                 }
             }
             (StringOrArray::Array(this), StringOrArray::Array(mut from)) => {
+                this.append(&mut from);
+            }
+            _ => {
+                todo!()
+            }
+        }
+        Ok(())
+    }
+}
+impl Merge for de::StringOrArray {
+    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+        match (self, from) {
+            (this @ de::StringOrArray::String(_), from @ de::StringOrArray::String(_)) => {
+                if force {
+                    *this = from;
+                }
+            }
+            (de::StringOrArray::Array(this), de::StringOrArray::Array(mut from)) => {
                 this.append(&mut from);
             }
             _ => {
@@ -105,6 +130,27 @@ impl Merge for Env {
         Ok(())
     }
 }
+impl Merge for de::Env {
+    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+        match (self, from) {
+            (de::Env::Value(this), de::Env::Value(from)) => {
+                if force {
+                    *this = from;
+                }
+            }
+            (
+                de::Env::Table { value: this_value, force: this_force, relative: this_relative },
+                de::Env::Table { value: from_value, force: from_force, relative: from_relative },
+            ) => {
+                this_value.merge(from_value, force)?;
+                this_force.merge(from_force, force)?;
+                this_relative.merge(from_relative, force)?;
+            }
+            _ => todo!(),
+        }
+        Ok(())
+    }
+}
 impl Merge for Rustflags {
     fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, from.deserialized_repr) {
@@ -117,6 +163,28 @@ impl Merge for Rustflags {
                 self.flags.append(&mut from.flags);
             }
             (RustflagsDeserializedRepr::Unknown, _) | (_, RustflagsDeserializedRepr::Unknown) => {
+                unreachable!()
+            }
+            _ => {
+                todo!()
+            }
+        }
+        Ok(())
+    }
+}
+impl Merge for de::Rustflags {
+    fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
+        match (self.deserialized_repr, from.deserialized_repr) {
+            (de::RustflagsDeserializedRepr::String, de::RustflagsDeserializedRepr::String) => {
+                if force {
+                    *self = from;
+                }
+            }
+            (de::RustflagsDeserializedRepr::Array, de::RustflagsDeserializedRepr::Array) => {
+                self.flags.append(&mut from.flags);
+            }
+            (de::RustflagsDeserializedRepr::Unknown, _)
+            | (_, de::RustflagsDeserializedRepr::Unknown) => {
                 unreachable!()
             }
             _ => {

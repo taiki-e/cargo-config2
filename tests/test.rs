@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{Context as _, Result};
 use cargo_config2::*;
-use toml_crate as toml;
+use toml_edit::easy as toml;
 
 fn fixtures_path() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
