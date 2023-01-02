@@ -467,9 +467,9 @@ impl Config {
         // }
         self.build.set_path(&path);
         self.doc.set_path(&path);
-        // for env in self.env.values_mut() {
-        //     env.set_path(&path);
-        // }
+        for env in self.env.values_mut() {
+            env.set_path(&path);
+        }
         // self.future_incompat_report.set_path(&path);
         // self.net.set_path(&path);
         for target in self.target.values_mut() {
@@ -692,18 +692,84 @@ impl DocConfig {
 }
 
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum Env {
-    Value(String),
-    Table {
-        value: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        force: Option<bool>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        relative: Option<bool>,
-    },
+pub struct Env {
+    pub value: Value<String>,
+    pub force: Option<bool>,
+    pub relative: Option<bool>,
+    deserialized_repr: EnvDeserializedRepr,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum EnvDeserializedRepr {
+    Value,
+    Table,
+}
+
+impl Serialize for Env {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        #[derive(Serialize)]
+        #[serde(untagged)]
+        enum EnvRepr<'a> {
+            Value(&'a str),
+            Table {
+                value: &'a str,
+                #[serde(skip_serializing_if = "Option::is_none")]
+                force: Option<bool>,
+                #[serde(skip_serializing_if = "Option::is_none")]
+                relative: Option<bool>,
+            },
+        }
+        match self {
+            Env {
+                value,
+                force: None,
+                relative: None,
+                deserialized_repr: EnvDeserializedRepr::Value,
+            } => EnvRepr::Value(&value.val).serialize(serializer),
+            Env { value, force, relative, .. } => {
+                EnvRepr::Table { value: &value.val, force: *force, relative: *relative }
+                    .serialize(serializer)
+            }
+        }
+    }
+}
+impl<'de> Deserialize<'de> for Env {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum EnvRepr {
+            Value(String),
+            Table { value: String, force: Option<bool>, relative: Option<bool> },
+        }
+        match EnvRepr::deserialize(deserializer)? {
+            EnvRepr::Value(value) => Ok(Self {
+                value: Value { val: value, definition: None },
+                force: None,
+                relative: None,
+                deserialized_repr: EnvDeserializedRepr::Value,
+            }),
+            EnvRepr::Table { value, force, relative } => Ok(Self {
+                value: Value { val: value, definition: None },
+                force,
+                relative,
+                deserialized_repr: EnvDeserializedRepr::Table,
+            }),
+        }
+    }
+}
+
+impl Env {
+    fn set_path(&mut self, path: &Path) {
+        self.value.set_path(path);
+    }
 }
 
 /// The `[future-incompat-report]` table.
@@ -872,17 +938,17 @@ pub struct Rustflags {
     flags: Vec<String>,
     // for merge
     #[serde(skip)]
-    deserialized_repr: DeserializedRepr,
+    deserialized_repr: RustflagsDeserializedRepr,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DeserializedRepr {
+enum RustflagsDeserializedRepr {
     Unknown,
     String,
     Array,
 }
 
-impl Default for DeserializedRepr {
+impl Default for RustflagsDeserializedRepr {
     fn default() -> Self {
         Self::Unknown
     }
@@ -900,7 +966,7 @@ impl Rustflags {
     pub fn from_encoded(s: &str) -> Self {
         Self {
             flags: s.split('\x1f').map(str::to_owned).collect(),
-            deserialized_repr: DeserializedRepr::Unknown,
+            deserialized_repr: RustflagsDeserializedRepr::Unknown,
         }
     }
 
@@ -925,7 +991,7 @@ impl Rustflags {
     pub fn from_space_separated(s: &str) -> Self {
         Self {
             flags: split_space_separated(s).map(str::to_owned).collect(),
-            deserialized_repr: DeserializedRepr::Unknown,
+            deserialized_repr: RustflagsDeserializedRepr::String,
         }
     }
 
@@ -1025,13 +1091,9 @@ impl<'de> Deserialize<'de> for Rustflags {
     {
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
-            StringOrArray::String(s) => {
-                let mut this = Self::from_space_separated(&s);
-                this.deserialized_repr = DeserializedRepr::String;
-                Ok(this)
-            }
+            StringOrArray::String(s) => Ok(Self::from_space_separated(&s)),
             StringOrArray::Array(v) => {
-                Ok(Self { flags: v, deserialized_repr: DeserializedRepr::Array })
+                Ok(Self { flags: v, deserialized_repr: RustflagsDeserializedRepr::Array })
             }
         }
     }
@@ -1044,32 +1106,32 @@ impl From<Rustflags> for Vec<String> {
 }
 impl From<Vec<String>> for Rustflags {
     fn from(value: Vec<String>) -> Self {
-        Self { flags: value, deserialized_repr: DeserializedRepr::Unknown }
+        Self { flags: value, deserialized_repr: RustflagsDeserializedRepr::Array }
     }
 }
 impl From<&[String]> for Rustflags {
     fn from(value: &[String]) -> Self {
-        Self { flags: value.to_owned(), deserialized_repr: DeserializedRepr::Unknown }
+        Self { flags: value.to_owned(), deserialized_repr: RustflagsDeserializedRepr::Array }
     }
 }
 impl From<&[&str]> for Rustflags {
     fn from(value: &[&str]) -> Self {
         Self {
             flags: value.iter().map(|&v| v.to_owned()).collect(),
-            deserialized_repr: DeserializedRepr::Unknown,
+            deserialized_repr: RustflagsDeserializedRepr::Array,
         }
     }
 }
 impl<const N: usize> From<[String; N]> for Rustflags {
     fn from(value: [String; N]) -> Self {
-        Self { flags: value[..].to_owned(), deserialized_repr: DeserializedRepr::Unknown }
+        Self { flags: value[..].to_owned(), deserialized_repr: RustflagsDeserializedRepr::Array }
     }
 }
 impl<const N: usize> From<[&str; N]> for Rustflags {
     fn from(value: [&str; N]) -> Self {
         Self {
             flags: value[..].iter().map(|&v| v.to_owned()).collect(),
-            deserialized_repr: DeserializedRepr::Unknown,
+            deserialized_repr: RustflagsDeserializedRepr::Array,
         }
     }
 }

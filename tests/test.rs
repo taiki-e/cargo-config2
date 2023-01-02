@@ -52,17 +52,15 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     assert_eq!(config.doc.browser().unwrap().unwrap(), (Path::new("chromium").into(), vec![]));
 
     // [env]
-    assert_eq!(config.env["ENV_VAR_NAME"], Env::Value("value".into()));
-    assert_eq!(config.env["ENV_VAR_NAME_2"], Env::Table {
-        value: "value".into(),
-        force: Some(true),
-        relative: None
-    });
-    assert_eq!(config.env["ENV_VAR_NAME_3"], Env::Table {
-        value: "relative/path".into(),
-        force: None,
-        relative: Some(true),
-    });
+    assert_eq!(config.env["ENV_VAR_NAME"].value.val, "value");
+    assert_eq!(config.env["ENV_VAR_NAME"].force, None);
+    assert_eq!(config.env["ENV_VAR_NAME"].relative, None);
+    assert_eq!(config.env["ENV_VAR_NAME_2"].value.val, "value");
+    assert_eq!(config.env["ENV_VAR_NAME_2"].force, Some(true));
+    assert_eq!(config.env["ENV_VAR_NAME_2"].relative, None);
+    assert_eq!(config.env["ENV_VAR_NAME_3"].value.val, "relative/path");
+    assert_eq!(config.env["ENV_VAR_NAME_3"].force, None);
+    assert_eq!(config.env["ENV_VAR_NAME_3"].relative, Some(true));
 
     // [future-incompat-report]
     assert_eq!(config.future_incompat_report.frequency, Some(Frequency::Always));

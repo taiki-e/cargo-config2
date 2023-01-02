@@ -135,22 +135,25 @@ impl PartialEq for Definition {
 pub(crate) trait SetPath {
     fn set_path(&mut self, path: &Path);
 }
-impl<T> SetPath for Option<Value<T>> {
+impl<T: SetPath> SetPath for Option<T> {
     fn set_path(&mut self, path: &Path) {
         if let Some(v) = self {
-            v.definition = Some(Definition::Path(path.to_owned()));
+            v.set_path(path);
         }
     }
 }
-impl<T> SetPath for Option<StringOrArray<Value<T>>> {
+impl<T> SetPath for Value<T> {
     fn set_path(&mut self, path: &Path) {
-        if let Some(v) = self {
-            match v {
-                StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
-                StringOrArray::Array(v) => {
-                    for v in v {
-                        v.definition = Some(Definition::Path(path.to_owned()));
-                    }
+        self.definition = Some(Definition::Path(path.to_owned()));
+    }
+}
+impl<T> SetPath for StringOrArray<Value<T>> {
+    fn set_path(&mut self, path: &Path) {
+        match self {
+            StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
+            StringOrArray::Array(v) => {
+                for v in v {
+                    v.definition = Some(Definition::Path(path.to_owned()));
                 }
             }
         }

@@ -14,7 +14,8 @@ use std::collections::btree_map;
 use anyhow::{Context as _, Result};
 
 use crate::{
-    BTreeMap, DeserializedRepr, Env, Frequency, NonZeroI32, Rustflags, StringOrArray, Value, When,
+    BTreeMap, Env, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
+    RustflagsDeserializedRepr, StringOrArray, Value, When,
 };
 
 pub(crate) trait Merge {
@@ -73,22 +74,33 @@ impl<T> Merge for StringOrArray<T> {
 impl Merge for Env {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         match (self, from) {
-            (this @ Env::Value(_), from @ Env::Value(_)) => {
+            (
+                Env {
+                    value: this,
+                    force: None,
+                    relative: None,
+                    deserialized_repr: EnvDeserializedRepr::Value,
+                },
+                Env {
+                    value: from,
+                    force: None,
+                    relative: None,
+                    deserialized_repr: EnvDeserializedRepr::Value,
+                },
+            ) => {
                 if force {
                     *this = from;
                 }
             }
             (
-                Env::Table { value: this_value, force: this_force, relative: this_relative },
-                Env::Table { value: from_value, force: from_force, relative: from_relative },
+                this @ Env { deserialized_repr: EnvDeserializedRepr::Table, .. },
+                from @ Env { deserialized_repr: EnvDeserializedRepr::Table, .. },
             ) => {
-                this_value.merge(from_value, force)?;
-                this_force.merge(from_force, force)?;
-                this_relative.merge(from_relative, force)?;
+                this.value.merge(from.value, force)?;
+                this.force.merge(from.force, force)?;
+                this.relative.merge(from.relative, force)?;
             }
-            _ => {
-                todo!()
-            }
+            _ => todo!(),
         }
         Ok(())
     }
@@ -96,15 +108,15 @@ impl Merge for Env {
 impl Merge for Rustflags {
     fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, from.deserialized_repr) {
-            (DeserializedRepr::String, DeserializedRepr::String) => {
+            (RustflagsDeserializedRepr::String, RustflagsDeserializedRepr::String) => {
                 if force {
                     *self = from;
                 }
             }
-            (DeserializedRepr::Array, DeserializedRepr::Array) => {
+            (RustflagsDeserializedRepr::Array, RustflagsDeserializedRepr::Array) => {
                 self.flags.append(&mut from.flags);
             }
-            (DeserializedRepr::Unknown, _) | (_, DeserializedRepr::Unknown) => {
+            (RustflagsDeserializedRepr::Unknown, _) | (_, RustflagsDeserializedRepr::Unknown) => {
                 unreachable!()
             }
             _ => {
