@@ -12,6 +12,7 @@ use crate::{Definition, Value};
 
 #[derive(Debug, Clone)]
 pub struct ResolveContext {
+    //
     pub(crate) env: HashMap<String, OsString>,
     rustc: Option<OsString>,
     cfg: HashMap<TargetTriple, Cfg>,
@@ -46,12 +47,23 @@ impl ResolveContext {
         self
     }
 
-    pub(crate) fn env(&self, name: &str) -> Result<Option<Value<String>>> {
+    //  micro-optimization for static name -- avoiding name allocation can speed up
+    // de::Config::apply_env by up to 40% because most env var names we fetch are static.
+    pub(crate) fn env(&self, name: &'static str) -> Result<Option<Value<String>>> {
         match self.env.get(name) {
             None => Ok(None),
             Some(v) => Ok(Some(Value {
                 val: v.clone().into_string().map_err(std::env::VarError::NotUnicode)?,
-                definition: Some(Definition::Environment(name.to_owned())),
+                definition: Some(Definition::Environment(name.into())),
+            })),
+        }
+    }
+    pub(crate) fn env_dyn(&self, name: &str) -> Result<Option<Value<String>>> {
+        match self.env.get(name) {
+            None => Ok(None),
+            Some(v) => Ok(Some(Value {
+                val: v.clone().into_string().map_err(std::env::VarError::NotUnicode)?,
+                definition: Some(Definition::Environment(name.to_owned().into())),
             })),
         }
     }
@@ -370,4 +382,55 @@ mod tests {
                 Cfg::from_rustc(OsStr::new("rustc"), &spec_path.to_str().unwrap().into()).unwrap();
         }
     }
+
+    #[test]
+    fn env_filter() {
+        // NB: sync with bench in bench/benches/bench.rs
+        let env_list = [
+            ("CARGO_BUILD_JOBS", "-1"),
+            ("RUSTC", "rustc"),
+            ("CARGO_BUILD_RUSTC", "rustc"),
+            ("RUSTC_WRAPPER", "rustc_wrapper"),
+            ("CARGO_BUILD_RUSTC_WRAPPER", "rustc_wrapper"),
+            ("RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper"),
+            ("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper"),
+            ("RUSTDOC", "rustdoc"),
+            ("CARGO_BUILD_RUSTDOC", "rustdoc"),
+            ("CARGO_BUILD_TARGET", "triple"),
+            ("CARGO_TARGET_DIR", "target"),
+            ("CARGO_BUILD_TARGET_DIR", "target"),
+            ("CARGO_ENCODED_RUSTFLAGS", "1"),
+            ("RUSTFLAGS", "1"),
+            ("CARGO_BUILD_RUSTFLAGS", "1"),
+            ("CARGO_ENCODED_RUSTDOCFLAGS", "1"),
+            ("RUSTDOCFLAGS", "1"),
+            ("CARGO_BUILD_RUSTDOCFLAGS", "1"),
+            ("CARGO_INCREMENTAL", "false"),
+            ("CARGO_BUILD_INCREMENTAL", "1"),
+            ("CARGO_BUILD_DEP_INFO_BASEDIR", "1"),
+            ("BROWSER", "1"),
+            ("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY", "always"),
+            ("CARGO_NET_RETRY", "1"),
+            ("CARGO_NET_GIT_FETCH_WITH_CLI", "false"),
+            ("CARGO_NET_OFFLINE", "false"),
+            ("CARGO_TERM_QUIET", "false"),
+            ("CARGO_TERM_VERBOSE", "false"),
+            ("CARGO_TERM_COLOR", "auto"),
+            ("CARGO_TERM_PROGRESS_WHEN", "auto"),
+            ("CARGO_TERM_PROGRESS_WIDTH", "100"),
+        ];
+        let mut config = crate::de::Config::default();
+        let cx = &mut ResolveContext::from_env(env_list);
+        for (k, v) in env_list {
+            assert_eq!(cx.env[k], v, "key={k},value={v}");
+        }
+        config.apply_env(cx).unwrap();
+    }
+
+    // #[test]
+    // fn dump_all_env() {
+    //     let mut config = crate::de::Config::default();
+    //     let cx = &mut ResolveContext::no_env();
+    //     config.apply_env(cx).unwrap();
+    // }
 }

@@ -1,11 +1,9 @@
 // Environment variables are prefer over config values.
 // https://doc.rust-lang.org/nightly/cargo/reference/config.html#environment-variables
 
-use std::collections::BTreeMap;
-
 use super::{
     BuildConfig, Config, DocConfig, FutureIncompatReportConfig, NetConfig, ResolveContext, Result,
-    Rustflags, StringOrArray, TermConfig, TermProgress,
+    Rustflags, StringList, StringOrArray, TermConfig, TermProgress,
 };
 use crate::{Definition, Value};
 
@@ -45,12 +43,12 @@ impl Config {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
         for (k, v) in &cx.env {
             if let Some(k) = k.strip_prefix("CARGO_ALIAS_") {
-                self.alias.get_or_insert_with(BTreeMap::default).insert(
+                self.alias.insert(
                     k.to_owned(),
-                    StringOrArray::String(Value {
-                        val: v.clone().into_string().map_err(std::env::VarError::NotUnicode)?,
-                        definition: Some(Definition::Environment(k.to_owned())),
-                    }),
+                    StringList::from_string(
+                        v.to_str().ok_or_else(|| std::env::VarError::NotUnicode(v.clone()))?,
+                        &Some(Definition::Environment(k.to_owned().into())),
+                    ),
                 );
                 continue;
             }

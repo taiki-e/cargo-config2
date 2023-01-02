@@ -78,30 +78,38 @@ pub struct Config {
     /// Command aliases.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub alias: Option<BTreeMap<String, StringOrArray>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build: Option<BuildConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub doc: Option<DocConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub env: Option<BTreeMap<String, Env>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub future_incompat_report: Option<FutureIncompatReportConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub alias: BTreeMap<String, StringList>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BuildConfig::is_none")]
+    pub build: BuildConfig,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "DocConfig::is_none")]
+    pub doc: DocConfig,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub env: BTreeMap<String, Env>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
+    pub future_incompat_report: FutureIncompatReportConfig,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub net: Option<NetConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "NetConfig::is_none")]
+    pub net: NetConfig,
     // TODO: patch
     // TODO: profile
     // TODO: registries
     // TODO: registry
     // TODO: source
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<BTreeMap<String, TargetConfig>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub term: Option<TermConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub target: BTreeMap<String, TargetConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "TermConfig::is_none")]
+    pub term: TermConfig,
 
     // Load contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
@@ -118,15 +126,15 @@ impl Config {
     ///
     /// If `force` is `true`, this matches the way cargo's `--config` CLI option
     /// overrides config.
-    pub fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+    pub(crate) fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         merge::Merge::merge(self, from, force)
     }
 
-    pub fn set_cwd(&mut self, path: PathBuf) {
+    pub(crate) fn set_cwd(&mut self, path: PathBuf) {
         self.current_dir = Some(path);
     }
 
-    pub fn set_path(&mut self, path: PathBuf) {
+    pub(crate) fn set_path(&mut self, path: PathBuf) {
         crate::value::SetPath::set_path(self, &path);
         self.path = Some(path);
     }
@@ -139,18 +147,18 @@ impl Config {
         let target = &target_triple.triple;
 
         let target_u_upper = target_u_upper(target);
-        let mut target_config = self.target.as_ref().and_then(|t| t.get(target).cloned());
+        let mut target_config = self.target.get(target).cloned();
         let mut target_linker = target_config.as_mut().and_then(|c| c.linker.take());
         let mut target_runner = target_config.as_mut().and_then(|c| c.runner.take());
         let mut target_rustflags: Option<Rustflags> =
             target_config.as_mut().and_then(|c| c.rustflags.take());
-        if let Some(linker) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
+        if let Some(linker) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
             target_linker = Some(linker);
         }
-        if let Some(runner) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
+        if let Some(runner) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
             target_runner = Some(StringOrArray::String(runner));
         }
-        if let Some(rustflags) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
+        if let Some(rustflags) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
             let target_rustflags = target_rustflags.get_or_insert_with(Rustflags::default);
             let mut rustflags = Rustflags::from_space_separated(&rustflags);
             target_rustflags.flags.append(&mut rustflags.flags);
@@ -158,32 +166,29 @@ impl Config {
                 target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
             }
         }
-        if let Some(t) = &self.target {
-            for (k, v) in t {
-                if !k.starts_with("cfg(") {
-                    continue;
-                }
-                if cx.eval_cfg(k, target_triple)? {
-                    // Priorities (as of 1.68.0-nightly (2022-12-23)):
-                    // 1. CARGO_TARGET_<triple>_RUNNER
-                    // 2. target.<triple>.runner
-                    // 3. target.<cfg>.runner
-                    if target_runner.is_none() {
-                        if let Some(runner) = v.runner.as_ref() {
-                            target_runner = Some(runner.clone());
-                        }
+        for (k, v) in &self.target {
+            if !k.starts_with("cfg(") {
+                continue;
+            }
+            if cx.eval_cfg(k, target_triple)? {
+                // Priorities (as of 1.68.0-nightly (2022-12-23)):
+                // 1. CARGO_TARGET_<triple>_RUNNER
+                // 2. target.<triple>.runner
+                // 3. target.<cfg>.runner
+                if target_runner.is_none() {
+                    if let Some(runner) = v.runner.as_ref() {
+                        target_runner = Some(runner.clone());
                     }
-                    // Applied order (as of 1.68.0-nightly (2022-12-23)):
-                    // 1. target.<triple>.rustflags
-                    // 2. CARGO_TARGET_<triple>_RUSTFLAGS
-                    // 3. target.<cfg>.rustflags
-                    if let Some(rustflags) = v.rustflags.as_ref() {
-                        let target_rustflags =
-                            target_rustflags.get_or_insert_with(Rustflags::default);
-                        target_rustflags.flags.extend_from_slice(&rustflags.flags);
-                        if target_rustflags.deserialized_repr != rustflags.deserialized_repr {
-                            target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
-                        }
+                }
+                // Applied order (as of 1.68.0-nightly (2022-12-23)):
+                // 1. target.<triple>.rustflags
+                // 2. CARGO_TARGET_<triple>_RUSTFLAGS
+                // 3. target.<cfg>.rustflags
+                if let Some(rustflags) = v.rustflags.as_ref() {
+                    let target_rustflags = target_rustflags.get_or_insert_with(Rustflags::default);
+                    target_rustflags.flags.extend_from_slice(&rustflags.flags);
+                    if target_rustflags.deserialized_repr != rustflags.deserialized_repr {
+                        target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
                     }
                 }
             }
@@ -194,18 +199,14 @@ impl Config {
         if let Some(runner) = target_runner {
             target_config.get_or_insert_with(TargetConfig::default).runner = Some(runner);
         }
-        if let Some(build) = &self.build {
-            if build.override_target_rustflags {
-                target_config.get_or_insert_with(TargetConfig::default).rustflags =
-                    build.rustflags.clone();
-            } else if let Some(rustflags) = target_rustflags {
-                target_config.get_or_insert_with(TargetConfig::default).rustflags = Some(rustflags);
-            } else {
-                target_config.get_or_insert_with(TargetConfig::default).rustflags =
-                    build.rustflags.clone();
-            }
+        if self.build.override_target_rustflags {
+            target_config.get_or_insert_with(TargetConfig::default).rustflags =
+                self.build.rustflags.clone();
         } else if let Some(rustflags) = target_rustflags {
             target_config.get_or_insert_with(TargetConfig::default).rustflags = Some(rustflags);
+        } else {
+            target_config.get_or_insert_with(TargetConfig::default).rustflags =
+                self.build.rustflags.clone();
         }
         Ok(target_config)
     }
@@ -621,14 +622,14 @@ impl<'de> Deserialize<'de> for StringList {
         }
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
-            StringOrArray::String(s) => Ok(Self::from_string(&s.val, s.definition)),
+            StringOrArray::String(s) => Ok(Self::from_string(&s.val, &s.definition)),
             StringOrArray::Array(v) => Ok(Self::from_array(v)),
         }
     }
 }
 
 impl StringList {
-    pub(crate) fn from_string(value: &str, definition: Option<Definition>) -> Self {
+    pub(crate) fn from_string(value: &str, definition: &Option<Definition>) -> Self {
         Self {
             list: split_space_separated(value)
                 .map(|v| Value { val: v.to_owned(), definition: definition.clone() })
@@ -637,7 +638,7 @@ impl StringList {
         }
     }
     pub(crate) fn from_array(list: Vec<Value<String>>) -> Self {
-        Self { list, deserialized_repr: StringListDeserializedRepr::String }
+        Self { list, deserialized_repr: StringListDeserializedRepr::Array }
     }
 }
 
@@ -651,13 +652,13 @@ pub enum StringOrArray {
 }
 
 impl StringOrArray {
-    pub fn string(&self) -> Option<&Value<String>> {
+    pub(crate) fn string(&self) -> Option<&Value<String>> {
         match self {
             Self::String(s) => Some(s),
             Self::Array(_) => None,
         }
     }
-    pub fn array(&self) -> Option<&[Value<String>]> {
+    pub(crate) fn array(&self) -> Option<&[Value<String>]> {
         match self {
             Self::String(_) => None,
             Self::Array(v) => Some(v),

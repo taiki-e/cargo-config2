@@ -1,0 +1,18 @@
+[package]
+name = "bench"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+cargo-config2 = { path = "..", default-features = false }
+
+criterion = { default-features = false, git = "https://github.com/taiki-e/criterion.rs.git", branch = "dev" } # reduce deps
+toml = "0.5"
+toml_edit = { version = "0.16", features = ["easy"] }
+fs-err = "2"
+
+[[bench]]
+name = "bench"
+path = "bench.rs"
+harness = false

@@ -140,7 +140,7 @@ pub enum Definition {
     /// Defined in a `.cargo/config`, includes the path to the file.
     Path(PathBuf),
     /// Defined in an environment variable, includes the environment key.
-    Environment(String),
+    Environment(Cow<'static, str>),
     /// Passed in on the command line.
     /// A path is attached when the config value is a path to a config file.
     Cli(Option<PathBuf>),

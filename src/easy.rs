@@ -77,40 +77,24 @@ impl Config {
         let mut resolved = Self::default();
         de.apply_env(&mut cx)?;
 
-        if let Some(alias) = de.alias {
-            for (k, v) in alias {
-                resolved.alias.insert(k, v.into_easy_string_list());
-            }
+        for (k, v) in de.alias {
+            resolved.alias.insert(k, v.into());
         }
-        if let Some(build) = de.build {
-            resolved.build =
-                BuildConfig::from_unresolved(build, de.current_dir.as_deref(), &mut cx)?;
+        resolved.build =
+            BuildConfig::from_unresolved(de.build, de.current_dir.as_deref(), &mut cx)?;
+        resolved.doc.from_unresolved(de.doc, de.current_dir.as_deref(), &mut cx)?;
+        for (k, v) in de.env {
+            // TODO
         }
-        if let Some(doc) = de.doc {
-            resolved.doc.from_unresolved(doc, de.current_dir.as_deref(), &mut cx)?;
-        }
-        if let Some(env) = de.env {
-            for (k, v) in env {
-                // TODO
-            }
-        }
-        if let Some(future_incompat_report) = de.future_incompat_report {
-            resolved.future_incompat_report.from_unresolved(
-                future_incompat_report,
-                de.current_dir.as_deref(),
-                &mut cx,
-            )?;
-        }
-        if let Some(net) = de.net {
-            resolved.net.from_unresolved(net, de.current_dir.as_deref(), &mut cx)?;
-        }
-        if let Some(term) = de.term {
-            resolved.term.from_unresolved(term, de.current_dir.as_deref(), &mut cx)?;
-        }
-        if let Some(target) = de.target {
-            for (k, v) in target {
-                // TODO
-            }
+        resolved.future_incompat_report.from_unresolved(
+            de.future_incompat_report,
+            de.current_dir.as_deref(),
+            &mut cx,
+        )?;
+        resolved.net.from_unresolved(de.net, de.current_dir.as_deref(), &mut cx)?;
+        resolved.term.from_unresolved(de.term, de.current_dir.as_deref(), &mut cx)?;
+        for (k, v) in de.target {
+            // TODO
         }
 
         // TODO: target
@@ -866,7 +850,25 @@ impl<'de> Deserialize<'de> for PathAndArgs {
     where
         D: serde::Deserializer<'de>,
     {
-        todo!()
+        use serde::de::Error;
+        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
+        match v {
+            StringOrArray::String(s) => {
+                let mut s = split_space_separated(&s);
+                let path = match s.next() {
+                    Some(path) => path,
+                    None => return Err(D::Error::invalid_length(0, &"at least one element")),
+                };
+                Ok(Self { path: path.into(), args: s.map(str::to_owned).collect() })
+            }
+            StringOrArray::Array(mut v) => {
+                if v.is_empty() {
+                    return Err(D::Error::invalid_length(0, &"at least one element"));
+                }
+                let path = v.remove(0);
+                Ok(Self { path: path.into(), args: v })
+            }
+        }
     }
 }
 
@@ -892,123 +894,18 @@ impl<'de> Deserialize<'de> for StringList {
     }
 }
 
+impl From<de::StringList> for StringList {
+    fn from(value: de::StringList) -> Self {
+        Self { list: value.list.into_iter().map(|v| v.val).collect() }
+    }
+}
+
 /// A string or array of strings.
-#[allow(clippy::exhaustive_enums)]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum StringOrArray<T = String> {
-    String(T),
-    Array(Vec<T>),
-}
-
-impl StringOrArray {
-    // /// Flattens an array of strings into a single string.
-    // ///
-    // /// If this value is a [string](StringOrArray::String), borrows the value as is.
-    // pub fn join_array(&self, sep: &str) -> Cow<'_, str> {
-    //     match self {
-    //         Self::String(s) => Cow::Borrowed(s),
-    //         Self::Array(v) => Cow::Owned(v.join(sep)),
-    //     }
-    // }
-
-    // fn into_string(self) -> String {
-    //     match self {
-    //         Self::String(s) => s,
-    //         Self::Array(v) => v.join(" "),
-    //     }
-    // }
-    // fn to_string(&self) -> Cow<'_, str> {
-    //     match self {
-    //         Self::String(s) => Cow::Borrowed(s),
-    //         Self::Array(v) => Cow::Owned(v.join(" ")),
-    //     }
-    // }
-
-    // /// Splits a string into a single string.
-    // ///
-    // /// If this value is an [array](StringOrArray::Array), borrows the value as is.
-    // pub fn split_string(&self, pat: char) -> impl Iterator<Item = &str> + '_ {
-    //     enum SplitString<'a> {
-    //         String(core::str::Split<'a, char>),
-    //         Array(core::slice::Iter<'a, String>),
-    //     }
-    //     impl<'a> Iterator for SplitString<'a> {
-    //         type Item = &'a str;
-    //         fn next(&mut self) -> Option<Self::Item> {
-    //             match self {
-    //                 Self::String(s) => s.next(),
-    //                 Self::Array(v) => v.next().map(String::as_str),
-    //             }
-    //         }
-    //         fn size_hint(&self) -> (usize, Option<usize>) {
-    //             match self {
-    //                 Self::String(s) => s.size_hint(),
-    //                 Self::Array(v) => v.size_hint(),
-    //             }
-    //         }
-    //     }
-    //     match self {
-    //         Self::String(s) => SplitString::String(s.split(pat)),
-    //         Self::Array(v) => SplitString::Array(v.iter()),
-    //     }
-    // }
-}
-impl<T> StringOrArray<T> {
-    pub fn string(&self) -> Option<&T> {
-        match self {
-            Self::String(s) => Some(s),
-            Self::Array(_) => None,
-        }
-    }
-    pub fn array(&self) -> Option<&[T]> {
-        match self {
-            Self::String(_) => None,
-            Self::Array(v) => Some(v),
-        }
-    }
-    fn as_array_no_split(&self) -> &[T] {
-        match self {
-            Self::String(s) => slice::from_ref(s),
-            Self::Array(v) => v,
-        }
-    }
-}
-
-impl From<String> for StringOrArray {
-    fn from(value: String) -> Self {
-        Self::String(value)
-    }
-}
-impl From<&str> for StringOrArray {
-    fn from(value: &str) -> Self {
-        Self::String(value.to_owned())
-    }
-}
-impl From<Vec<String>> for StringOrArray {
-    fn from(value: Vec<String>) -> Self {
-        Self::Array(value)
-    }
-}
-impl From<&[String]> for StringOrArray {
-    fn from(value: &[String]) -> Self {
-        Self::Array(value.to_owned())
-    }
-}
-impl From<&[&str]> for StringOrArray {
-    fn from(value: &[&str]) -> Self {
-        Self::Array(value.iter().map(|&v| v.to_owned()).collect())
-    }
-}
-impl<const N: usize> From<[String; N]> for StringOrArray {
-    fn from(value: [String; N]) -> Self {
-        Self::Array(value[..].to_owned())
-    }
-}
-impl<const N: usize> From<[&str; N]> for StringOrArray {
-    fn from(value: [&str; N]) -> Self {
-        Self::Array(value[..].iter().map(|&v| v.to_owned()).collect())
-    }
+enum StringOrArray {
+    String(String),
+    Array(Vec<String>),
 }
 
 fn target_u_lower(target: &str) -> String {
