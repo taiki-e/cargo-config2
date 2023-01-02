@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::Path};
+use std::{collections::HashMap, path::Path};
 
 use anyhow::{Context as _, Result};
 use cargo_config2::*;
@@ -9,8 +9,9 @@ fn fixtures_path() -> &'static Path {
 }
 
 fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
-    let base_config = &de(&fixtures_path().join("reference")).unwrap();
-    let mut config = base_config.clone();
+    let dir = &fixtures_path().join("reference");
+    let base_config = &de(dir).unwrap();
+    let config = base_config.clone();
 
     // [alias]
     for (k, v) in &config.alias {
@@ -29,19 +30,26 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     }
 
     // [build]
-    assert_eq!(config.build.rustc, Some("rustc".into()));
-    assert_eq!(config.build.rustc_wrapper, Some("…".into()));
-    assert_eq!(config.build.rustc_workspace_wrapper, Some("…".into()));
-    assert_eq!(config.build.rustdoc, Some("rustdoc".into()));
-    assert_eq!(config.build.target, Some("triple".into()));
-    assert_eq!(config.build.target_dir, Some("target".into()));
+    assert_eq!(config.build.rustc.as_ref().unwrap().val, "rustc");
+    assert_eq!(config.build.rustc().unwrap().as_os_str(), "rustc");
+    assert_eq!(config.build.rustc_wrapper.as_ref().unwrap().val, "…");
+    assert_eq!(config.build.rustc_wrapper().unwrap().as_os_str(), "…");
+    assert_eq!(config.build.rustc_workspace_wrapper.as_ref().unwrap().val, "…");
+    assert_eq!(config.build.rustc_workspace_wrapper().unwrap().as_os_str(), "…");
+    assert_eq!(config.build.rustdoc.as_ref().unwrap().val, "rustdoc");
+    assert_eq!(config.build.rustdoc().unwrap().as_os_str(), "rustdoc");
+    assert_eq!(config.build.target.as_ref().unwrap().string().unwrap().val, "triple");
+    assert_eq!(config.build.target_dir.as_ref().unwrap().val, "target");
+    assert_eq!(config.build.target_dir().unwrap(), dir.join("target"));
     assert_eq!(config.build.rustflags, Some(["…", "…"].into()));
     assert_eq!(config.build.rustdocflags, Some(["…", "…"].into()));
     assert_eq!(config.build.incremental, Some(true));
-    assert_eq!(config.build.dep_info_basedir, Some("…".into()));
+    assert_eq!(config.build.dep_info_basedir.as_ref().unwrap().val, "…");
+    assert_eq!(config.build.dep_info_basedir().unwrap(), dir.join("…"));
 
     // [doc]
-    assert_eq!(config.doc.browser, Some("chromium".into()));
+    assert_eq!(config.doc.browser.as_ref().unwrap().string().unwrap().val, "chromium");
+    assert_eq!(config.doc.browser().unwrap().unwrap(), (Path::new("chromium").into(), vec![]));
 
     // [env]
     assert_eq!(config.env["ENV_VAR_NAME"], Env::Value("value".into()));
@@ -81,13 +89,25 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     // [source.<name>]
 
     // [target.<triple>]
-    assert_eq!(config.target["x86_64-unknown-linux-gnu"].linker, Some("b".into()));
-    assert_eq!(config.target["x86_64-unknown-linux-gnu"].runner, Some("b".into()));
+    assert_eq!(config.target["x86_64-unknown-linux-gnu"].linker.as_ref().unwrap().val, "b");
+    assert_eq!(
+        config.target["x86_64-unknown-linux-gnu"].runner.as_ref().unwrap().string().unwrap().val,
+        "b"
+    );
     assert_eq!(config.target["x86_64-unknown-linux-gnu"].rustflags, Some(["b", "bb"].into()));
 
     // [target.<cfg>]
     assert_eq!(config.target["cfg(target_arch = \"x86_64\")"].linker, None);
-    assert_eq!(config.target["cfg(target_arch = \"x86_64\")"].runner, Some("c".into()));
+    assert_eq!(
+        config.target["cfg(target_arch = \"x86_64\")"]
+            .runner
+            .as_ref()
+            .unwrap()
+            .string()
+            .unwrap()
+            .val,
+        "c"
+    );
     assert_eq!(config.target["cfg(target_arch = \"x86_64\")"].rustflags, Some(["c", "cc"].into()));
 
     // [target.<triple>.<links>]
@@ -100,11 +120,15 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
     assert_eq!(config.term.progress.width, Some(80));
 
     // resolve
+    let mut config = base_config.clone();
     let cx = &mut ResolveContext::no_env();
     config.resolve_with_context(cx, "x86_64-unknown-linux-gnu").unwrap();
-    assert_eq!(config.build.target, Some("triple".into()));
-    assert_eq!(config.target["x86_64-unknown-linux-gnu"].linker, Some("b".into()));
-    assert_eq!(config.target["x86_64-unknown-linux-gnu"].runner, Some("b".into()));
+    assert_eq!(config.build.target.as_ref().unwrap().string().unwrap().val, "triple");
+    assert_eq!(config.target["x86_64-unknown-linux-gnu"].linker.as_ref().unwrap().val, "b");
+    assert_eq!(
+        config.target["x86_64-unknown-linux-gnu"].runner.as_ref().unwrap().string().unwrap().val,
+        "b"
+    );
     assert_eq!(
         config.target["x86_64-unknown-linux-gnu"].rustflags,
         Some(["b", "bb", "c", "cc"].into())
@@ -131,7 +155,7 @@ fn assert_reference_example(de: fn(&Path) -> Result<Config>) {
 #[test]
 fn config_toml() {
     fn de(dir: &Path) -> Result<Config> {
-        Ok(toml::from_slice(&fs::read(dir.join(".cargo/config.toml"))?)?)
+        cargo_config2::toml::read(dir.join(".cargo/config.toml"))
     }
     fn ser(config: &Config) -> String {
         toml::to_string(&config).unwrap()
@@ -173,14 +197,14 @@ fn custom_target() {
 
         let mut config = base_config.clone();
         config.resolve_with_context(&mut ResolveContext::no_env(), spec_path).unwrap();
-        assert_eq!(config.target[target].linker, Some("avr-gcc".into()));
+        assert_eq!(config.target[target].linker.as_ref().unwrap().val, "avr-gcc");
         assert_eq!(config.target[target].rustflags, Some(["-C", "opt-level=s"].into()));
 
         let mut config = base_config.clone();
         config
             .resolve_with_context(ResolveContext::no_env().with_rustc("rustc"), spec_path)
             .unwrap();
-        assert_eq!(config.target[target].linker, Some("avr-gcc".into()));
+        assert_eq!(config.target[target].linker.as_ref().unwrap().val, "avr-gcc");
         assert_eq!(config.target[target].rustflags, Some(["-C", "opt-level=s"].into()));
     }
 

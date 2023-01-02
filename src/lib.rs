@@ -81,7 +81,8 @@ mod merge;
 mod paths;
 mod resolve;
 #[cfg(feature = "toml")]
-mod toml;
+pub mod toml;
+mod value;
 
 use core::{num::NonZeroI32, ops, slice, str::FromStr};
 use std::{
@@ -93,10 +94,12 @@ use std::{
 use anyhow::{bail, Error, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::value::SetPath;
 pub use crate::{
     command::host_triple,
     paths::ConfigPaths,
     resolve::{ResolveContext, TargetTriple},
+    value::{Definition, Value},
 };
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -140,15 +143,16 @@ pub struct Config {
     #[serde(skip_serializing_if = "Term::is_none")]
     pub term: Term,
 
-    // Load, merge, or resolve contexts. Completely ignored in serialization and deserialization.
-    #[serde(skip)]
-    env_applied: bool,
-    #[serde(skip)]
-    resolved_targets: BTreeSet<String>,
+    // Load contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     current_dir: Option<PathBuf>,
     #[serde(skip)]
     path: Option<PathBuf>,
+    // Resolve contexts. Completely ignored in serialization and deserialization.
+    #[serde(skip)]
+    env_applied: bool,
+    #[serde(skip)]
+    resolved_targets: BTreeSet<String>,
 }
 
 impl Config {
@@ -221,17 +225,17 @@ impl Config {
         let target_u_upper = target_u_upper(target);
         let mut target_config = self.target.remove(target).unwrap_or_default();
         let mut target_linker = target_config.linker.take();
-        let mut target_runner = target_config.runner.take().map(StringOrArray::into_string);
+        let mut target_runner = target_config.runner.take();
         let mut target_rustflags: Option<Rustflags> = target_config.rustflags.take();
-        if let Some(linker) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
+        if let Some(linker) = cx.env_val(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
             target_linker = Some(linker);
         }
         // Priorities (as of 1.68.0-nightly (2022-12-23)):
         // 1. CARGO_TARGET_<triple>_RUNNER
         // 2. target.<triple>.runner
         // 3. target.<cfg>.runner
-        if let Some(runner) = cx.env(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
-            target_runner = Some(runner);
+        if let Some(runner) = cx.env_val(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
+            target_runner = Some(StringOrArray::String(runner));
         }
         // Applied order (as of 1.68.0-nightly (2022-12-23)):
         // 1. target.<triple>.rustflags
@@ -243,8 +247,8 @@ impl Config {
         for (k, v) in &self.target {
             if cx.eval_cfg(k, target_triple)? {
                 if target_runner.is_none() {
-                    if let Some(runner) = v.runner.as_ref().map(StringOrArray::to_string) {
-                        target_runner = Some(runner.into_owned());
+                    if let Some(runner) = v.runner.as_ref() {
+                        target_runner = Some(runner.clone());
                     }
                 }
                 if let Some(rustflags) = v.rustflags.as_ref() {
@@ -259,7 +263,7 @@ impl Config {
             target_config.linker = Some(linker);
         }
         if let Some(runner) = target_runner {
-            target_config.runner = Some(StringOrArray::String(runner));
+            target_config.runner = Some(runner);
         }
         if self.build.override_target_rustflags {
             target_config.rustflags = self.build.rustflags.clone();
@@ -373,7 +377,10 @@ impl Config {
         let config_targets =
             self.build.target.as_ref().map(StringOrArray::as_array_no_split).unwrap_or_default();
         if !config_targets.is_empty() {
-            return Ok(config_targets.iter().map(Into::into).collect());
+            return Ok(config_targets
+                .iter()
+                .map(|v| TargetTriple::new(&v.val, v.definition.as_ref().map(|d| (d, self))))
+                .collect());
         }
         Ok(vec![host.into()])
     }
@@ -409,7 +416,13 @@ impl Config {
         let config_targets =
             self.build.target.as_ref().map(StringOrArray::as_array_no_split).unwrap_or_default();
         if !config_targets.is_empty() {
-            return Ok(config_targets.to_owned());
+            return Ok(config_targets
+                .iter()
+                .map(|v| {
+                    let t = TargetTriple::new(&v.val, v.definition.as_ref().map(|d| (d, self)));
+                    t.spec_path.unwrap_or(t.triple)
+                })
+                .collect());
         }
         Ok(vec![])
     }
@@ -425,11 +438,43 @@ impl Config {
         merge::Merge::merge(self, from, force)
     }
 
-    /// Returns the path to this config file.
-    ///
-    /// If this config was created by any of `Config::load*` functions, this always returns `Some`.
     pub fn path(&self) -> Option<&Path> {
         self.path.as_deref()
+    }
+
+    fn set_cwd(&mut self, path: PathBuf) {
+        // for alias in self.alias.values_mut() {
+        //     alias.set_cwd(&path);
+        // }
+        self.build.set_cwd(&path);
+        self.doc.set_cwd(&path);
+        // for env in self.env.values_mut() {
+        //     env.set_cwd(&path);
+        // }
+        // self.future_incompat_report.set_cwd(&path);
+        // self.net.set_cwd(&path);
+        for target in self.target.values_mut() {
+            target.set_cwd(&path);
+        }
+        // self.term.set_cwd(&path);
+        self.current_dir = Some(path);
+    }
+    fn set_path(&mut self, path: PathBuf) {
+        // for alias in self.alias.values_mut() {
+        //     alias.set_path(&path);
+        // }
+        self.build.set_path(&path);
+        self.doc.set_path(&path);
+        // for env in self.env.values_mut() {
+        //     env.set_path(&path);
+        // }
+        // self.future_incompat_report.set_path(&path);
+        // self.net.set_path(&path);
+        for target in self.target.values_mut() {
+            target.set_path(&path);
+        }
+        // self.term.set_path(&path);
+        self.path = Some(path);
     }
 }
 
@@ -451,33 +496,33 @@ pub struct Build {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustc: Option<String>,
+    pub rustc: Option<Value<String>>,
     /// Sets a wrapper to execute instead of `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustc_wrapper: Option<String>,
+    pub rustc_wrapper: Option<Value<String>>,
     /// Sets a wrapper to execute instead of `rustc`, for workspace members only.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustc_workspace_wrapper: Option<String>,
+    pub rustc_workspace_wrapper: Option<Value<String>>,
     /// Sets the executable to use for `rustdoc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdoc)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustdoc: Option<String>,
+    pub rustdoc: Option<Value<String>>,
     /// The default target platform triples to compile to.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<StringOrArray>,
+    pub target: Option<StringOrArray<Value<String>>>,
     /// The path to where all compiler output is placed. The default if not
     /// specified is a directory named target located at the root of the workspace.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target_dir: Option<String>,
+    pub target_dir: Option<Value<String>>,
     /// Extra command-line flags to pass to rustc. The value may be an array
     /// of strings or a space-separated string.
     ///
@@ -499,11 +544,56 @@ pub struct Build {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dep_info_basedir: Option<String>,
+    pub dep_info_basedir: Option<Value<String>>,
 
-    // Resolve context. Completely ignored in serialization and deserialization.
+    // Load contexts. Completely ignored in serialization and deserialization.
+    #[serde(skip)]
+    current_dir: Option<PathBuf>,
+    // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     override_target_rustflags: bool,
+}
+
+impl Build {
+    pub fn rustc(&self) -> Option<Cow<'_, Path>> {
+        Some(self.rustc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    }
+    pub fn rustc_wrapper(&self) -> Option<Cow<'_, Path>> {
+        Some(self.rustc_wrapper.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    }
+    pub fn rustc_workspace_wrapper(&self) -> Option<Cow<'_, Path>> {
+        Some(
+            self.rustc_workspace_wrapper
+                .as_ref()?
+                .resolve_as_program_path(self.current_dir.as_deref()),
+        )
+    }
+    pub fn rustdoc(&self) -> Option<Cow<'_, Path>> {
+        Some(self.rustdoc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    }
+    pub fn target_dir(&self) -> Option<Cow<'_, Path>> {
+        Some(self.target_dir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
+    }
+    pub fn dep_info_basedir(&self) -> Option<Cow<'_, Path>> {
+        Some(self.dep_info_basedir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
+    }
+
+    fn set_cwd(&mut self, path: &Path) {
+        self.current_dir = Some(path.to_owned());
+    }
+    fn set_path(&mut self, path: &Path) {
+        // self.jobs.set_path(path);
+        self.rustc.set_path(path);
+        self.rustc_wrapper.set_path(path);
+        self.rustc_workspace_wrapper.set_path(path);
+        self.rustdoc.set_path(path);
+        self.target.set_path(path);
+        self.target_dir.set_path(path);
+        // self.rustflags.set_path(&path);
+        // self.rustdocflags.set_path(&path);
+        // self.incremental.set_path(&path);
+        self.dep_info_basedir.set_path(path);
+    }
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
@@ -514,18 +604,45 @@ pub struct Build {
 pub struct TargetConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinker)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub linker: Option<String>,
+    pub linker: Option<Value<String>>,
     /// [reference (`target.<triple>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerunner)
     ///
     /// [reference (`target.<cfg>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrunner)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub runner: Option<StringOrArray>,
+    pub runner: Option<StringOrArray<Value<String>>>,
     /// [reference (`target.<triple>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerustflags)
     ///
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustflags: Option<Rustflags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
+
+    // Load contexts. Completely ignored in serialization and deserialization.
+    #[serde(skip)]
+    current_dir: Option<PathBuf>,
+}
+
+impl TargetConfig {
+    pub fn linker(&self) -> Option<Cow<'_, Path>> {
+        Some(self.linker.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    }
+    pub fn runner(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
+        match self.runner.as_ref() {
+            Some(runner) => {
+                Ok(Some(runner.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn set_cwd(&mut self, path: &Path) {
+        self.current_dir = Some(path.to_owned());
+    }
+    fn set_path(&mut self, path: &Path) {
+        self.linker.set_path(path);
+        self.runner.set_path(path);
+        // self.rustflags.set_path(path);
+    }
 }
 
 /// The `[doc]` table.
@@ -540,7 +657,29 @@ pub struct Doc {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#docbrowser)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub browser: Option<StringOrArray>,
+    pub browser: Option<StringOrArray<Value<String>>>,
+
+    // Load contexts. Completely ignored in serialization and deserialization.
+    #[serde(skip)]
+    current_dir: Option<PathBuf>,
+}
+
+impl Doc {
+    pub fn browser(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
+        match self.browser.as_ref() {
+            Some(browser) => {
+                Ok(Some(browser.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn set_cwd(&mut self, path: &Path) {
+        self.current_dir = Some(path.to_owned());
+    }
+    fn set_path(&mut self, path: &Path) {
+        self.browser.set_path(path);
+    }
 }
 
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
@@ -776,12 +915,7 @@ impl Rustflags {
     /// See also [`encode_space_separated`](Self::encode_space_separated).
     pub fn from_space_separated(s: &str) -> Self {
         Self {
-            flags: s
-                .split(' ')
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .map(str::to_owned)
-                .collect(),
+            flags: split_space_separated(s).map(str::to_owned).collect(),
             deserialized_repr: DeserializedRepr::Unknown,
         }
     }
@@ -935,29 +1069,12 @@ impl<const N: usize> From<[&str; N]> for Rustflags {
 #[allow(clippy::exhaustive_enums)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum StringOrArray {
-    String(String),
-    Array(Vec<String>),
+pub enum StringOrArray<T = String> {
+    String(T),
+    Array(Vec<T>),
 }
 
 impl StringOrArray {
-    /// Splits this string or array of strings to program path with args.
-    ///
-    /// See [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments) for details.
-    pub fn split_for_command(&self) -> Option<(&str, Vec<&str>)> {
-        match self {
-            Self::String(s) => {
-                let mut s = s.split(' ');
-                let path = s.next()?;
-                Some((path, s.collect()))
-            }
-            Self::Array(v) => {
-                let path = v.get(0)?;
-                Some((path, v.iter().skip(1).map(String::as_str).collect()))
-            }
-        }
-    }
-
     // /// Flattens an array of strings into a single string.
     // ///
     // /// If this value is a [string](StringOrArray::String), borrows the value as is.
@@ -968,18 +1085,18 @@ impl StringOrArray {
     //     }
     // }
 
-    fn into_string(self) -> String {
-        match self {
-            Self::String(s) => s,
-            Self::Array(v) => v.join(" "),
-        }
-    }
-    fn to_string(&self) -> Cow<'_, str> {
-        match self {
-            Self::String(s) => Cow::Borrowed(s),
-            Self::Array(v) => Cow::Owned(v.join(" ")),
-        }
-    }
+    // fn into_string(self) -> String {
+    //     match self {
+    //         Self::String(s) => s,
+    //         Self::Array(v) => v.join(" "),
+    //     }
+    // }
+    // fn to_string(&self) -> Cow<'_, str> {
+    //     match self {
+    //         Self::String(s) => Cow::Borrowed(s),
+    //         Self::Array(v) => Cow::Owned(v.join(" ")),
+    //     }
+    // }
 
     // /// Splits a string into a single string.
     // ///
@@ -1009,8 +1126,21 @@ impl StringOrArray {
     //         Self::Array(v) => SplitString::Array(v.iter()),
     //     }
     // }
-
-    fn as_array_no_split(&self) -> &[String] {
+}
+impl<T> StringOrArray<T> {
+    pub fn string(&self) -> Option<&T> {
+        match self {
+            Self::String(s) => Some(s),
+            Self::Array(_) => None,
+        }
+    }
+    pub fn array(&self) -> Option<&[T]> {
+        match self {
+            Self::String(_) => None,
+            Self::Array(v) => Some(v),
+        }
+    }
+    fn as_array_no_split(&self) -> &[T] {
         match self {
             Self::String(s) => slice::from_ref(s),
             Self::Array(v) => v,
@@ -1061,4 +1191,8 @@ fn target_u_upper(target: &str) -> String {
     let mut target = target_u_lower(target);
     target.make_ascii_uppercase();
     target
+}
+
+fn split_space_separated(s: &str) -> impl Iterator<Item = &str> {
+    s.split(' ').map(str::trim).filter(|s| !s.is_empty())
 }

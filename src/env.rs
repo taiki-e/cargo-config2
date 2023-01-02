@@ -54,40 +54,40 @@ impl Build {
         // 1. RUSTC
         // 2. build.rustc (CARGO_BUILD_RUSTC)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc
-        if let Some(rustc) = cx.env("RUSTC")? {
+        if let Some(rustc) = cx.env_val("RUSTC")? {
             self.rustc = Some(rustc);
-        } else if let Some(rustc) = cx.env("CARGO_BUILD_RUSTC")? {
+        } else if let Some(rustc) = cx.env_val("CARGO_BUILD_RUSTC")? {
             self.rustc = Some(rustc);
         }
         // 1. RUSTC_WRAPPER
         // 2. build.rustc-wrapper (CARGO_BUILD_RUSTC_WRAPPER)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper
-        if let Some(rustc_wrapper) = cx.env("RUSTC_WRAPPER")? {
+        if let Some(rustc_wrapper) = cx.env_val("RUSTC_WRAPPER")? {
             self.rustc_wrapper = Some(rustc_wrapper);
-        } else if let Some(rustc_wrapper) = cx.env("CARGO_BUILD_RUSTC_WRAPPER")? {
+        } else if let Some(rustc_wrapper) = cx.env_val("CARGO_BUILD_RUSTC_WRAPPER")? {
             self.rustc_wrapper = Some(rustc_wrapper);
         }
         // 1. RUSTC_WORKSPACE_WRAPPER
         // 2. build.rustc-workspace-wrapper (CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper
-        if let Some(rustc_workspace_wrapper) = cx.env("RUSTC_WORKSPACE_WRAPPER")? {
+        if let Some(rustc_workspace_wrapper) = cx.env_val("RUSTC_WORKSPACE_WRAPPER")? {
             self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
         } else if let Some(rustc_workspace_wrapper) =
-            cx.env("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER")?
+            cx.env_val("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER")?
         {
             self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
         }
         // 1. RUSTDOC
         // 2. build.rustdoc (CARGO_BUILD_RUSTDOC)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdoc
-        if let Some(rustdoc) = cx.env("RUSTDOC")? {
+        if let Some(rustdoc) = cx.env_val("RUSTDOC")? {
             self.rustdoc = Some(rustdoc);
-        } else if let Some(rustdoc) = cx.env("CARGO_BUILD_RUSTDOC")? {
+        } else if let Some(rustdoc) = cx.env_val("CARGO_BUILD_RUSTDOC")? {
             self.rustdoc = Some(rustdoc);
         }
 
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget
-        if let Some(target) = cx.env("CARGO_BUILD_TARGET")? {
+        if let Some(target) = cx.env_val("CARGO_BUILD_TARGET")? {
             self.target = Some(StringOrArray::String(target));
         }
 
@@ -96,9 +96,9 @@ impl Build {
         // 1. CARGO_TARGET_DIR
         // 2. CARGO_BUILD_TARGET_DIR
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget
-        if let Some(target_dir) = cx.env("CARGO_TARGET_DIR")? {
+        if let Some(target_dir) = cx.env_val("CARGO_TARGET_DIR")? {
             self.target_dir = Some(target_dir);
-        } else if let Some(target_dir) = cx.env("CARGO_BUILD_TARGET_DIR")? {
+        } else if let Some(target_dir) = cx.env_val("CARGO_BUILD_TARGET_DIR")? {
             self.target_dir = Some(target_dir);
         }
 
@@ -143,7 +143,7 @@ impl Build {
         }
 
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir
-        if let Some(dep_info_basedir) = cx.env("CARGO_BUILD_DEP_INFO_BASEDIR")? {
+        if let Some(dep_info_basedir) = cx.env_val("CARGO_BUILD_DEP_INFO_BASEDIR")? {
             self.dep_info_basedir = Some(dep_info_basedir);
         }
 
@@ -157,7 +157,7 @@ impl Doc {
         // doc.browser config value is prefer over BROWSER environment variable.
         // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/ops/cargo_doc.rs#L52-L53
         if self.browser.is_none() {
-            if let Some(browser) = cx.env("BROWSER")? {
+            if let Some(browser) = cx.env_val("BROWSER")? {
                 self.browser = Some(StringOrArray::String(browser));
             }
         }

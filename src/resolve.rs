@@ -7,6 +7,8 @@ use std::{
 use anyhow::Result;
 use cfg_expr::{target_lexicon, Expression, Predicate};
 
+use crate::{Config, Definition, Value};
+
 #[allow(missing_debug_implementations)]
 pub struct ResolveContext {
     pub(crate) env: HashMap<String, OsString>,
@@ -49,6 +51,15 @@ impl ResolveContext {
         match self.env.get(name) {
             None => Ok(None),
             Some(v) => Ok(Some(v.clone().into_string().map_err(std::env::VarError::NotUnicode)?)),
+        }
+    }
+    pub(crate) fn env_val(&self, name: &str) -> Result<Option<Value<String>>> {
+        match self.env.get(name) {
+            None => Ok(None),
+            Some(v) => Ok(Some(Value {
+                val: v.clone().into_string().map_err(std::env::VarError::NotUnicode)?,
+                definition: Some(Definition::Environment(name.to_owned())),
+            })),
         }
     }
 
@@ -256,23 +267,36 @@ pub struct TargetTriple {
 
 pub(crate) fn is_spec_path(triple_or_spec_path: &str) -> bool {
     Path::new(triple_or_spec_path).extension() == Some(OsStr::new("json"))
+        || triple_or_spec_path.contains('/')
+        || triple_or_spec_path.contains('\\')
+}
+fn resolve_spec_path(spec_path: &str, definition: Option<(&Definition, &Config)>) -> String {
+    if let Some((definition, config)) = definition {
+        if let Some(root) = definition.root(config) {
+            return root.join(spec_path).into_os_string().into_string().unwrap();
+        }
+    }
+    spec_path.to_owned()
 }
 
 impl TargetTriple {
-    fn new(triple_or_spec_path: String) -> Self {
+    pub(crate) fn new(
+        triple_or_spec_path: &str,
+        definition: Option<(&Definition, &Config)>,
+    ) -> Self {
         // Handles custom target
-        if is_spec_path(&triple_or_spec_path) {
+        if is_spec_path(triple_or_spec_path) {
             Self {
-                triple: Path::new(&triple_or_spec_path)
+                triple: Path::new(triple_or_spec_path)
                     .file_stem()
                     .unwrap()
                     .to_str()
                     .unwrap()
                     .to_owned(),
-                spec_path: Some(triple_or_spec_path),
+                spec_path: Some(resolve_spec_path(triple_or_spec_path, definition)),
             }
         } else {
-            Self { triple: triple_or_spec_path, spec_path: None }
+            Self { triple: triple_or_spec_path.to_owned(), spec_path: None }
         }
     }
 
@@ -291,17 +315,17 @@ impl From<&TargetTriple> for TargetTriple {
 }
 impl From<String> for TargetTriple {
     fn from(value: String) -> Self {
-        Self::new(value)
+        Self::new(&value, None)
     }
 }
 impl From<&String> for TargetTriple {
     fn from(value: &String) -> Self {
-        Self::new(value.clone())
+        Self::new(value, None)
     }
 }
 impl From<&str> for TargetTriple {
     fn from(value: &str) -> Self {
-        Self::new(value.to_owned())
+        Self::new(value, None)
     }
 }
 

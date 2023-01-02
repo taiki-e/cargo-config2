@@ -14,7 +14,7 @@ use std::collections::btree_map;
 use anyhow::{Context as _, Result};
 
 use crate::{
-    BTreeMap, DeserializedRepr, Env, Frequency, NonZeroI32, Rustflags, StringOrArray, When,
+    BTreeMap, DeserializedRepr, Env, Frequency, NonZeroI32, Rustflags, StringOrArray, Value, When,
 };
 
 pub(crate) trait Merge {
@@ -23,8 +23,8 @@ pub(crate) trait Merge {
 }
 
 macro_rules! merge_non_container {
-    ($ty:tt) => {
-        impl Merge for $ty {
+    ($($ty:tt)*) => {
+        impl Merge for $($ty)* {
             fn merge(&mut self, from: Self, force: bool) -> Result<()> {
                 if force {
                     *self = from;
@@ -38,6 +38,7 @@ merge_non_container!(bool);
 merge_non_container!(u32);
 merge_non_container!(NonZeroI32);
 merge_non_container!(String);
+merge_non_container!(Value<String>);
 merge_non_container!(Frequency);
 merge_non_container!(When);
 
@@ -51,7 +52,7 @@ impl<T: Merge> Merge for Option<T> {
         Ok(())
     }
 }
-impl Merge for StringOrArray {
+impl<T> Merge for StringOrArray<T> {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         match (self, from) {
             (this @ StringOrArray::String(_), from @ StringOrArray::String(_)) => {
