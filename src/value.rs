@@ -9,10 +9,10 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::{de, split_space_separated, Config, StringOrArray};
+use crate::{Config, StringOrArray};
 
 #[allow(clippy::exhaustive_structs)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,104 +31,25 @@ impl Value<String> {
         Ok(Value { val: self.val.parse()?, definition: self.definition })
     }
     // https://doc.rust-lang.org/nightly/cargo/reference/config.html#config-relative-paths
-    pub(crate) fn resolve_as_program_path<'a>(
-        &'a self,
-        current_dir: Option<&Path>,
-    ) -> Cow<'a, Path> {
+    pub(crate) fn resolve_as_program_path(&self, current_dir: Option<&Path>) -> PathBuf {
         if self.definition.is_none()
             || Path::new(&self.val).is_absolute()
             || !self.val.contains('/') && !self.val.contains('\\')
         {
-            Cow::Borrowed(Path::new(&self.val))
+            PathBuf::from(&self.val)
         } else if let Some(root) = self.definition.as_ref().unwrap().root_inner(current_dir) {
-            root.join(&self.val).into()
+            root.join(&self.val)
         } else {
-            Cow::Borrowed(Path::new(&self.val))
+            PathBuf::from(&self.val)
         }
     }
-    pub(crate) fn resolve_as_path<'a>(&'a self, current_dir: Option<&Path>) -> Cow<'a, Path> {
+    pub(crate) fn resolve_as_path(&self, current_dir: Option<&Path>) -> PathBuf {
         if self.definition.is_none() || Path::new(&self.val).is_absolute() {
-            Cow::Borrowed(Path::new(&self.val))
+            PathBuf::from(&self.val)
         } else if let Some(root) = self.definition.as_ref().unwrap().root_inner(current_dir) {
-            root.join(&self.val).into()
+            root.join(&self.val)
         } else {
-            Cow::Borrowed(Path::new(&self.val))
-        }
-    }
-}
-impl StringOrArray<Value<String>> {
-    // https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments
-    /// Splits this string or array of strings to program path with args.
-    fn split_for_command(&self) -> Result<(&str, Option<&Definition>, Vec<&str>)> {
-        match self {
-            Self::String(s) => {
-                let definition = s.definition.as_ref();
-                let mut s = split_space_separated(&s.val);
-                let path = s.next().context("invalid length 0, expected at least one element")?;
-                Ok((path, definition, s.collect()))
-            }
-            Self::Array(v) => {
-                let path = v.get(0).context("invalid length 0, expected at least one element")?;
-                Ok((
-                    &path.val,
-                    path.definition.as_ref(),
-                    v.iter().skip(1).map(|s| s.val.as_str()).collect(),
-                ))
-            }
-        }
-    }
-    pub(crate) fn resolve_as_program_path_with_args<'a>(
-        &'a self,
-        current_dir: Option<&Path>,
-    ) -> Result<(Cow<'a, Path>, Vec<&'a str>)> {
-        let (program, definition, args) = self.split_for_command()?;
-        if definition.is_none()
-            || Path::new(program).is_absolute()
-            || !program.contains('/') && !program.contains('\\')
-        {
-            Ok((Cow::Borrowed(Path::new(program)), args))
-        } else if let Some(root) = definition.unwrap().root_inner(current_dir) {
-            Ok((root.join(program).into(), args))
-        } else {
-            Ok((Cow::Borrowed(Path::new(program)), args))
-        }
-    }
-}
-impl de::StringOrArray {
-    // https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments
-    /// Splits this string or array of strings to program path with args.
-    fn split_for_command(&self) -> Result<(&str, Option<&Definition>, Vec<&str>)> {
-        match self {
-            Self::String(s) => {
-                let definition = s.definition.as_ref();
-                let mut s = split_space_separated(&s.val);
-                let path = s.next().context("invalid length 0, expected at least one element")?;
-                Ok((path, definition, s.collect()))
-            }
-            Self::Array(v) => {
-                let path = v.get(0).context("invalid length 0, expected at least one element")?;
-                Ok((
-                    &path.val,
-                    path.definition.as_ref(),
-                    v.iter().skip(1).map(|s| s.val.as_str()).collect(),
-                ))
-            }
-        }
-    }
-    pub(crate) fn resolve_as_program_path_with_args<'a>(
-        &'a self,
-        current_dir: Option<&Path>,
-    ) -> Result<(Cow<'a, Path>, Vec<&'a str>)> {
-        let (program, definition, args) = self.split_for_command()?;
-        if definition.is_none()
-            || Path::new(program).is_absolute()
-            || !program.contains('/') && !program.contains('\\')
-        {
-            Ok((Cow::Borrowed(Path::new(program)), args))
-        } else if let Some(root) = definition.unwrap().root_inner(current_dir) {
-            Ok((root.join(program).into(), args))
-        } else {
-            Ok((Cow::Borrowed(Path::new(program)), args))
+            PathBuf::from(&self.val)
         }
     }
 }

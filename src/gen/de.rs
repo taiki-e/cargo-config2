@@ -163,6 +163,11 @@ impl SetPath for crate::de::Rustflags {
         self.flags.set_path(path);
     }
 }
+impl SetPath for crate::de::ConfigRelativePath {
+    fn set_path(&mut self, path: &Path) {
+        self.0.set_path(path);
+    }
+}
 impl SetPath for crate::de::StringList {
     fn set_path(&mut self, path: &Path) {
         self.list.set_path(path);

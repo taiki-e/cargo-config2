@@ -25,8 +25,9 @@ members = ["bench", "tools/codegen"]
 doc-scrape-examples = false
 
 [features]
-default = ["toml"]
+default = ["toml", "lazy"]
 toml = ["toml_edit"]
+lazy = ["once_cell", "toml"]
 
 [dependencies]
 cfg-expr = { version = "0.13", features = ["targets"] }
@@ -35,6 +36,7 @@ serde = { version = "1.0.103", features = ["derive"] }
 shell-escape = "0.1.5"
 
 toml_edit = { version = "0.16", features = ["easy"], optional = true }
+once_cell = { version = "1", default-features = false, optional = true }
 
 # TODO: use our own error type
 anyhow = "1"

@@ -4,7 +4,6 @@ use std::{
     num::NonZeroI32,
     ops,
     path::{Path, PathBuf},
-    slice,
 };
 
 use anyhow::{bail, Result};
@@ -341,33 +340,31 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    fn from_unresolved(
-        mut de: de::BuildConfig,
+    pub(crate) fn from_unresolved(
+        de: de::BuildConfig,
         current_dir: Option<&Path>,
         cx: &mut ResolveContext,
     ) -> Result<Self> {
         let jobs = de.jobs.map(|v| v.val);
-        let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir).into_owned());
-        let rustc_wrapper =
-            de.rustc_wrapper.map(|v| v.resolve_as_program_path(current_dir).into_owned());
+        let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir));
+        let rustc_wrapper = de.rustc_wrapper.map(|v| v.resolve_as_program_path(current_dir));
         let rustc_workspace_wrapper =
-            de.rustc_workspace_wrapper.map(|v| v.resolve_as_program_path(current_dir).into_owned());
-        let rustdoc = de.rustdoc.map(|v| v.resolve_as_program_path(current_dir).into_owned());
+            de.rustc_workspace_wrapper.map(|v| v.resolve_as_program_path(current_dir));
+        let rustdoc = de.rustdoc.map(|v| v.resolve_as_program_path(current_dir));
         let target = de.target.map(|t| {
             t.as_array_no_split()
                 .iter()
                 .map(|v| TargetTriple::new(&v.val, v.definition.as_ref(), current_dir))
                 .collect()
         });
-        let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
+        let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir));
         let rustflags =
             de.rustflags.map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
         let rustdocflags = de
             .rustdocflags
             .map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
         let incremental = de.incremental.map(|v| v.val);
-        let dep_info_basedir =
-            de.dep_info_basedir.map(|v| v.resolve_as_path(current_dir).into_owned());
+        let dep_info_basedir = de.dep_info_basedir.map(|v| v.resolve_as_path(current_dir));
         let override_target_rustflags = de.override_target_rustflags;
         Ok(Self {
             jobs,
@@ -414,12 +411,11 @@ impl TargetConfig {
         current_dir: Option<&Path>,
         cx: &mut ResolveContext,
     ) -> Result<Self> {
-        let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir).into_owned());
+        let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir));
         let runner = match de.runner {
-            Some(v) => Some(PathAndArgs {
-                path: v.path.resolve_as_program_path(current_dir).into_owned(),
-                args: v.args,
-            }),
+            Some(v) => {
+                Some(PathAndArgs { path: v.path.resolve_program(current_dir), args: v.args })
+            }
             None => None,
         };
         let rustflags =
@@ -451,10 +447,8 @@ impl DocConfig {
         cx: &mut ResolveContext,
     ) -> Result<()> {
         if let Some(v) = de.browser {
-            self.browser = Some(PathAndArgs {
-                path: v.path.resolve_as_program_path(current_dir).into_owned(),
-                args: v.args,
-            });
+            self.browser =
+                Some(PathAndArgs { path: v.path.resolve_program(current_dir), args: v.args });
         }
         Ok(())
     }
@@ -578,7 +572,7 @@ pub struct NetConfig {
 impl NetConfig {
     fn from_unresolved(
         &mut self,
-        mut de: de::NetConfig,
+        de: de::NetConfig,
         current_dir: Option<&Path>,
         cx: &mut ResolveContext,
     ) -> Result<()> {
@@ -619,16 +613,14 @@ pub struct TermConfig {
 impl TermConfig {
     fn from_unresolved(
         &mut self,
-        mut de: de::TermConfig,
+        de: de::TermConfig,
         current_dir: Option<&Path>,
         cx: &mut ResolveContext,
     ) -> Result<()> {
         self.quiet = de.quiet.map(|v| v.val);
         self.verbose = de.verbose.map(|v| v.val);
         self.color = de.color.map(|v| v.val);
-        if let Some(progress) = de.progress {
-            self.progress.from_unresolved(progress, current_dir, cx)?;
-        }
+        self.progress.from_unresolved(de.progress, current_dir, cx)?;
         Ok(())
     }
 }

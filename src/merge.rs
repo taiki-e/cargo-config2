@@ -1,12 +1,3 @@
-// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/mod.rs#L1900-L1908
-//
-// > If `force` is true, primitive (non-container) types will override existing values.
-// > If false, the original will be kept and the new value ignored.
-// >
-// > Container types (tables and arrays) are merged with existing values.
-// >
-// > Container and non-container types cannot be mixed.
-
 #![allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
 
 use std::collections::btree_map;
@@ -18,6 +9,14 @@ use crate::{
     RustflagsDeserializedRepr, StringOrArray, Value, When,
 };
 
+// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/mod.rs#L1900-L1908
+//
+// > If `force` is true, primitive (non-container) types will override existing values.
+// > If false, the original will be kept and the new value ignored.
+// >
+// > Container types (tables and arrays) are merged with existing values.
+// >
+// > Container and non-container types cannot be mixed.
 pub(crate) trait Merge {
     /// Merges given config into this config.
     fn merge(&mut self, from: Self, force: bool) -> Result<()>;
@@ -115,7 +114,7 @@ impl Merge for de::PathAndArgs {
                 // # a/.cargo/config
                 // [doc]
                 // browser = ["a"]
-                self.args.push(from.path.val);
+                self.args.push(from.path.0.val);
                 self.args.append(&mut from.args);
             }
             (expected, actual) => {

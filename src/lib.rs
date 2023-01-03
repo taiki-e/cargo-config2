@@ -75,6 +75,7 @@ mod merge_impl;
 #[macro_use]
 mod process;
 
+#[cfg(feature = "lazy")]
 pub mod api;
 mod command;
 pub mod de;
@@ -89,7 +90,7 @@ pub mod toml;
 mod value;
 
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::Borrow,
     collections::{BTreeMap, BTreeSet},
     num::NonZeroI32,
     ops,
@@ -578,28 +579,28 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    pub fn rustc(&self) -> Option<Cow<'_, Path>> {
-        Some(self.rustc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn rustc_wrapper(&self) -> Option<Cow<'_, Path>> {
-        Some(self.rustc_wrapper.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn rustc_workspace_wrapper(&self) -> Option<Cow<'_, Path>> {
-        Some(
-            self.rustc_workspace_wrapper
-                .as_ref()?
-                .resolve_as_program_path(self.current_dir.as_deref()),
-        )
-    }
-    pub fn rustdoc(&self) -> Option<Cow<'_, Path>> {
-        Some(self.rustdoc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn target_dir(&self) -> Option<Cow<'_, Path>> {
-        Some(self.target_dir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
-    }
-    pub fn dep_info_basedir(&self) -> Option<Cow<'_, Path>> {
-        Some(self.dep_info_basedir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
-    }
+    // pub fn rustc(&self) -> Option<Cow<'_, Path>> {
+    //     Some(self.rustc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    // }
+    // pub fn rustc_wrapper(&self) -> Option<Cow<'_, Path>> {
+    //     Some(self.rustc_wrapper.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    // }
+    // pub fn rustc_workspace_wrapper(&self) -> Option<Cow<'_, Path>> {
+    //     Some(
+    //         self.rustc_workspace_wrapper
+    //             .as_ref()?
+    //             .resolve_as_program_path(self.current_dir.as_deref()),
+    //     )
+    // }
+    // pub fn rustdoc(&self) -> Option<Cow<'_, Path>> {
+    //     Some(self.rustdoc.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    // }
+    // pub fn target_dir(&self) -> Option<Cow<'_, Path>> {
+    //     Some(self.target_dir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
+    // }
+    // pub fn dep_info_basedir(&self) -> Option<Cow<'_, Path>> {
+    //     Some(self.dep_info_basedir.as_ref()?.resolve_as_path(self.current_dir.as_deref()))
+    // }
 
     fn set_cwd(&mut self, path: &Path) {
         self.current_dir = Some(path.to_owned());
@@ -646,17 +647,17 @@ pub struct TargetConfig {
 }
 
 impl TargetConfig {
-    pub fn linker(&self) -> Option<Cow<'_, Path>> {
-        Some(self.linker.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
-    }
-    pub fn runner(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
-        match self.runner.as_ref() {
-            Some(runner) => {
-                Ok(Some(runner.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
-            }
-            None => Ok(None),
-        }
-    }
+    // pub fn linker(&self) -> Option<Cow<'_, Path>> {
+    //     Some(self.linker.as_ref()?.resolve_as_program_path(self.current_dir.as_deref()))
+    // }
+    // pub fn runner(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
+    //     match self.runner.as_ref() {
+    //         Some(runner) => {
+    //             Ok(Some(runner.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
+    //         }
+    //         None => Ok(None),
+    //     }
+    // }
 
     fn set_cwd(&mut self, path: &Path) {
         self.current_dir = Some(path.to_owned());
@@ -688,14 +689,14 @@ pub struct DocConfig {
 }
 
 impl DocConfig {
-    pub fn browser(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
-        match self.browser.as_ref() {
-            Some(browser) => {
-                Ok(Some(browser.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
-            }
-            None => Ok(None),
-        }
-    }
+    // pub fn browser(&self) -> Result<Option<(Cow<'_, Path>, Vec<&str>)>> {
+    //     match self.browser.as_ref() {
+    //         Some(browser) => {
+    //             Ok(Some(browser.resolve_as_program_path_with_args(self.current_dir.as_deref())?))
+    //         }
+    //         None => Ok(None),
+    //     }
+    // }
 
     fn set_cwd(&mut self, path: &Path) {
         self.current_dir = Some(path.to_owned());

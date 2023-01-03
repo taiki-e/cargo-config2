@@ -416,8 +416,8 @@ pub struct TermConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<Value<Color>>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub progress: Option<TermProgress>,
+    #[serde(skip_serializing_if = "TermProgress::is_none")]
+    pub progress: TermProgress,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -597,10 +597,45 @@ impl<'de> Deserialize<'de> for Rustflags {
     }
 }
 
+// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/path.rs
+#[derive(Debug, Deserialize, PartialEq, Clone)]
+#[serde(transparent)]
+pub struct ConfigRelativePath(pub(crate) Value<String>);
+
+impl ConfigRelativePath {
+    /// Returns the underlying value.
+    pub fn value(&self) -> &Value<String> {
+        &self.0
+    }
+
+    /// Returns the raw underlying configuration value for this key.
+    pub fn raw_value(&self) -> &str {
+        &self.0.val
+    }
+
+    /// Resolves this configuration-relative path to an absolute path.
+    ///
+    /// This will always return an absolute path where it's relative to the
+    /// location for configuration for this value.
+    pub(crate) fn resolve_path(&self, current_dir: Option<&Path>) -> PathBuf {
+        self.0.resolve_as_path(current_dir)
+    }
+
+    /// Resolves this configuration-relative path to either an absolute path or
+    /// something appropriate to execute from `PATH`.
+    ///
+    /// Values which don't look like a filesystem path (don't contain `/` or
+    /// `\`) will be returned as-is, and everything else will fall through to an
+    /// absolute path.
+    pub(crate) fn resolve_program(&self, current_dir: Option<&Path>) -> PathBuf {
+        self.0.resolve_as_program_path(current_dir)
+    }
+}
+
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct PathAndArgs {
-    pub path: Value<String>,
+    pub path: ConfigRelativePath,
     pub args: Vec<String>,
 
     // for merge
@@ -644,7 +679,7 @@ impl PathAndArgs {
         let mut s = split_space_separated(value);
         let path = s.next()?;
         Some(Self {
-            path: Value { val: path.to_owned(), definition },
+            path: ConfigRelativePath(Value { val: path.to_owned(), definition }),
             args: s.map(str::to_owned).collect(),
             deserialized_repr: StringListDeserializedRepr::String,
         })
@@ -658,7 +693,7 @@ impl PathAndArgs {
         }
         let path = list.remove(0);
         Some(Self {
-            path: Value { val: path, definition },
+            path: ConfigRelativePath(Value { val: path, definition }),
             args: list,
             deserialized_repr: StringListDeserializedRepr::Array,
         })

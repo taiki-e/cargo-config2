@@ -110,25 +110,40 @@ fn gen_de() -> Result<()> {
             match item {
                 syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
                     if matches!(vis, syn::Visibility::Public(..))
-                        && matches!(fields, syn::Fields::Named(..))
                         && !set_path_exclude.iter().any(|&e| ident == e) =>
                 {
-                    let fields = fields
-                        .iter()
-                        .filter(|f| {
-                            !serde_skip(&f.attrs)
-                                && f.ident.as_ref().unwrap() != "deserialized_repr"
-                        })
-                        .map(|syn::Field { ident, .. }| {
-                            quote! { self.#ident.set_path(path); }
-                        });
-                    tokens.extend(quote! {
-                        impl SetPath for crate:: #(#module::)* #ident {
-                            fn set_path(&mut self, path: &Path) {
-                                #(#fields)*
-                            }
+                    match fields {
+                        Fields::Named(fields) => {
+                            let fields = fields
+                                .named
+                                .iter()
+                                .filter(|f| {
+                                    !serde_skip(&f.attrs)
+                                        && f.ident.as_ref().unwrap() != "deserialized_repr"
+                                })
+                                .map(|syn::Field { ident, .. }| {
+                                    quote! { self.#ident.set_path(path); }
+                                });
+                            tokens.extend(quote! {
+                                impl SetPath for crate:: #(#module::)* #ident {
+                                    fn set_path(&mut self, path: &Path) {
+                                        #(#fields)*
+                                    }
+                                }
+                            });
                         }
-                    });
+                        Fields::Unnamed(fields) => {
+                            assert_eq!(fields.unnamed.len(), 1);
+                            tokens.extend(quote! {
+                                impl SetPath for crate:: #(#module::)* #ident {
+                                    fn set_path(&mut self, path: &Path) {
+                                        self.0.set_path(path);
+                                    }
+                                }
+                            });
+                        }
+                        Fields::Unit => unreachable!(),
+                    }
                 }
                 syn::Item::Enum(syn::ItemEnum { vis, ident, variants, .. })
                     if matches!(vis, syn::Visibility::Public(..))

@@ -36,7 +36,7 @@ fn config_path(path: &Path) -> Option<PathBuf> {
 }
 
 /// An iterator over cargo config paths.
-#[allow(missing_debug_implementations)]
+#[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct ConfigPaths<'a> {
     ancestors: std::path::Ancestors<'a>,

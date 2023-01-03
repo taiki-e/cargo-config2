@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dev-dependencies]
-cargo-config2 = { path = "..", default-features = false }
+cargo-config2 = { path = ".." }
 
 criterion = { default-features = false, git = "https://github.com/taiki-e/criterion.rs.git", branch = "dev" } # reduce deps
 toml = "0.5"
