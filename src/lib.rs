@@ -80,6 +80,7 @@ pub mod api;
 mod command;
 pub mod de;
 pub mod easy;
+pub mod easy_old;
 mod env;
 mod merge;
 mod paths;
@@ -103,12 +104,15 @@ use serde::{Deserialize, Serialize};
 
 #[doc(no_inline)]
 pub use crate::de::{Color, Frequency, When};
-use crate::value::SetPath;
 pub use crate::{
     command::host_triple,
     paths::ConfigPaths,
     resolve::{ResolveContext, TargetTriple},
     value::{Definition, Value},
+};
+use crate::{
+    de::{split_encoded, split_space_separated, target_u_upper},
+    value::SetPath,
 };
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -391,7 +395,11 @@ impl Config {
             return Ok(config_targets
                 .iter()
                 .map(|v| {
-                    TargetTriple::new(&v.val, v.definition.as_ref(), self.current_dir.as_deref())
+                    TargetTriple::new(
+                        (&v.val).into(),
+                        v.definition.as_ref(),
+                        self.current_dir.as_deref(),
+                    )
                 })
                 .collect());
         }
@@ -433,7 +441,7 @@ impl Config {
                 .iter()
                 .map(|v| {
                     let t = TargetTriple::new(
-                        &v.val,
+                        (&v.val).into(),
                         v.definition.as_ref(),
                         self.current_dir.as_deref(),
                     );
@@ -906,7 +914,7 @@ impl Rustflags {
     /// See also [`encode`](Self::encode).
     pub fn from_encoded(s: &str) -> Self {
         Self {
-            flags: s.split('\x1f').map(str::to_owned).collect(),
+            flags: split_encoded(s).map(str::to_owned).collect(),
             deserialized_repr: RustflagsDeserializedRepr::Unknown,
         }
     }
@@ -1165,6 +1173,11 @@ impl From<String> for StringOrArray {
         Self::String(value)
     }
 }
+impl From<&String> for StringOrArray {
+    fn from(value: &String) -> Self {
+        Self::String(value.clone())
+    }
+}
 impl From<&str> for StringOrArray {
     fn from(value: &str) -> Self {
         Self::String(value.to_owned())
@@ -1194,17 +1207,4 @@ impl<const N: usize> From<[&str; N]> for StringOrArray {
     fn from(value: [&str; N]) -> Self {
         Self::Array(value[..].iter().map(|&v| v.to_owned()).collect())
     }
-}
-
-fn target_u_lower(target: &str) -> String {
-    target.replace(['-', '.'], "_")
-}
-fn target_u_upper(target: &str) -> String {
-    let mut target = target_u_lower(target);
-    target.make_ascii_uppercase();
-    target
-}
-
-fn split_space_separated(s: &str) -> impl Iterator<Item = &str> {
-    s.split(' ').map(str::trim).filter(|s| !s.is_empty())
 }

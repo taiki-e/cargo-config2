@@ -149,15 +149,17 @@ impl Config {
         self.path = Some(path);
     }
 
-    fn resolve_target(
-        &self,
-        cx: &mut ResolveContext,
+    pub(crate) fn resolve_target(
+        cx: &ResolveContext,
+        target_configs: &BTreeMap<String, TargetConfig>,
+        override_target_rustflags: bool,
+        build_rustflags: &Option<Rustflags>,
         target_triple: &TargetTriple,
     ) -> Result<Option<TargetConfig>> {
         let target = &target_triple.triple;
+        let mut target_config = target_configs.get(target).cloned();
 
         let target_u_upper = target_u_upper(target);
-        let mut target_config = self.target.get(target).cloned();
         let mut target_linker = target_config.as_mut().and_then(|c| c.linker.take());
         let mut target_runner = target_config.as_mut().and_then(|c| c.runner.take());
         let mut target_rustflags: Option<Rustflags> =
@@ -180,7 +182,7 @@ impl Config {
                 target_rustflags @ None => *target_rustflags = Some(rustflags),
             }
         }
-        for (k, v) in &self.target {
+        for (k, v) in target_configs {
             if !k.starts_with("cfg(") {
                 continue;
             }
@@ -214,14 +216,14 @@ impl Config {
         if let Some(runner) = target_runner {
             target_config.get_or_insert_with(TargetConfig::default).runner = Some(runner);
         }
-        if self.build.override_target_rustflags {
+        if override_target_rustflags {
             target_config.get_or_insert_with(TargetConfig::default).rustflags =
-                self.build.rustflags.clone();
+                build_rustflags.clone();
         } else if let Some(rustflags) = target_rustflags {
             target_config.get_or_insert_with(TargetConfig::default).rustflags = Some(rustflags);
         } else {
             target_config.get_or_insert_with(TargetConfig::default).rustflags =
-                self.build.rustflags.clone();
+                build_rustflags.clone();
         }
         Ok(target_config)
     }
@@ -534,9 +536,7 @@ impl Rustflags {
     /// See also [`encode`](Self::encode).
     pub(crate) fn from_encoded(s: &Value<String>) -> Self {
         Self {
-            flags: s
-                .val
-                .split('\x1f')
+            flags: split_encoded(&s.val)
                 .map(|v| Value { val: v.to_owned(), definition: s.definition.clone() })
                 .collect(),
             // Encoded rustflags cannot be serialized as a string because they may contain spaces.
@@ -819,12 +819,15 @@ impl StringOrArray {
 fn target_u_lower(target: &str) -> String {
     target.replace(['-', '.'], "_")
 }
-fn target_u_upper(target: &str) -> String {
+pub(crate) fn target_u_upper(target: &str) -> String {
     let mut target = target_u_lower(target);
     target.make_ascii_uppercase();
     target
 }
 
-fn split_space_separated(s: &str) -> impl Iterator<Item = &str> {
+pub(crate) fn split_encoded(s: &str) -> impl Iterator<Item = &str> {
+    s.split('\x1f')
+}
+pub(crate) fn split_space_separated(s: &str) -> impl Iterator<Item = &str> {
     s.split(' ').map(str::trim).filter(|s| !s.is_empty())
 }

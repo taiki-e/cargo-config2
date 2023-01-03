@@ -1,4 +1,6 @@
 use std::{
+    borrow::Cow,
+    cell::RefCell,
     collections::{HashMap, HashSet},
     ffi::{OsStr, OsString},
     path::Path,
@@ -12,18 +14,17 @@ use crate::{Definition, Value};
 
 #[derive(Debug, Clone)]
 pub struct ResolveContext {
-    //
     pub(crate) env: HashMap<String, OsString>,
     rustc: Option<OsString>,
-    cfg: HashMap<TargetTriple, Cfg>,
+    cfg: RefCell<HashMap<TargetTriple, Cfg>>,
 }
 
 impl ResolveContext {
     pub fn new() -> Result<Self> {
-        Ok(Self::from_env(std::env::vars_os()))
+        Ok(Self::with_env(std::env::vars_os()))
     }
 
-    pub fn from_env(
+    pub fn with_env(
         vars: impl IntoIterator<Item = (impl Into<OsString>, impl Into<OsString>)>,
     ) -> Self {
         let mut this = Self::no_env();
@@ -38,12 +39,12 @@ impl ResolveContext {
     }
 
     pub fn no_env() -> Self {
-        Self { env: HashMap::default(), rustc: None, cfg: HashMap::default() }
+        Self { env: HashMap::default(), rustc: None, cfg: RefCell::new(HashMap::default()) }
     }
 
-    pub fn set_rustc(&mut self, rustc: impl Into<OsString>) -> &mut Self {
+    pub fn set_rustc(mut self, rustc: impl Into<OsString>) -> Self {
         self.rustc = Some(rustc.into());
-        self.cfg = HashMap::default();
+        self.cfg = RefCell::new(HashMap::default());
         self
     }
 
@@ -68,14 +69,15 @@ impl ResolveContext {
         }
     }
 
-    pub(crate) fn eval_cfg(&mut self, expr: &str, target: &TargetTriple) -> Result<bool> {
+    pub(crate) fn eval_cfg(&self, expr: &str, target: &TargetTriple) -> Result<bool> {
+        let mut cfg_map = self.cfg.borrow_mut();
         let expr = Expression::parse(expr)?;
-        let cfg = match self.cfg.get(target) {
+        let cfg = match cfg_map.get(target) {
             Some(cfg) => cfg,
-            None => match self.cfg_for_target(target)? {
+            None => match cfg_for_target(self.rustc.as_deref(), target)? {
                 Some(cfg) => {
-                    self.cfg.insert(target.clone(), cfg);
-                    &self.cfg[target]
+                    cfg_map.insert(target.clone(), cfg);
+                    &cfg_map[target]
                 }
                 None => return Ok(false),
             },
@@ -96,33 +98,33 @@ impl ResolveContext {
             | Predicate::Feature(_) => false,
         }))
     }
+}
 
-    fn cfg_for_target(&mut self, target: &TargetTriple) -> Result<Option<Cfg>> {
-        if let Some(rustc) = &self.rustc {
-            return Ok(Some(Cfg::from_rustc(rustc, target)?));
-        }
-        if let Some(target_info) = cfg_expr::targets::get_builtin_target_by_triple(&target.triple) {
-            return Ok(Some(Cfg::from_target_info(TargetInfo::CfgExpr(target_info.clone()))));
-        }
-        // HACK: work around for https://github.com/bytecodealliance/target-lexicon/issues/63
-        // Inspired by https://github.com/EmbarkStudios/cfg-expr/blob/0.13.0/tests/eval.rs#L19-L31.
-        let triple = if target.triple.starts_with("avr-unknown-gnu-at") {
-            target_lexicon::Triple {
-                architecture: target_lexicon::Architecture::Avr,
-                vendor: target_lexicon::Vendor::Unknown,
-                operating_system: target_lexicon::OperatingSystem::Unknown,
-                environment: target_lexicon::Environment::Unknown,
-                binary_format: target_lexicon::BinaryFormat::Unknown,
-            }
-        } else {
-            match target.triple.parse::<target_lexicon::Triple>() {
-                Ok(triple) => triple,
-                // TODO
-                Err(_e) => return Ok(None),
-            }
-        };
-        Ok(Some(Cfg::from_target_info(TargetInfo::TargetLexicon(triple))))
+fn cfg_for_target(rustc: Option<&OsStr>, target: &TargetTriple) -> Result<Option<Cfg>> {
+    if let Some(rustc) = rustc {
+        return Ok(Some(Cfg::from_rustc(rustc, target)?));
     }
+    if let Some(target_info) = cfg_expr::targets::get_builtin_target_by_triple(&target.triple) {
+        return Ok(Some(Cfg::from_target_info(TargetInfo::CfgExpr(target_info.clone()))));
+    }
+    // HACK: work around for https://github.com/bytecodealliance/target-lexicon/issues/63
+    // Inspired by https://github.com/EmbarkStudios/cfg-expr/blob/0.13.0/tests/eval.rs#L19-L31.
+    let triple = if target.triple.starts_with("avr-unknown-gnu-at") {
+        target_lexicon::Triple {
+            architecture: target_lexicon::Architecture::Avr,
+            vendor: target_lexicon::Vendor::Unknown,
+            operating_system: target_lexicon::OperatingSystem::Unknown,
+            environment: target_lexicon::Environment::Unknown,
+            binary_format: target_lexicon::BinaryFormat::Unknown,
+        }
+    } else {
+        match target.triple.parse::<target_lexicon::Triple>() {
+            Ok(triple) => triple,
+            // TODO
+            Err(_e) => return Ok(None),
+        }
+    };
+    Ok(Some(Cfg::from_target_info(TargetInfo::TargetLexicon(triple))))
 }
 
 #[derive(Debug, Clone)]
@@ -279,33 +281,36 @@ fn resolve_spec_path(
     spec_path: &str,
     definition: Option<&Definition>,
     current_dir: Option<&Path>,
-) -> String {
+) -> Option<String> {
     if let Some(definition) = definition {
         if let Some(root) = definition.root_inner(current_dir) {
-            return root.join(spec_path).into_os_string().into_string().unwrap();
+            return Some(root.join(spec_path).into_os_string().to_string_lossy().into_owned());
         }
     }
-    spec_path.to_owned()
+    None
 }
 
 impl TargetTriple {
     pub(crate) fn new(
-        triple_or_spec_path: &str,
+        triple_or_spec_path: Cow<'_, str>,
         def: Option<&Definition>,
         current_dir: Option<&Path>,
     ) -> Self {
         // Handles custom target
-        if is_spec_path(triple_or_spec_path) {
+        if is_spec_path(&triple_or_spec_path) {
             Self {
-                triple: Path::new(triple_or_spec_path)
+                triple: Path::new(&*triple_or_spec_path)
                     .file_stem()
                     .unwrap()
                     .to_string_lossy()
                     .into_owned(),
-                spec_path: Some(resolve_spec_path(triple_or_spec_path, def, current_dir)),
+                spec_path: Some(
+                    resolve_spec_path(&triple_or_spec_path, def, current_dir)
+                        .unwrap_or_else(|| triple_or_spec_path.into_owned()),
+                ),
             }
         } else {
-            Self { triple: triple_or_spec_path.to_owned(), spec_path: None }
+            Self { triple: triple_or_spec_path.into_owned(), spec_path: None }
         }
     }
 
@@ -324,17 +329,17 @@ impl From<&TargetTriple> for TargetTriple {
 }
 impl From<String> for TargetTriple {
     fn from(value: String) -> Self {
-        Self::new(&value, None, None)
+        Self::new(value.into(), None, None)
     }
 }
 impl From<&String> for TargetTriple {
     fn from(value: &String) -> Self {
-        Self::new(value, None, None)
+        Self::new(value.into(), None, None)
     }
 }
 impl From<&str> for TargetTriple {
     fn from(value: &str) -> Self {
-        Self::new(value, None, None)
+        Self::new(value.into(), None, None)
     }
 }
 
@@ -351,7 +356,7 @@ impl<'de> Deserialize<'de> for TargetTriple {
     where
         D: serde::Deserializer<'de>,
     {
-        Ok(Self::new(&String::deserialize(deserializer)?, None, None))
+        Ok(Self::new(String::deserialize(deserializer)?.into(), None, None))
     }
 }
 
@@ -419,7 +424,7 @@ mod tests {
             ("CARGO_TERM_PROGRESS_WIDTH", "100"),
         ];
         let mut config = crate::de::Config::default();
-        let cx = &mut ResolveContext::from_env(env_list);
+        let cx = &mut ResolveContext::with_env(env_list);
         for (k, v) in env_list {
             assert_eq!(cx.env[k], v, "key={k},value={v}");
         }

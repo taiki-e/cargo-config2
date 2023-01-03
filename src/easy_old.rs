@@ -1,15 +1,13 @@
 use std::{
-    borrow::Borrow,
-    cell::{Cell, RefCell},
-    collections::{BTreeMap, BTreeSet, HashSet},
-    fmt,
+    cell::RefCell,
+    collections::{BTreeMap, BTreeSet},
     num::NonZeroI32,
     ops,
     path::{Path, PathBuf},
 };
 
 use anyhow::{bail, Result};
-use once_cell::unsync::{Lazy, OnceCell};
+use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 
 use crate::de::{self, split_encoded, split_space_separated};
@@ -22,91 +20,62 @@ pub use crate::{
     value::{Definition, Value},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Config {
-    de: UnresolvedConfig,
     // TODO: paths
     /// Command aliases.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
-    alias: OnceCell<BTreeMap<String, StringList>>,
-    build: OnceCell<BuildConfig>,
-    doc: OnceCell<DocConfig>,
-    env: OnceCell<BTreeMap<String, Env>>,
-    future_incompat_report: OnceCell<FutureIncompatReportConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub alias: BTreeMap<String, StringList>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BuildConfig::is_none")]
+    pub build: BuildConfig,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "DocConfig::is_none")]
+    pub doc: DocConfig,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub env: BTreeMap<String, Env>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
+    pub future_incompat_report: FutureIncompatReportConfig,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
-    net: OnceCell<NetConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "NetConfig::is_none")]
+    pub net: NetConfig,
     // TODO: patch
     // TODO: profile
     // TODO: registries
     // TODO: registry
     // TODO: source
+    #[serde(skip_deserializing)]
+    #[serde(skip_serializing_if = "ref_cell_bree_map_is_empty")]
     target: RefCell<BTreeMap<TargetTriple, TargetConfig>>,
-    term: OnceCell<TermConfig>,
+    #[serde(default)]
+    #[serde(skip_serializing)]
+    #[serde(rename = "target")]
+    de_target: BTreeMap<String, de::TargetConfig>,
 
-    // Resolve contexts.
-    resolved_targets: HashSet<String>,
-    resolve_context: ResolveContext,
-    current_dir: PathBuf,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "TermConfig::is_none")]
+    pub term: TermConfig,
+
+    // Resolve contexts. Completely ignored in serialization and deserialization.
+    #[serde(skip)]
+    resolved_targets: BTreeSet<String>,
+    #[serde(skip)]
+    resolve_context: OnceCell<ResolveContext>,
+    current_dir: Option<PathBuf>,
 }
 
-struct UnresolvedConfig {
-    alias: Cell<BTreeMap<String, de::StringList>>,
-    build: Cell<de::BuildConfig>,
-    doc: Cell<de::DocConfig>,
-    env: Cell<BTreeMap<String, de::Env>>,
-    future_incompat_report: Cell<de::FutureIncompatReportConfig>,
-    // TODO: cargo-new
-    // TODO: http
-    // TODO: install
-    net: Cell<de::NetConfig>,
-    // TODO: patch
-    // TODO: profile
-    // TODO: registries
-    // TODO: registry
-    // TODO: source
-    target: BTreeMap<String, de::TargetConfig>,
-    term: Cell<de::TermConfig>,
-
-    build_rustflags: Option<de::Rustflags>,
-    override_target_rustflags: bool,
-}
-
-impl From<de::Config> for UnresolvedConfig {
-    fn from(value: de::Config) -> Self {
-        let de::Config {
-            alias,
-            build,
-            doc,
-            env,
-            future_incompat_report,
-            net,
-            target,
-            term,
-            current_dir: _,
-            path: _,
-        } = value;
-        Self {
-            build_rustflags: build.rustflags.clone(),
-            override_target_rustflags: build.override_target_rustflags,
-            alias: Cell::new(alias),
-            build: Cell::new(build),
-            doc: Cell::new(doc),
-            env: Cell::new(env),
-            future_incompat_report: Cell::new(future_incompat_report),
-            net: Cell::new(net),
-            target,
-            term: Cell::new(term),
-        }
-    }
-}
-
-impl fmt::Debug for UnresolvedConfig {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("UnresolvedConfig { .. }")
-    }
+fn ref_cell_bree_map_is_empty<K, V>(map: &RefCell<BTreeMap<K, V>>) -> bool {
+    map.borrow().is_empty()
 }
 
 impl Config {
@@ -114,125 +83,49 @@ impl Config {
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load() -> Result<Self> {
-        let mut resolve_context = ResolveContext::new()?;
-        let current_dir = std::env::current_dir()?;
-        let mut de = de::toml::read_hierarchical(&current_dir)?.unwrap_or_default();
-        de.apply_env(&mut resolve_context)?;
-        Ok(Self {
-            de: UnresolvedConfig::from(de),
-            alias: OnceCell::new(),
-            build: OnceCell::new(),
-            doc: OnceCell::new(),
-            env: OnceCell::new(),
-            future_incompat_report: OnceCell::new(),
-            net: OnceCell::new(),
-            target: RefCell::new(BTreeMap::default()),
-            term: OnceCell::new(),
-            resolved_targets: HashSet::default(),
-            resolve_context,
-            current_dir,
-        })
+        Self::load_with_cwd(std::env::current_dir()?)
     }
 
-    /// Gets the `[alias]` table.
-    pub fn alias(&self) -> &BTreeMap<String, StringList> {
-        self.alias.get_or_init(|| {
-            let mut map: BTreeMap<String, StringList> = BTreeMap::default();
-            for (k, v) in self.de.alias.take() {
-                map.insert(k, v.into());
-            }
-            map
-        })
+    /// Read config files hierarchically from the given directory and merges them.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
+        Self::load_with_cwd_and_context(cwd, ResolveContext::new()?)
     }
-    /// Gets the `[build]` table.
-    pub fn build(&self) -> Result<&BuildConfig> {
-        self.build.get_or_try_init(|| {
-            BuildConfig::from_unresolved(self.de.build.take(), Some(&self.current_dir))
-        })
+
+    /// Read config files hierarchically from the given directory and merges them.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    pub fn load_with_cwd_and_context(cwd: impl AsRef<Path>, cx: ResolveContext) -> Result<Self> {
+        let de = de::toml::read_hierarchical(cwd.as_ref())?.unwrap_or_default();
+        Self::from_unresolved(de, cx)
     }
-    /// Gets the `[doc]` table.
-    pub fn doc(&self) -> Result<&DocConfig> {
-        self.doc.get_or_try_init(|| {
-            DocConfig::from_unresolved(self.de.doc.take(), Some(&self.current_dir))
-        })
-    }
-    /// Gets the `[env]` table.
-    pub fn env(&self) -> &BTreeMap<String, Env> {
-        self.env.get_or_init(|| {
-            let mut map: BTreeMap<String, Env> = BTreeMap::default();
-            for (k, v) in self.de.env.take() {
-                // TODO
-            }
-            map
-        })
-    }
-    /// Gets the `[future_incompat_report]` table.
-    pub fn future_incompat_report(&self) -> Result<&FutureIncompatReportConfig> {
-        self.future_incompat_report.get_or_try_init(|| {
-            FutureIncompatReportConfig::from_unresolved(self.de.future_incompat_report.take())
-        })
-    }
-    /// Gets the `[net]` table.
-    pub fn net(&self) -> Result<&NetConfig> {
-        self.net.get_or_try_init(|| NetConfig::from_unresolved(self.de.net.take()))
-    }
-    /// Gets the `[target]` table.
-    pub fn target(&self, target: &TargetTriple) -> Result<TargetConfig> {
-        let mut target_configs = self.target.borrow_mut();
-        if !target_configs.contains_key(target) {
-            let target_config = TargetConfig::from_unresolved(
-                de::Config::resolve_target(
-                    &self.resolve_context,
-                    &self.de.target,
-                    self.de.override_target_rustflags,
-                    &self.de.build_rustflags,
-                    target,
-                )?
-                .unwrap_or_default(),
-                Some(&self.current_dir),
-            )?;
-            target_configs.insert(target.clone(), target_config);
+
+    pub(crate) fn from_unresolved(mut de: de::Config, mut cx: ResolveContext) -> Result<Self> {
+        let mut resolved = Self::default();
+        de.apply_env(&mut cx)?;
+
+        for (k, v) in de.alias {
+            resolved.alias.insert(k, v.into());
         }
-        Ok(target_configs[target].clone())
+        resolved.build =
+            BuildConfig::from_unresolved(de.build, de.current_dir.as_deref(), &mut cx)?;
+        resolved.doc.from_unresolved(de.doc, de.current_dir.as_deref(), &mut cx)?;
+        for (k, v) in de.env {
+            resolved.env.insert(k, v.into());
+        }
+        resolved.future_incompat_report.from_unresolved(
+            de.future_incompat_report,
+            de.current_dir.as_deref(),
+            &mut cx,
+        )?;
+        resolved.net.from_unresolved(de.net, de.current_dir.as_deref(), &mut cx)?;
+        resolved.term.from_unresolved(de.term, de.current_dir.as_deref(), &mut cx)?;
+
+        resolved.de_target = de.target;
+        resolved.resolve_context = OnceCell::from(cx);
+        Ok(resolved)
     }
-    /// Gets the `[term]` table.
-    pub fn term(&self) -> Result<&TermConfig> {
-        self.term.get_or_try_init(|| Ok(TermConfig::from_unresolved(self.de.term.take())))
-    }
-
-    // pub(crate) fn from_unresolved(
-    //     mut de: de::Config,
-    //     targets: &[TargetTriple],
-    //     mut cx: ResolveContext,
-    // ) -> Result<Self> {
-    //     let mut resolved = Self::default();
-    //     de.apply_env(&mut cx)?;
-
-    //     for (k, v) in de.alias {
-    //         resolved.alias.insert(k, v.into());
-    //     }
-    //     resolved.build =
-    //         BuildConfig::from_unresolved(de.build, de.current_dir.as_deref(), &mut cx)?;
-    //     resolved.doc.from_unresolved(de.doc, de.current_dir.as_deref(), &mut cx)?;
-    //     for (k, v) in de.env {
-    //         // TODO
-    //     }
-    //     resolved.future_incompat_report.from_unresolved(
-    //         de.future_incompat_report,
-    //         de.current_dir.as_deref(),
-    //         &mut cx,
-    //     )?;
-    //     resolved.net.from_unresolved(de.net, de.current_dir.as_deref(), &mut cx)?;
-    //     resolved.term.from_unresolved(de.term, de.current_dir.as_deref(), &mut cx)?;
-    //     for (k, v) in de.target {
-    //         // TODO
-    //     }
-
-    //     // TODO: target
-
-    //     resolved.resolve_context = Some(cx);
-    //     Ok(resolved)
-    // }
 
     /// Selects target triples to build.
     ///
@@ -329,7 +222,7 @@ impl Config {
         if !targets.is_empty() {
             return Ok(targets);
         }
-        let config_targets = self.build()?.target.clone().unwrap_or_default();
+        let config_targets = self.build.target.clone().unwrap_or_default();
         if !config_targets.is_empty() {
             return Ok(config_targets);
         }
@@ -359,7 +252,7 @@ impl Config {
         if !targets.is_empty() {
             return Ok(targets);
         }
-        let config_targets = self.build()?.target.as_deref().unwrap_or_default();
+        let config_targets = self.build.target.as_deref().unwrap_or_default();
         if !config_targets.is_empty() {
             return Ok(config_targets
                 .iter()
@@ -367,6 +260,40 @@ impl Config {
                 .collect());
         }
         Ok(vec![])
+    }
+
+    fn init_target_config(&self, target: &TargetTriple) -> Result<()> {
+        let mut target_configs = self.target.borrow_mut();
+        if !target_configs.contains_key(target) {
+            let target_config = TargetConfig::from_unresolved(
+                de::Config::resolve_target(
+                    self.resolve_context.get_or_try_init(ResolveContext::new)?,
+                    &self.de_target,
+                    self.build.override_target_rustflags,
+                    &self.build.de_rustflags,
+                    target,
+                )?
+                .unwrap_or_default(),
+                self.current_dir.as_deref(),
+            )?;
+            target_configs.insert(target.clone(), target_config);
+        }
+        Ok(())
+    }
+    pub fn linker(&self, target: impl Into<TargetTriple>) -> Result<Option<PathBuf>> {
+        let target = target.into();
+        self.init_target_config(&target)?;
+        Ok(self.target.borrow()[&target].linker.clone())
+    }
+    pub fn runner(&self, target: impl Into<TargetTriple>) -> Result<Option<PathAndArgs>> {
+        let target = target.into();
+        self.init_target_config(&target)?;
+        Ok(self.target.borrow()[&target].runner.clone())
+    }
+    pub fn rustflags(&self, target: impl Into<TargetTriple>) -> Result<Option<Rustflags>> {
+        let target = target.into();
+        self.init_target_config(&target)?;
+        Ok(self.target.borrow()[&target].rustflags.clone())
     }
 
     // TODO: add override instead?
@@ -381,13 +308,6 @@ impl Config {
     //     merge::Merge::merge(self, from, force)
     // }
 }
-
-// impl<T: Borrow<TargetTriple>> ops::Index<T> for Config {
-//     type Output = TargetConfig;
-//     fn index(&self, index: T) -> &Self::Output {
-//         &self.target[&index.borrow().triple]
-//     }
-// }
 
 /// The `[build]` table.
 ///
@@ -460,10 +380,15 @@ pub struct BuildConfig {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     override_target_rustflags: bool,
+    de_rustflags: Option<de::Rustflags>,
 }
 
 impl BuildConfig {
-    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: Option<&Path>) -> Result<Self> {
+    pub(crate) fn from_unresolved(
+        de: de::BuildConfig,
+        current_dir: Option<&Path>,
+        cx: &mut ResolveContext,
+    ) -> Result<Self> {
         let jobs = de.jobs.map(|v| v.val);
         let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir));
         let rustc_wrapper = de.rustc_wrapper.map(|v| v.resolve_as_program_path(current_dir));
@@ -477,6 +402,7 @@ impl BuildConfig {
                 .collect()
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir));
+        let de_rustflags = de.rustflags.clone();
         let rustflags =
             de.rustflags.map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
         let rustdocflags = de
@@ -498,6 +424,7 @@ impl BuildConfig {
             incremental,
             dep_info_basedir,
             override_target_rustflags,
+            de_rustflags,
         })
     }
 }
@@ -507,25 +434,25 @@ impl BuildConfig {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct TargetConfig {
+struct TargetConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinker)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub linker: Option<PathBuf>,
+    linker: Option<PathBuf>,
     /// [reference (`target.<triple>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerunner)
     ///
     /// [reference (`target.<cfg>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrunner)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub runner: Option<PathAndArgs>,
+    runner: Option<PathAndArgs>,
     /// [reference (`target.<triple>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerustflags)
     ///
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustflags: Option<Rustflags>,
+    rustflags: Option<Rustflags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
 }
 
 impl TargetConfig {
-    fn from_unresolved(de: de::TargetConfig, current_dir: Option<&Path>) -> Result<Self> {
+    fn from_unresolved(mut de: de::TargetConfig, current_dir: Option<&Path>) -> Result<Self> {
         let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir));
         let runner = match de.runner {
             Some(v) => {
@@ -555,12 +482,17 @@ pub struct DocConfig {
 }
 
 impl DocConfig {
-    fn from_unresolved(de: de::DocConfig, current_dir: Option<&Path>) -> Result<Self> {
-        let browser = de.browser.as_ref().map(|v| PathAndArgs {
-            path: v.path.resolve_program(current_dir),
-            args: v.args.clone(),
-        });
-        Ok(Self { browser })
+    fn from_unresolved(
+        &mut self,
+        mut de: de::DocConfig,
+        current_dir: Option<&Path>,
+        cx: &mut ResolveContext,
+    ) -> Result<()> {
+        if let Some(v) = de.browser {
+            self.browser =
+                Some(PathAndArgs { path: v.path.resolve_program(current_dir), args: v.args });
+        }
+        Ok(())
     }
 }
 
@@ -624,6 +556,19 @@ impl<'de> Deserialize<'de> for Env {
     }
 }
 
+impl From<de::Env> for Env {
+    fn from(value: de::Env) -> Self {
+        match value {
+            de::Env::Value(value) => Self { value: value.val, force: false, relative: false },
+            de::Env::Table { value, force, relative } => Self {
+                value: value.val,
+                force: force.map_or(false, |v| v.val),
+                relative: relative.map_or(false, |v| v.val),
+            },
+        }
+    }
+}
+
 /// The `[future-incompat-report]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
@@ -639,9 +584,14 @@ pub struct FutureIncompatReportConfig {
 }
 
 impl FutureIncompatReportConfig {
-    fn from_unresolved(de: de::FutureIncompatReportConfig) -> Result<Self> {
-        let frequency = de.frequency.map(|v| v.val);
-        Ok(Self { frequency })
+    fn from_unresolved(
+        &mut self,
+        mut de: de::FutureIncompatReportConfig,
+        current_dir: Option<&Path>,
+        cx: &mut ResolveContext,
+    ) -> Result<()> {
+        self.frequency = de.frequency.map(|v| v.val);
+        Ok(())
     }
 }
 
@@ -675,11 +625,16 @@ pub struct NetConfig {
 }
 
 impl NetConfig {
-    fn from_unresolved(de: de::NetConfig) -> Result<Self> {
-        let retry = de.retry.map(|v| v.val);
-        let git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
-        let offline = de.offline.map(|v| v.val);
-        Ok(Self { retry, git_fetch_with_cli, offline })
+    fn from_unresolved(
+        &mut self,
+        de: de::NetConfig,
+        current_dir: Option<&Path>,
+        cx: &mut ResolveContext,
+    ) -> Result<()> {
+        self.retry = de.retry.map(|v| v.val);
+        self.git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
+        self.offline = de.offline.map(|v| v.val);
+        Ok(())
     }
 }
 
@@ -706,24 +661,29 @@ pub struct TermConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<Color>,
     #[serde(default)]
-    #[serde(skip_serializing_if = "TermProgressConfig::is_none")]
-    pub progress: TermProgressConfig,
+    #[serde(skip_serializing_if = "TermProgress::is_none")]
+    pub progress: TermProgress,
 }
 
 impl TermConfig {
-    fn from_unresolved(de: de::TermConfig) -> Self {
-        let quiet = de.quiet.map(|v| v.val);
-        let verbose = de.verbose.map(|v| v.val);
-        let color = de.color.map(|v| v.val);
-        let progress = TermProgressConfig::from_unresolved(de.progress);
-        Self { quiet, verbose, color, progress }
+    fn from_unresolved(
+        &mut self,
+        de: de::TermConfig,
+        current_dir: Option<&Path>,
+        cx: &mut ResolveContext,
+    ) -> Result<()> {
+        self.quiet = de.quiet.map(|v| v.val);
+        self.verbose = de.verbose.map(|v| v.val);
+        self.color = de.color.map(|v| v.val);
+        self.progress.from_unresolved(de.progress, current_dir, cx)?;
+        Ok(())
     }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
-pub struct TermProgressConfig {
+pub struct TermProgress {
     /// Controls whether or not progress bar is shown in the terminal.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswhen)
@@ -736,11 +696,16 @@ pub struct TermProgressConfig {
     pub width: Option<u32>,
 }
 
-impl TermProgressConfig {
-    fn from_unresolved(mut de: de::TermProgress) -> Self {
-        let when = de.when.map(|v| v.val);
-        let width = de.width.map(|v| v.val);
-        Self { when, width }
+impl TermProgress {
+    fn from_unresolved(
+        &mut self,
+        mut de: de::TermProgress,
+        current_dir: Option<&Path>,
+        cx: &mut ResolveContext,
+    ) -> Result<()> {
+        self.when = de.when.map(|v| v.val);
+        self.width = de.width.map(|v| v.val);
+        Ok(())
     }
 }
 
@@ -950,7 +915,7 @@ impl<'de> Deserialize<'de> for PathAndArgs {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]
 pub struct StringList {
@@ -972,9 +937,59 @@ impl<'de> Deserialize<'de> for StringList {
     }
 }
 
+impl StringList {
+    pub(crate) fn from_string(value: &str) -> Self {
+        Self { list: split_space_separated(value).map(str::to_owned).collect() }
+    }
+    pub(crate) fn from_array(list: Vec<String>) -> Self {
+        Self { list }
+    }
+}
+
 impl From<de::StringList> for StringList {
     fn from(value: de::StringList) -> Self {
         Self { list: value.list.into_iter().map(|v| v.val).collect() }
+    }
+}
+
+impl From<String> for StringList {
+    fn from(value: String) -> Self {
+        Self::from_string(&value)
+    }
+}
+impl From<&String> for StringList {
+    fn from(value: &String) -> Self {
+        Self::from_string(value)
+    }
+}
+impl From<&str> for StringList {
+    fn from(value: &str) -> Self {
+        Self::from_string(value)
+    }
+}
+impl From<Vec<String>> for StringList {
+    fn from(value: Vec<String>) -> Self {
+        Self::from_array(value)
+    }
+}
+impl From<&[String]> for StringList {
+    fn from(value: &[String]) -> Self {
+        Self::from_array(value.to_owned())
+    }
+}
+impl From<&[&str]> for StringList {
+    fn from(value: &[&str]) -> Self {
+        Self::from_array(value.iter().map(|&v| v.to_owned()).collect())
+    }
+}
+impl<const N: usize> From<[String; N]> for StringList {
+    fn from(value: [String; N]) -> Self {
+        Self::from_array(value[..].to_owned())
+    }
+}
+impl<const N: usize> From<[&str; N]> for StringList {
+    fn from(value: [&str; N]) -> Self {
+        Self::from_array(value[..].iter().map(|&v| v.to_owned()).collect())
     }
 }
 
