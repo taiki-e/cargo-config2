@@ -291,7 +291,7 @@ fn resolve_spec_path(
 impl TargetTriple {
     pub(crate) fn new(
         triple_or_spec_path: &str,
-        definition: Option<&Definition>,
+        def: Option<&Definition>,
         current_dir: Option<&Path>,
     ) -> Self {
         // Handles custom target
@@ -300,10 +300,9 @@ impl TargetTriple {
                 triple: Path::new(triple_or_spec_path)
                     .file_stem()
                     .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_owned(),
-                spec_path: Some(resolve_spec_path(triple_or_spec_path, definition, current_dir)),
+                    .to_string_lossy()
+                    .into_owned(),
+                spec_path: Some(resolve_spec_path(triple_or_spec_path, def, current_dir)),
             }
         } else {
             Self { triple: triple_or_spec_path.to_owned(), spec_path: None }

@@ -221,20 +221,16 @@ impl Merge for Rustflags {
 impl Merge for de::Rustflags {
     fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, from.deserialized_repr) {
-            (de::RustflagsDeserializedRepr::String, de::RustflagsDeserializedRepr::String) => {
+            (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
                 if force {
                     *self = from;
                 }
             }
-            (de::RustflagsDeserializedRepr::Array, de::RustflagsDeserializedRepr::Array) => {
+            (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
                 self.flags.append(&mut from.flags);
             }
-            (de::RustflagsDeserializedRepr::Unknown, _)
-            | (_, de::RustflagsDeserializedRepr::Unknown) => {
-                unreachable!()
-            }
-            _ => {
-                todo!()
+            (expected, actual) => {
+                bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
             }
         }
         Ok(())

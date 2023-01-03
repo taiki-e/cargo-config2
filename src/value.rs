@@ -4,7 +4,7 @@
 use std::{
     borrow::Cow,
     collections::BTreeMap,
-    mem,
+    fmt, mem,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -81,6 +81,27 @@ impl Definition {
                 Some(p.parent().unwrap().parent().unwrap())
             }
             Definition::Environment(_) | Definition::Cli(None) => current_dir,
+        }
+    }
+
+    /// Returns true if self is a higher priority to other.
+    ///
+    /// CLI is preferred over environment, which is preferred over files.
+    pub fn is_higher_priority(&self, other: &Definition) -> bool {
+        matches!(
+            (self, other),
+            (Definition::Cli(_), Definition::Environment(_) | Definition::Path(_))
+                | (Definition::Environment(_), Definition::Path(_))
+        )
+    }
+}
+
+impl fmt::Display for Definition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Definition::Path(p) | Definition::Cli(Some(p)) => p.display().fmt(f),
+            Definition::Environment(key) => write!(f, "environment variable `{key}`"),
+            Definition::Cli(None) => write!(f, "--config cli option"),
         }
     }
 }

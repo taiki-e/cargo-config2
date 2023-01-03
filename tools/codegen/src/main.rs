@@ -91,6 +91,7 @@ fn gen_de() -> Result<()> {
                         .iter()
                         .filter(|f| {
                             !serde_skip(&f.attrs)
+                                && f.ident.as_ref().unwrap() != "serialized_repr"
                                 && f.ident.as_ref().unwrap() != "deserialized_repr"
                         })
                         .map(|syn::Field { ident, .. }| {
@@ -119,6 +120,7 @@ fn gen_de() -> Result<()> {
                                 .iter()
                                 .filter(|f| {
                                     !serde_skip(&f.attrs)
+                                        && f.ident.as_ref().unwrap() != "serialized_repr"
                                         && f.ident.as_ref().unwrap() != "deserialized_repr"
                                 })
                                 .map(|syn::Field { ident, .. }| {

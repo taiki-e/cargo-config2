@@ -172,11 +172,12 @@ impl Config {
             );
         }
         if let Some(rustflags) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
-            let target_rustflags = target_rustflags.get_or_insert_with(Rustflags::default);
             let mut rustflags = Rustflags::from_space_separated(&rustflags);
-            target_rustflags.flags.append(&mut rustflags.flags);
-            if target_rustflags.deserialized_repr != rustflags.deserialized_repr {
-                target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
+            match &mut target_rustflags {
+                Some(target_rustflags) => {
+                    target_rustflags.flags.append(&mut rustflags.flags);
+                }
+                target_rustflags @ None => *target_rustflags = Some(rustflags),
             }
         }
         for (k, v) in &self.target {
@@ -198,10 +199,11 @@ impl Config {
                 // 2. CARGO_TARGET_<triple>_RUSTFLAGS
                 // 3. target.<cfg>.rustflags
                 if let Some(rustflags) = v.rustflags.as_ref() {
-                    let target_rustflags = target_rustflags.get_or_insert_with(Rustflags::default);
-                    target_rustflags.flags.extend_from_slice(&rustflags.flags);
-                    if target_rustflags.deserialized_repr != rustflags.deserialized_repr {
-                        target_rustflags.deserialized_repr = RustflagsDeserializedRepr::Unknown;
+                    match &mut target_rustflags {
+                        Some(target_rustflags) => {
+                            target_rustflags.flags.extend_from_slice(&rustflags.flags);
+                        }
+                        target_rustflags @ None => *target_rustflags = Some(rustflags.clone()),
                     }
                 }
             }
@@ -512,26 +514,13 @@ impl FromStr for Frequency {
 }
 
 /// A representation of rustflags and rustdocflags.
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
 pub struct Rustflags {
     pub(crate) flags: Vec<Value<String>>,
     // for merge
     #[serde(skip)]
-    pub(crate) deserialized_repr: RustflagsDeserializedRepr,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum RustflagsDeserializedRepr {
-    Unknown,
-    String,
-    Array,
-}
-
-impl Default for RustflagsDeserializedRepr {
-    fn default() -> Self {
-        Self::Unknown
-    }
+    pub(crate) deserialized_repr: StringListDeserializedRepr,
 }
 
 impl Rustflags {
@@ -550,7 +539,8 @@ impl Rustflags {
                 .split('\x1f')
                 .map(|v| Value { val: v.to_owned(), definition: s.definition.clone() })
                 .collect(),
-            deserialized_repr: RustflagsDeserializedRepr::Unknown,
+            // Encoded rustflags cannot be serialized as a string because they may contain spaces.
+            deserialized_repr: StringListDeserializedRepr::Array,
         }
     }
 
@@ -577,7 +567,7 @@ impl Rustflags {
             flags: split_space_separated(&s.val)
                 .map(|v| Value { val: v.to_owned(), definition: s.definition.clone() })
                 .collect(),
-            deserialized_repr: RustflagsDeserializedRepr::String,
+            deserialized_repr: StringListDeserializedRepr::String,
         }
     }
 }
@@ -591,7 +581,7 @@ impl<'de> Deserialize<'de> for Rustflags {
         match v {
             StringOrArray::String(s) => Ok(Self::from_space_separated(&s)),
             StringOrArray::Array(v) => {
-                Ok(Self { flags: v, deserialized_repr: RustflagsDeserializedRepr::Array })
+                Ok(Self { flags: v, deserialized_repr: StringListDeserializedRepr::Array })
             }
         }
     }
@@ -647,7 +637,24 @@ impl Serialize for PathAndArgs {
     where
         S: serde::Serializer,
     {
-        todo!()
+        match self.deserialized_repr {
+            StringListDeserializedRepr::String => {
+                let mut s = self.path.raw_value().to_owned();
+                for arg in &self.args {
+                    s.push(' ');
+                    s.push_str(arg);
+                }
+                s.serialize(serializer)
+            }
+            StringListDeserializedRepr::Array => {
+                let mut v = Vec::with_capacity(1 + self.args.len());
+                v.push(self.path.raw_value().to_owned());
+                for arg in &self.args {
+                    v.push(arg.clone());
+                }
+                v.serialize(serializer)
+            }
+        }
     }
 }
 impl<'de> Deserialize<'de> for PathAndArgs {
@@ -706,14 +713,12 @@ impl SetPath for crate::de::PathAndArgs {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct StringList {
     pub list: Vec<Value<String>>,
 
     // for merge
-    #[serde(skip)]
     pub(crate) deserialized_repr: StringListDeserializedRepr,
 }
 
@@ -731,6 +736,29 @@ impl StringListDeserializedRepr {
     }
 }
 
+impl Serialize for StringList {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self.deserialized_repr {
+            StringListDeserializedRepr::String => {
+                let mut s = String::with_capacity(
+                    self.list.len().saturating_sub(1)
+                        + self.list.iter().map(|v| v.val.len()).sum::<usize>(),
+                );
+                for arg in &self.list {
+                    if !s.is_empty() {
+                        s.push(' ');
+                    }
+                    s.push_str(&arg.val);
+                }
+                s.serialize(serializer)
+            }
+            StringListDeserializedRepr::Array => self.list.serialize(serializer),
+        }
+    }
+}
 impl<'de> Deserialize<'de> for StringList {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -784,16 +812,6 @@ impl StringOrArray {
         match self {
             Self::String(s) => slice::from_ref(s),
             Self::Array(v) => v,
-        }
-    }
-    pub(crate) fn into_easy_string_list(self) -> crate::easy::StringList {
-        match self {
-            Self::String(s) => crate::easy::StringList {
-                list: split_space_separated(&s.val).map(str::to_owned).collect(),
-            },
-            Self::Array(v) => {
-                crate::easy::StringList { list: v.into_iter().map(|v| v.val).collect() }
-            }
         }
     }
 }

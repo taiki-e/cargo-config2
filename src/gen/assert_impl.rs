@@ -7,6 +7,7 @@
 const _: fn() = || {
     fn assert_auto_traits<T: ?Sized + Send + Sync + Unpin>() {}
     assert_auto_traits::<crate::api::Config>();
+    assert_auto_traits::<crate::api::ConfigValue>();
     assert_auto_traits::<crate::de::Config>();
     assert_auto_traits::<crate::de::BuildConfig>();
     assert_auto_traits::<crate::de::TargetConfig>();
