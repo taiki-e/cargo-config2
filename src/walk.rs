@@ -35,7 +35,7 @@ fn config_path(path: &Path) -> Option<PathBuf> {
     None
 }
 
-/// An iterator over cargo config paths.
+/// An iterator over Cargo configuration file paths.
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Walk<'a> {
@@ -44,12 +44,15 @@ pub struct Walk<'a> {
 }
 
 impl<'a> Walk<'a> {
-    /// Creates an iterator over cargo config paths.
+    /// Creates an iterator over Cargo configuration file paths from the given path.
     pub fn new(current_dir: &'a Path) -> Self {
-        Self {
-            ancestors: current_dir.ancestors(),
-            cargo_home: home::cargo_home_with_cwd(current_dir).ok(),
-        }
+        Self::with_cargo_home(current_dir, home::cargo_home_with_cwd(current_dir).ok())
+    }
+
+    /// Creates an iterator over Cargo configuration file paths from the given path
+    /// and `CARGO_HOME` path.
+    pub fn with_cargo_home(current_dir: &'a Path, cargo_home: Option<PathBuf>) -> Self {
+        Self { ancestors: current_dir.ancestors(), cargo_home }
     }
 }
 
@@ -67,5 +70,34 @@ impl Iterator for Walk<'_> {
             }
         }
         config_path(&self.cargo_home.take()?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
+    use fs_err as fs;
+
+    use super::*;
+
+    #[test]
+    fn walk() -> Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let p = tmp.path();
+        let home = &p.join("a/.cargo");
+        let cwd = &p.join("a/b/c");
+        fs::create_dir_all(home)?;
+        fs::write(p.join("a/.cargo/config"), "")?;
+        fs::create_dir_all(p.join("a/b/.cargo"))?;
+        fs::write(p.join("a/b/.cargo/config"), "")?;
+        fs::write(p.join("a/b/.cargo/config.toml"), "")?;
+        fs::create_dir_all(p.join("a/b/c/.cargo"))?;
+        fs::write(p.join("a/b/c/.cargo/config.toml"), "")?;
+        let mut w = Walk::with_cargo_home(cwd, Some(home.clone()));
+        assert_eq!(w.next(), Some(p.join("a/b/c/.cargo/config.toml")));
+        assert_eq!(w.next(), Some(p.join("a/b/.cargo/config")));
+        assert_eq!(w.next(), Some(p.join("a/.cargo/config")));
+        assert_eq!(w.next(), None);
+        Ok(())
     }
 }
