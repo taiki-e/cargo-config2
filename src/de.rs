@@ -333,6 +333,7 @@ pub struct DocConfig {
     pub browser: Option<PathAndArgs>,
 }
 
+// TODO: hide internal repr, change to struct
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -349,6 +350,13 @@ pub enum EnvConfigValue {
 }
 
 impl EnvConfigValue {
+    pub(crate) const fn kind(&self) -> &'static str {
+        match self {
+            Self::Value(..) => "string",
+            Self::Table { .. } => "table",
+        }
+    }
+
     pub(crate) fn resolve(&self, current_dir: &Path) -> Cow<'_, OsStr> {
         match self {
             Self::Value(v) => Cow::Borrowed(OsStr::new(&v.val)),

@@ -137,7 +137,9 @@ impl Merge for de::EnvConfigValue {
                 this_force.merge(from_force, force)?;
                 this_relative.merge(from_relative, force)?;
             }
-            _ => todo!(),
+            (expected, actual) => {
+                bail!("expected {}, but found {}", expected.kind(), actual.kind());
+            }
         }
         Ok(())
     }

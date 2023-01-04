@@ -14,13 +14,12 @@ Supported tables and fields are mainly based on [cargo-llvm-cov](https://github.
 ```no_run
 # fn main() -> anyhow::Result<()> {
 // Read config files hierarchically from the current directory and merges them.
-let mut config = cargo_config2::Config::load()?;
+let config = cargo_config2::Config::load()?;
 // Apply environment variables and resolves target-specific configuration
 // (`target.<triple>` and `target.<cfg>`).
 let target = "x86_64-unknown-linux-gnu";
-config.resolve(target)?;
 // Display resolved rustflags for `target`.
-println!("{:?}", config.target[target].rustflags);
+println!("{:?}", config.rustflags(target)?);
 # Ok(()) }
 ```
 
@@ -58,8 +57,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::must_use_candidate,
     clippy::single_match_else,
     clippy::single_match,
-    clippy::too_many_lines,
-    clippy::unnecessary_wraps
+    clippy::too_many_lines
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

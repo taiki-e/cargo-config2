@@ -110,17 +110,17 @@ impl Config {
 
         let mut alias = BTreeMap::new();
         for (k, v) in de.alias {
-            alias.insert(k, v.into());
+            alias.insert(k, StringList::from_unresolved(v));
         }
-        let build = BuildConfig::from_unresolved(de.build, &current_dir)?;
-        let doc = DocConfig::from_unresolved(de.doc, &current_dir)?;
+        let build = BuildConfig::from_unresolved(de.build, &current_dir);
+        let doc = DocConfig::from_unresolved(de.doc, &current_dir);
         let mut env = BTreeMap::new();
         for (k, v) in de.env {
             env.insert(k, EnvConfigValue::from_unresolved(v, &current_dir));
         }
         let future_incompat_report =
-            FutureIncompatReportConfig::from_unresolved(de.future_incompat_report)?;
-        let net = NetConfig::from_unresolved(de.net)?;
+            FutureIncompatReportConfig::from_unresolved(de.future_incompat_report);
+        let net = NetConfig::from_unresolved(de.net);
         let term = TermConfig::from_unresolved(de.term);
 
         Ok(Self {
@@ -184,7 +184,7 @@ impl Config {
     /// }
     ///
     /// let args = Args::parse();
-    /// let mut config = cargo_config2::Config::load()?;
+    /// let config = cargo_config2::Config::load()?;
     ///
     /// let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     /// let host = cargo_config2::host_triple(cargo)?;
@@ -194,8 +194,7 @@ impl Config {
     /// }
     /// let target = targets.pop().unwrap();
     ///
-    /// config.resolve(&target)?;
-    /// println!("{:?}", config[target].rustflags);
+    /// println!("{:?}", config.rustflags(target));
     /// # Ok(()) }
     /// ```
     ///
@@ -212,15 +211,14 @@ impl Config {
     /// }
     ///
     /// let args = Args::parse();
-    /// let mut config = cargo_config2::Config::load()?;
+    /// let config = cargo_config2::Config::load()?;
     ///
     /// let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     /// let host = cargo_config2::host_triple(cargo)?;
     /// let targets = config.build_target_for_config(&args.target, &host)?;
     ///
     /// for target in targets {
-    ///     config.resolve(&target)?;
-    ///     println!("{:?}", config[target].rustflags);
+    ///     println!("{:?}", config.rustflags(target)?);
     /// }
     /// # Ok(()) }
     /// ```
@@ -287,7 +285,7 @@ impl Config {
                 )?
                 .unwrap_or_default(),
                 &self.current_dir,
-            )?;
+            );
             target_configs.insert(target.clone().into_owned(), target_config);
         }
         Ok(())
@@ -411,7 +409,7 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Self {
         let jobs = de.jobs.map(|v| v.val);
         let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let rustc_wrapper =
@@ -442,7 +440,7 @@ impl BuildConfig {
         let dep_info_basedir =
             de.dep_info_basedir.map(|v| v.resolve_as_path(current_dir).into_owned());
         let override_target_rustflags = de.override_target_rustflags;
-        Ok(Self {
+        Self {
             jobs,
             rustc,
             rustc_wrapper,
@@ -456,7 +454,7 @@ impl BuildConfig {
             dep_info_basedir,
             override_target_rustflags,
             de_rustflags,
-        })
+        }
     }
 }
 
@@ -483,7 +481,7 @@ pub struct TargetConfig {
 }
 
 impl TargetConfig {
-    pub(crate) fn from_unresolved(de: de::TargetConfig, current_dir: &Path) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::TargetConfig, current_dir: &Path) -> Self {
         let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let runner = match de.runner {
             Some(v) => Some(PathAndArgs {
@@ -494,7 +492,7 @@ impl TargetConfig {
         };
         let rustflags =
             de.rustflags.map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
-        Ok(Self { linker, runner, rustflags })
+        Self { linker, runner, rustflags }
     }
 }
 
@@ -514,12 +512,12 @@ pub struct DocConfig {
 }
 
 impl DocConfig {
-    pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Self {
         let browser = de.browser.map(|v| PathAndArgs {
             path: v.path.resolve_program(current_dir).into_owned(),
             args: v.args.into_iter().map(|v| v.val).collect(),
         });
-        Ok(Self { browser })
+        Self { browser }
     }
 }
 
@@ -601,9 +599,9 @@ pub struct FutureIncompatReportConfig {
 }
 
 impl FutureIncompatReportConfig {
-    pub(crate) fn from_unresolved(de: de::FutureIncompatReportConfig) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::FutureIncompatReportConfig) -> Self {
         let frequency = de.frequency.map(|v| v.val);
-        Ok(Self { frequency })
+        Self { frequency }
     }
 }
 
@@ -637,11 +635,11 @@ pub struct NetConfig {
 }
 
 impl NetConfig {
-    pub(crate) fn from_unresolved(de: de::NetConfig) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::NetConfig) -> Self {
         let retry = de.retry.map(|v| v.val);
         let git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
         let offline = de.offline.map(|v| v.val);
-        Ok(Self { retry, git_fetch_with_cli, offline })
+        Self { retry, git_fetch_with_cli, offline }
     }
 }
 
@@ -886,10 +884,7 @@ impl StringList {
     pub(crate) fn from_array(list: Vec<String>) -> Self {
         Self { list }
     }
-}
-
-impl From<de::StringList> for StringList {
-    fn from(value: de::StringList) -> Self {
+    pub(crate) fn from_unresolved(value: de::StringList) -> Self {
         Self { list: value.list.into_iter().map(|v| v.val).collect() }
     }
 }
