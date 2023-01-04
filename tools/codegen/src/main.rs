@@ -17,7 +17,6 @@ use syn::{
 fn main() -> Result<()> {
     gen_assert_impl()?;
     gen_de()?;
-    gen_merge()?;
     gen_is_none()?;
     Ok(())
 }
@@ -56,11 +55,11 @@ fn write(function_name: &str, path: &Path, contents: TokenStream) -> Result<()> 
 }
 
 fn gen_de() -> Result<()> {
-    let files = &["src/de.rs"];
+    const FILES: &[&str] = &["src/de.rs"];
     // TODO: check if this list is outdated
-    let merge_exclude =
+    const MERGE_EXCLUDE: &[&str] =
         &["Rustflags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs"];
-    let set_path_exclude = &["ResolveContext", "PathAndArgs"];
+    const SET_PATH_EXCLUDE: &[&str] = &[];
 
     let workspace_root = &workspace_root();
 
@@ -69,7 +68,7 @@ fn gen_de() -> Result<()> {
         use crate::{merge::Merge, value::SetPath, Result};
     };
 
-    for &f in files {
+    for &f in FILES {
         let s = fs::read_to_string(workspace_root.join(f))?;
         let mut ast = syn::parse_file(&s)?;
 
@@ -85,7 +84,7 @@ fn gen_de() -> Result<()> {
                 syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
                     if matches!(vis, syn::Visibility::Public(..))
                         && matches!(fields, syn::Fields::Named(..))
-                        && !merge_exclude.iter().any(|&e| ident == e) =>
+                        && !MERGE_EXCLUDE.iter().any(|&e| ident == e) =>
                 {
                     let fields = fields
                         .iter()
@@ -111,7 +110,7 @@ fn gen_de() -> Result<()> {
             match item {
                 syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
                     if matches!(vis, syn::Visibility::Public(..))
-                        && !set_path_exclude.iter().any(|&e| ident == e) =>
+                        && !SET_PATH_EXCLUDE.iter().any(|&e| ident == e) =>
                 {
                     match fields {
                         Fields::Named(fields) => {
@@ -150,7 +149,7 @@ fn gen_de() -> Result<()> {
                 syn::Item::Enum(syn::ItemEnum { vis, ident, variants, .. })
                     if matches!(vis, syn::Visibility::Public(..))
                         && variants.iter().all(|v| !v.fields.is_empty())
-                        && set_path_exclude.iter().all(|&e| ident != e) =>
+                        && SET_PATH_EXCLUDE.iter().all(|&e| ident != e) =>
                 {
                     let mut arms = vec![];
                     for syn::Variant { ident, fields, .. } in variants {
@@ -205,62 +204,10 @@ fn gen_de() -> Result<()> {
     Ok(())
 }
 
-fn gen_merge() -> Result<()> {
-    let files = &["src/lib.rs"];
-    // TODO: check if this list is outdated
-    let exclude = &["Rustflags", "ResolveContext", "EnvConfigValue"];
-
-    let workspace_root = &workspace_root();
-
-    let mut tokens = quote! {
-        use crate::{merge::Merge, Result};
-    };
-
-    for &f in files {
-        let s = fs::read_to_string(workspace_root.join(f))?;
-        let mut ast = syn::parse_file(&s)?;
-
-        let module = if f.ends_with("lib.rs") {
-            vec![]
-        } else {
-            let name = format_ident!("{}", Path::new(f).file_stem().unwrap().to_string_lossy());
-            vec![name.into()]
-        };
-
-        ItemVisitor::new(module, |item, module| match item {
-            syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
-                if matches!(vis, syn::Visibility::Public(..))
-                    && matches!(fields, syn::Fields::Named(..))
-                    && !exclude.iter().any(|&e| ident == e) =>
-            {
-                let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                    |syn::Field { ident, .. }| {
-                        quote! { self.#ident.merge(from.#ident, force)?; }
-                    },
-                );
-                tokens.extend(quote! {
-                    impl Merge for crate:: #(#module::)* #ident {
-                        fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-                            #(#fields)*
-                            Ok(())
-                        }
-                    }
-                });
-            }
-            _ => {}
-        })
-        .visit_file_mut(&mut ast);
-    }
-
-    write("gen_merge", &workspace_root.join("src/gen/merge.rs"), tokens)?;
-
-    Ok(())
-}
-
 fn gen_is_none() -> Result<()> {
-    let files = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
+    const FILES: &[&str] = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
     // TODO: check if this list is outdated
-    let exclude = &[
+    const EXCLUDE: &[&str] = &[
         "Config",
         "TargetConfig",
         "Rustflags",
@@ -274,7 +221,7 @@ fn gen_is_none() -> Result<()> {
 
     let mut tokens = quote! {};
 
-    for &f in files {
+    for &f in FILES {
         let s = fs::read_to_string(workspace_root.join(f))?;
         let mut ast = syn::parse_file(&s)?;
 
@@ -289,7 +236,7 @@ fn gen_is_none() -> Result<()> {
             syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
                 if matches!(vis, syn::Visibility::Public(..))
                     && matches!(fields, syn::Fields::Named(..))
-                    && !exclude.iter().any(|&e| ident == e) =>
+                    && !EXCLUDE.iter().any(|&e| ident == e) =>
             {
                 let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
                     |syn::Field { ident, .. }| {

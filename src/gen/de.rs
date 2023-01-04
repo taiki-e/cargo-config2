@@ -168,6 +168,12 @@ impl SetPath for crate::de::ConfigRelativePath {
         self.0.set_path(path);
     }
 }
+impl SetPath for crate::de::PathAndArgs {
+    fn set_path(&mut self, path: &Path) {
+        self.path.set_path(path);
+        self.args.set_path(path);
+    }
+}
 impl SetPath for crate::de::StringList {
     fn set_path(&mut self, path: &Path) {
         self.list.set_path(path);

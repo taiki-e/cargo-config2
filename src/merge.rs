@@ -114,7 +114,7 @@ impl Merge for de::PathAndArgs {
                 // # a/.cargo/config
                 // [doc]
                 // browser = ["a"]
-                self.args.push(from.path.0.val);
+                self.args.push(from.path.0);
                 self.args.append(&mut from.args);
             }
             (expected, actual) => {

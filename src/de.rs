@@ -1,15 +1,8 @@
-#[path = "de_env.rs"]
-mod env;
 #[path = "gen/de.rs"]
 mod gen;
 
 use std::{
-    borrow::Cow,
-    collections::BTreeMap,
-    ffi::OsStr,
-    num::NonZeroI32,
-    path::{Path, PathBuf},
-    slice,
+    borrow::Cow, collections::BTreeMap, ffi::OsStr, fs, num::NonZeroI32, path::Path, slice,
     str::FromStr,
 };
 
@@ -19,64 +12,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     merge,
     resolve::{ResolveContext, TargetTripleRef},
-    value::{Definition, SetPath, Value},
+    value::{Definition, Value},
 };
-
-#[cfg(feature = "toml")]
-#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-pub mod toml {
-    use std::{
-        fs,
-        path::{Path, PathBuf},
-    };
-
-    use anyhow::{Context, Result};
-
-    use super::Config;
-    use crate::walk::Walk;
-
-    /// Reads cargo config file at the given path.
-    ///
-    /// **Note:** This does not respect the hierarchical structure of the cargo config.
-    pub fn read(path: PathBuf) -> Result<Config> {
-        let buf =
-            fs::read(&path).with_context(|| format!("failed to read `{}`", path.display()))?;
-        let mut config: Config = toml_edit::easy::from_slice(&buf).with_context(|| {
-            format!("failed to parse `{}` as cargo configuration", path.display())
-        })?;
-        config.set_path(path);
-        Ok(config)
-    }
-
-    /// Hierarchically reads cargo config files and merge them.
-    pub fn read_hierarchical(current_dir: &Path) -> Result<Option<Config>> {
-        let mut base = None;
-        for path in Walk::new(current_dir) {
-            let config = read(path.clone())?;
-            match &mut base {
-                None => base = Some(config),
-                Some(base) => base.merge(config, false).with_context(|| {
-                    format!(
-                        "failed to merge config from `{}` into `{}`",
-                        path.display(),
-                        base.path.as_ref().unwrap().display()
-                    )
-                })?,
-            }
-        }
-        Ok(base)
-    }
-
-    /// Hierarchically reads cargo config files.
-    pub fn read_hierarchical_unmerged(current_dir: &Path) -> Result<Vec<Config>> {
-        let mut v = vec![];
-        for path in Walk::new(current_dir) {
-            let config = read(path)?;
-            v.push(config);
-        }
-        Ok(v)
-    }
-}
 
 /// Cargo configuration that environment variables, config overrides, and
 /// target-specific configurations have not been resolved.
@@ -120,13 +57,60 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "TermConfig::is_none")]
     pub term: TermConfig,
-
-    // Load contexts. Completely ignored in serialization and deserialization.
-    #[serde(skip)]
-    pub(crate) path: Option<PathBuf>,
 }
 
 impl Config {
+    /// Read config files hierarchically from the current directory and merges them.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    pub fn load() -> Result<Self> {
+        Self::load_with_cwd(std::env::current_dir()?)
+    }
+
+    /// Read config files hierarchically from the given directory and merges them.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
+        Self::_load_with_cwd(cwd.as_ref())
+    }
+    #[cfg(feature = "toml")]
+    pub(crate) fn _load_with_cwd(current_dir: &Path) -> Result<Config> {
+        let mut base = None;
+        for path in crate::Walk::new(current_dir) {
+            let config = Self::_load_file(&path)?;
+            match &mut base {
+                None => base = Some((path, config)),
+                Some((base_path, base)) => base.merge(config, false).with_context(|| {
+                    format!(
+                        "failed to merge config from `{}` into `{}`",
+                        path.display(),
+                        base_path.display()
+                    )
+                })?,
+            }
+        }
+        Ok(base.map(|(_, c)| c).unwrap_or_default())
+    }
+
+    /// Reads cargo config file at the given path.
+    ///
+    /// **Note:** Note: This just reads a file at the given path and does not
+    /// respect the hierarchical structure of the cargo config.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    pub fn load_file(path: impl AsRef<Path>) -> Result<Self> {
+        Self::_load_file(path.as_ref())
+    }
+    #[cfg(feature = "toml")]
+    fn _load_file(path: &Path) -> Result<Self> {
+        let buf = fs::read(path).with_context(|| format!("failed to read `{}`", path.display()))?;
+        let mut config: Config = toml_edit::easy::from_slice(&buf).with_context(|| {
+            format!("failed to parse `{}` as cargo configuration", path.display())
+        })?;
+        config.set_path(path);
+        Ok(config)
+    }
+
     /// Merges the given config into this config.
     ///
     /// If `force` is `false`, this matches the way cargo [merges configs in the
@@ -138,9 +122,8 @@ impl Config {
         merge::Merge::merge(self, from, force)
     }
 
-    pub(crate) fn set_path(&mut self, path: PathBuf) {
-        crate::value::SetPath::set_path(self, &path);
-        self.path = Some(path);
+    pub(crate) fn set_path(&mut self, path: &Path) {
+        crate::value::SetPath::set_path(self, path);
     }
 
     pub(crate) fn resolve_target(
@@ -636,7 +619,7 @@ impl ConfigRelativePath {
 #[non_exhaustive]
 pub struct PathAndArgs {
     pub path: ConfigRelativePath,
-    pub args: Vec<String>,
+    pub args: Vec<Value<String>>,
 
     // for merge
     pub(crate) deserialized_repr: StringListDeserializedRepr,
@@ -652,15 +635,15 @@ impl Serialize for PathAndArgs {
                 let mut s = self.path.raw_value().to_owned();
                 for arg in &self.args {
                     s.push(' ');
-                    s.push_str(arg);
+                    s.push_str(&arg.val);
                 }
                 s.serialize(serializer)
             }
             StringListDeserializedRepr::Array => {
                 let mut v = Vec::with_capacity(1 + self.args.len());
-                v.push(self.path.raw_value().to_owned());
+                v.push(&self.path.0.val);
                 for arg in &self.args {
-                    v.push(arg.clone());
+                    v.push(&arg.val);
                 }
                 v.serialize(serializer)
             }
@@ -677,12 +660,12 @@ impl<'de> Deserialize<'de> for PathAndArgs {
         #[serde(untagged)]
         enum StringOrArray {
             String(String),
-            Array(Vec<String>),
+            Array(Vec<Value<String>>),
         }
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         let res = match v {
             StringOrArray::String(s) => Self::from_string(&s, None),
-            StringOrArray::Array(v) => Self::from_array(v, None),
+            StringOrArray::Array(v) => Self::from_array(v),
         };
         match res {
             Some(path) => Ok(path),
@@ -696,30 +679,21 @@ impl PathAndArgs {
         let mut s = split_space_separated(value);
         let path = s.next()?;
         Some(Self {
+            args: s.map(|v| Value { val: v.to_owned(), definition: definition.clone() }).collect(),
             path: ConfigRelativePath(Value { val: path.to_owned(), definition }),
-            args: s.map(str::to_owned).collect(),
             deserialized_repr: StringListDeserializedRepr::String,
         })
     }
-    pub(crate) fn from_array(
-        mut list: Vec<String>,
-        definition: Option<Definition>,
-    ) -> Option<Self> {
+    pub(crate) fn from_array(mut list: Vec<Value<String>>) -> Option<Self> {
         if list.is_empty() {
             return None;
         }
         let path = list.remove(0);
         Some(Self {
-            path: ConfigRelativePath(Value { val: path, definition }),
+            path: ConfigRelativePath(path),
             args: list,
             deserialized_repr: StringListDeserializedRepr::Array,
         })
-    }
-}
-
-impl SetPath for crate::de::PathAndArgs {
-    fn set_path(&mut self, path: &Path) {
-        self.path.set_path(path);
     }
 }
 

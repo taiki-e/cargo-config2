@@ -69,8 +69,6 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 // mod assert_impl;
 #[path = "gen/is_none.rs"]
 mod is_none_impl;
-#[path = "gen/merge.rs"]
-mod merge_impl;
 
 #[macro_use]
 mod process;
@@ -81,9 +79,6 @@ pub mod easy;
 mod env;
 mod merge;
 mod resolve;
-#[cfg(feature = "toml")]
-#[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-pub mod toml;
 mod value;
 mod walk;
 
@@ -166,33 +161,50 @@ pub struct Config {
 }
 
 impl Config {
-    /// Read config files hierarchically from the current directory and merges them.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load() -> Result<Self> {
-        Self::load_with_cwd(std::env::current_dir()?)
-    }
+    // /// Read config files hierarchically from the current directory and merges them.
+    // #[cfg(feature = "toml")]
+    // #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    // pub fn load() -> Result<Self> {
+    //     Self::load_with_cwd(std::env::current_dir()?)
+    // }
 
-    /// Read config files hierarchically from the given directory and merges them.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_with_cwd(current_dir: impl AsRef<Path>) -> Result<Self> {
-        Ok(toml::read_hierarchical(current_dir.as_ref())?.unwrap_or_default())
-    }
-
-    /// Read config files hierarchically from the current directory.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_unmerged() -> Result<Vec<Self>> {
-        Self::load_unmerged_with_cwd(std::env::current_dir()?)
-    }
-
-    /// Read config files hierarchically from the given directory.
-    #[cfg(feature = "toml")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_unmerged_with_cwd(current_dir: impl AsRef<Path>) -> Result<Vec<Self>> {
-        toml::read_hierarchical_unmerged(current_dir.as_ref())
-    }
+    // /// Read config files hierarchically from the given directory and merges them.
+    // #[cfg(feature = "toml")]
+    // #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    // pub fn load_with_cwd(current_dir: impl AsRef<Path>) -> Result<Self> {
+    //     use anyhow::Context as _;
+    //     /// Reads cargo config file at the given path.
+    //     ///
+    //     /// **Note:** This does not respect the hierarchical structure of the cargo config.
+    //     fn read(path: PathBuf) -> Result<Config> {
+    //         let buf = std::fs::read(&path)
+    //             .with_context(|| format!("failed to read `{}`", path.display()))?;
+    //         let mut config: Config = toml_edit::easy::from_slice(&buf).with_context(|| {
+    //             format!("failed to parse `{}` as cargo configuration", path.display())
+    //         })?;
+    //         config.set_path(path);
+    //         Ok(config)
+    //     }
+    //     fn inner(current_dir: &Path) -> Result<Option<Config>> {
+    //         let mut base = None;
+    //         for path in Walk::new(current_dir) {
+    //             let mut config = read(path.clone())?;
+    //             config.set_cwd(current_dir.to_owned());
+    //             match &mut base {
+    //                 None => base = Some(config),
+    //                 Some(base) => base.merge(config, false).with_context(|| {
+    //                     format!(
+    //                         "failed to merge config from `{}` into `{}`",
+    //                         path.display(),
+    //                         base.path.as_ref().unwrap().display()
+    //                     )
+    //                 })?,
+    //             }
+    //         }
+    //         Ok(base)
+    //     }
+    //     Ok(inner(current_dir.as_ref())?.unwrap_or_default())
+    // }
 
     /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
     #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
@@ -215,7 +227,7 @@ impl Config {
 
     fn resolve_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
         if !self.env_applied {
-            self.apply_env(cx)?;
+            // self.apply_env(cx)?;
             self.env_applied = true;
         }
         Ok(())
@@ -452,16 +464,16 @@ impl Config {
         Ok(vec![])
     }
 
-    /// Merges the given config into this config.
-    ///
-    /// If `force` is `false`, this matches the way cargo [merges configs in the
-    /// parent directories](https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure).
-    ///
-    /// If `force` is `true`, this matches the way cargo's `--config` CLI option
-    /// overrides config.
-    pub fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        merge::Merge::merge(self, from, force)
-    }
+    // /// Merges the given config into this config.
+    // ///
+    // /// If `force` is `false`, this matches the way cargo [merges configs in the
+    // /// parent directories](https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure).
+    // ///
+    // /// If `force` is `true`, this matches the way cargo's `--config` CLI option
+    // /// overrides config.
+    // pub fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+    //     merge::Merge::merge(self, from, force)
+    // }
 
     pub fn path(&self) -> Option<&Path> {
         self.path.as_deref()

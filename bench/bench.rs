@@ -1,6 +1,6 @@
 #![allow(clippy::drop_non_drop)]
 
-use std::{collections::HashMap, hint::black_box, path::Path};
+use std::{hint::black_box, path::Path};
 
 use cargo_config2::ResolveContext;
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -15,14 +15,14 @@ fn reference(c: &mut Criterion) {
     let dir = &fixtures_path().join("reference");
     let config_path = &dir.join(".cargo/config.toml");
     let buf = &black_box(fs::read(config_path).unwrap());
-    // g.bench_function("parse_toml_rs", |b| {
-    //     b.iter(|| black_box(toml::from_slice::<cargo_config2::de::Config>(buf).unwrap()));
-    // });
-    // g.bench_function("parse_toml_edit", |b| {
-    //     b.iter(|| {
-    //         black_box(toml_edit::easy::from_slice::<cargo_config2::de::Config>(buf).unwrap())
-    //     });
-    // });
+    g.bench_function("parse_toml_rs", |b| {
+        b.iter(|| black_box(toml::from_slice::<cargo_config2::de::Config>(buf).unwrap()));
+    });
+    g.bench_function("parse_toml_edit", |b| {
+        b.iter(|| {
+            black_box(toml_edit::easy::from_slice::<cargo_config2::de::Config>(buf).unwrap())
+        });
+    });
     g.bench_function("apply_env_no_env", |b| {
         let config = &black_box(cargo_config2::de::Config::default());
         let cx = &mut black_box(ResolveContext::no_env());

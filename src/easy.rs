@@ -98,7 +98,7 @@ impl Config {
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_cwd_and_context(cwd: impl AsRef<Path>, cx: ResolveContext) -> Result<Self> {
         let cwd = cwd.as_ref();
-        let de = de::toml::read_hierarchical(cwd)?.unwrap_or_default();
+        let de = de::Config::_load_with_cwd(cwd)?;
         Self::from_unresolved(de, cx, cwd.to_owned())
     }
 
@@ -489,7 +489,7 @@ impl TargetConfig {
         let runner = match de.runner {
             Some(v) => Some(PathAndArgs {
                 path: v.path.resolve_program(current_dir).into_owned(),
-                args: v.args,
+                args: v.args.into_iter().map(|v| v.val).collect(),
             }),
             None => None,
         };
@@ -518,7 +518,7 @@ impl DocConfig {
     pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Result<Self> {
         let browser = de.browser.map(|v| PathAndArgs {
             path: v.path.resolve_program(current_dir).into_owned(),
-            args: v.args,
+            args: v.args.into_iter().map(|v| v.val).collect(),
         });
         Ok(Self { browser })
     }
@@ -531,6 +531,32 @@ pub struct EnvConfigValue {
     pub value: OsString,
     pub force: bool,
     pub relative: bool,
+}
+
+impl EnvConfigValue {
+    pub(crate) fn from_unresolved(de: de::EnvConfigValue, current_dir: &Path) -> Self {
+        if let de::EnvConfigValue::Table {
+            force, relative: Some(Value { val: true, .. }), ..
+        } = &de
+        {
+            return Self {
+                value: de.resolve(current_dir).into_owned(),
+                force: force.as_ref().map_or(false, |v| v.val),
+                // Since we resolved the value, it is no longer relative.
+                relative: false,
+            };
+        }
+        match de {
+            de::EnvConfigValue::Value(value) => {
+                Self { value: value.val.into(), force: false, relative: false }
+            }
+            de::EnvConfigValue::Table { value, force, .. } => Self {
+                value: value.val.into(),
+                force: force.map_or(false, |v| v.val),
+                relative: false,
+            },
+        }
+    }
 }
 
 impl Serialize for EnvConfigValue {
@@ -557,32 +583,6 @@ impl Serialize for EnvConfigValue {
             Self { value, force, relative, .. } => {
                 EnvRepr::Table { value, force: *force, relative: *relative }.serialize(serializer)
             }
-        }
-    }
-}
-
-impl EnvConfigValue {
-    pub(crate) fn from_unresolved(de: de::EnvConfigValue, current_dir: &Path) -> Self {
-        if let de::EnvConfigValue::Table {
-            force, relative: Some(Value { val: true, .. }), ..
-        } = &de
-        {
-            return Self {
-                value: de.resolve(current_dir).into_owned(),
-                force: force.as_ref().map_or(false, |v| v.val),
-                // Since we resolve value, the value is no longer relative.
-                relative: false,
-            };
-        }
-        match de {
-            de::EnvConfigValue::Value(value) => {
-                Self { value: value.val.into(), force: false, relative: false }
-            }
-            de::EnvConfigValue::Table { value, force, .. } => Self {
-                value: value.val.into(),
-                force: force.map_or(false, |v| v.val),
-                relative: false,
-            },
         }
     }
 }

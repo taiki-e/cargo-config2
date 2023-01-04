@@ -44,9 +44,9 @@ const _: fn() = || {
     assert_auto_traits::<crate::TermConfig>();
     assert_auto_traits::<crate::TermProgress>();
     assert_auto_traits::<crate::Rustflags>();
-    assert_auto_traits::<crate::paths::ConfigPaths<'_>>();
     assert_auto_traits::<crate::resolve::ResolveContext>();
     assert_auto_traits::<crate::resolve::TargetTripleRef<'_>>();
     assert_auto_traits::<crate::resolve::TargetTriple>();
     assert_auto_traits::<crate::value::Definition>();
+    assert_auto_traits::<crate::walk::Walk<'_>>();
 };

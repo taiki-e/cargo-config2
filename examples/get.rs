@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{bail, Result};
-use cargo_config2::Config;
+use cargo_config2::de::Config;
 use lexopt::{
     Arg::{Long, Short},
     ValueExt,
@@ -45,8 +45,9 @@ fn try_main() -> Result<()> {
                     "the `json` format does not support --merged=no, try the `toml` format instead"
                 );
             }
-            for config in Config::load_unmerged()? {
-                writeln!(stdout, "# {}", config.path().unwrap().display())?;
+            for path in cargo_config2::Walk::new(&std::env::current_dir()?) {
+                let config = Config::load_file(&path)?;
+                writeln!(stdout, "# {}", path.display())?;
                 print_config(&mut stdout, args.format, &config)?;
                 writeln!(stdout)?;
             }
