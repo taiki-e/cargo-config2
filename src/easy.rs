@@ -1,6 +1,7 @@
 use std::{
     cell::RefCell,
     collections::BTreeMap,
+    ffi::{OsStr, OsString},
     num::NonZeroI32,
     ops,
     path::{Path, PathBuf},
@@ -110,7 +111,7 @@ impl Config {
         let doc = DocConfig::from_unresolved(de.doc, de.current_dir.as_deref())?;
         let mut env = BTreeMap::new();
         for (k, v) in de.env {
-            env.insert(k, EnvConfigValue::from_unresolved(v));
+            env.insert(k, EnvConfigValue::from_unresolved(v, de.current_dir.as_deref()));
         }
         let future_incompat_report =
             FutureIncompatReportConfig::from_unresolved(de.future_incompat_report)?;
@@ -520,7 +521,7 @@ impl DocConfig {
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct EnvConfigValue {
-    pub value: String,
+    pub value: OsString,
     pub force: bool,
     pub relative: bool,
 }
@@ -533,9 +534,9 @@ impl Serialize for EnvConfigValue {
         #[derive(Serialize)]
         #[serde(untagged)]
         enum EnvRepr<'a> {
-            Value(&'a str),
+            Value(&'a OsStr),
             Table {
-                value: &'a str,
+                value: &'a OsStr,
                 #[serde(skip_serializing_if = "ops::Not::not")]
                 force: bool,
                 #[serde(skip_serializing_if = "ops::Not::not")]
@@ -560,9 +561,9 @@ impl<'de> Deserialize<'de> for EnvConfigValue {
         #[derive(Deserialize)]
         #[serde(untagged)]
         enum EnvRepr {
-            Value(String),
+            Value(OsString),
             Table {
-                value: String,
+                value: OsString,
                 #[serde(default)]
                 force: bool,
                 #[serde(default)]
@@ -577,15 +578,26 @@ impl<'de> Deserialize<'de> for EnvConfigValue {
 }
 
 impl EnvConfigValue {
-    pub(crate) fn from_unresolved(de: de::EnvConfigValue) -> Self {
+    pub(crate) fn from_unresolved(de: de::EnvConfigValue, current_dir: Option<&Path>) -> Self {
+        if let de::EnvConfigValue::Table {
+            force, relative: Some(Value { val: true, .. }), ..
+        } = &de
+        {
+            return Self {
+                value: de.resolve(current_dir).into_owned(),
+                force: force.as_ref().map_or(false, |v| v.val),
+                // Since we resolve value, the value is no longer relative.
+                relative: false,
+            };
+        }
         match de {
             de::EnvConfigValue::Value(value) => {
-                Self { value: value.val, force: false, relative: false }
+                Self { value: value.val.into(), force: false, relative: false }
             }
-            de::EnvConfigValue::Table { value, force, relative } => Self {
-                value: value.val,
+            de::EnvConfigValue::Table { value, force, .. } => Self {
+                value: value.val.into(),
                 force: force.map_or(false, |v| v.val),
-                relative: relative.map_or(false, |v| v.val),
+                relative: false,
             },
         }
     }

@@ -360,7 +360,7 @@ impl EnvConfigValue {
     pub(crate) fn resolve(&self, current_dir: Option<&Path>) -> Cow<'_, OsStr> {
         match self {
             Self::Value(v) => Cow::Borrowed(OsStr::new(&v.val)),
-            Self::Table { value, force, relative } => {
+            Self::Table { value, relative, .. } => {
                 if relative.as_ref().map_or(false, |v| v.val) {
                     if let Some(def) = &value.definition {
                         if let Some(p) = def.root(current_dir) {
