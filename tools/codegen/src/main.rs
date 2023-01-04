@@ -7,7 +7,6 @@ use std::{
 
 use anyhow::Result;
 use fs_err as fs;
-use heck::ToKebabCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
@@ -67,17 +66,14 @@ fn gen_de() -> Result<()> {
     const MERGE_EXCLUDE: &[&str] =
         &["Rustflags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs"];
     const SET_PATH_EXCLUDE: &[&str] = &[];
-    const FROM_CONFIG_VALUE_EXCLUDE: &[&str] =
-        &["Rustflags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs", "Config"];
 
     let workspace_root = &workspace_root();
 
     let mut tokens = quote! {
         use std::path::Path;
         use crate::{
-            lazy::{FromConfigValue, ConfigValue},
             merge::Merge,
-            value::{SetPath, Value},
+            value::SetPath,
             Result,
         };
     };
@@ -205,112 +201,6 @@ fn gen_de() -> Result<()> {
                                 match self {
                                     #(#arms,)*
                                 }
-                            }
-                        }
-                    });
-                }
-                _ => {}
-            }
-            // impl FromConfigValue
-            match item {
-                syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
-                    if matches!(vis, syn::Visibility::Public(..))
-                        && matches!(fields, syn::Fields::Named(..))
-                        && !FROM_CONFIG_VALUE_EXCLUDE.iter().any(|&e| ident == e) =>
-                {
-                    let struct_ident = &*ident;
-                    let mut result = vec![];
-                    let mut init = vec![];
-                    let mut arms = vec![];
-                    for syn::Field { attrs, ident, ty, .. } in fields {
-                        let ident = ident.as_ref().unwrap();
-                        let toml_field = ident.to_string().to_kebab_case();
-                        if serde_skip(attrs) {
-                            result.push(quote! { #ident: Default::default() });
-                            continue;
-                        }
-                        let current_key = || {
-                            match struct_ident.to_string().as_str() {
-                                "BuildConfig" => format!("build.{toml_field}"),
-                                "DocConfig" => format!("doc.{toml_field}"),
-                                "TermConfig" => format!("term.{toml_field}"),
-                                // this config is used for both [target] and [host]
-                                "TargetConfig" => toml_field.clone(),
-                                _ => todo!("{struct_ident}"),
-                            }
-                        };
-                        init.push(quote! { let mut #ident = None; });
-                        let arm = (|| {
-                            if let Some(ty) = is_option(ty) {
-                                result.push(quote! { #ident });
-                                if let Some(ty) = is_value(ty) {
-                                    if let Some(ty) = ty_path(ty).and_then(|p| p.get_ident()) {
-                                        let (get, convert) = match ty.to_string().as_str() {
-                                            "bool" => (quote!(boolean), quote!(val)),
-                                            "String" => {
-                                                (quote!(string), quote!(val: val.to_owned()))
-                                            }
-                                            "When" | "Color" | "Frequency" => (
-                                                quote!(string),
-                                                quote!(val: val.parse::<crate::#ty>()?),
-                                            ),
-                                            "i32" | "u32" => {
-                                                (quote!(i64), quote!(val: val.try_into()?))
-                                            }
-                                            _ => todo!(),
-                                        };
-                                        return quote! {
-                                            #toml_field => {
-                                                let (val, def) = v.#get(&[
-                                                    current_key, #toml_field
-                                                ])?;
-                                                #ident = Some(Value {
-                                                    #convert, definition: Some(def.clone())
-                                                });
-                                            }
-                                        };
-                                    }
-                                    todo!();
-                                } else {
-                                    let current_key = current_key();
-                                    quote! {
-                                        #toml_field => {
-                                            #ident = Some(crate:: #(#module::)*
-                                                #ty::from_config_value(
-                                                    v, #current_key
-                                                )?
-                                            );
-                                        }
-                                    }
-                                }
-                            } else {
-                                result.push(quote! { #ident: #ident.unwrap_or_default() });
-                                let current_key = current_key();
-                                quote! {
-                                    #toml_field => {
-                                        #ident = Some(crate:: #(#module::)* #ty::from_config_value(
-                                            v, #current_key
-                                        )?);
-                                    }
-                                }
-                            }
-                        })();
-                        arms.push(arm);
-                    }
-                    tokens.extend(quote! {
-                        impl FromConfigValue for crate:: #(#module::)* #ident {
-                            fn from_config_value(
-                                value: &ConfigValue,
-                                current_key: &str
-                            ) -> Result<Self> {
-                                #(#init)*
-                                for (k, v) in value.table(&[current_key])?.0 {
-                                    match k.as_str() {
-                                        #(#arms)*
-                                        _ => {}
-                                    }
-                                }
-                                Ok(Self { #(#result),* })
                             }
                         }
                     });
@@ -501,90 +391,4 @@ where
         (self.f)(item, &self.module);
         visit_mut::visit_item_mut(self, item);
     }
-}
-
-fn ty_path(ty: &Type) -> Option<&syn::Path> {
-    if let Type::Path(ty) = ty {
-        return Some(&ty.path);
-    }
-    None
-}
-
-fn is_primitive(ty: &Type) -> Option<&Ident> {
-    if let Some(path) = ty_path(ty) {
-        let ty = &path.get_ident()?;
-        if matches!(
-            &*ty.to_string(),
-            "bool"
-                | "char"
-                | "u8"
-                | "u16"
-                | "u32"
-                | "u64"
-                | "u128"
-                | "usize"
-                | "i8"
-                | "i16"
-                | "i32"
-                | "i64"
-                | "i128"
-                | "isize"
-                | "f32"
-                | "f64"
-        ) {
-            return Some(ty);
-        }
-    }
-    None
-}
-
-fn is_vec(ty: &Type) -> Option<(syn::Path, &Type)> {
-    if let Some(path) = ty_path(ty) {
-        if path.segments.len() == 1 && path.segments[0].ident == "Vec"
-            || path.segments.len() == 3
-                && (path.segments[0].ident == "std" || path.segments[0].ident == "alloc")
-                && path.segments[1].ident == "vec"
-                && path.segments[2].ident == "Vec"
-        {
-            if let PathArguments::AngleBracketed(args) = &path.segments.last().unwrap().arguments {
-                if let GenericArgument::Type(t) = &args.args[0] {
-                    let mut path = path.clone();
-                    path.segments.last_mut().unwrap().arguments = PathArguments::None;
-                    return Some((path, t));
-                }
-            }
-        }
-    }
-    None
-}
-
-fn is_option(ty: &Type) -> Option<&Type> {
-    if let Some(path) = ty_path(ty) {
-        if path.segments.len() == 1 && path.segments[0].ident == "Option"
-            || path.segments.len() == 3
-                && (path.segments[0].ident == "std" || path.segments[0].ident == "core")
-                && path.segments[1].ident == "option"
-                && path.segments[2].ident == "Option"
-        {
-            if let PathArguments::AngleBracketed(args) = &path.segments.last().unwrap().arguments {
-                if let GenericArgument::Type(ty) = &args.args[0] {
-                    return Some(ty);
-                }
-            }
-        }
-    }
-    None
-}
-
-fn is_value(ty: &Type) -> Option<&Type> {
-    if let Some(path) = ty_path(ty) {
-        if path.segments.len() == 1 && path.segments[0].ident == "Value" {
-            if let PathArguments::AngleBracketed(args) = &path.segments.last().unwrap().arguments {
-                if let GenericArgument::Type(ty) = &args.args[0] {
-                    return Some(ty);
-                }
-            }
-        }
-    }
-    None
 }

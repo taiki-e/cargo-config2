@@ -15,7 +15,6 @@ use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    lazy::{self, ConfigValue, FromConfigValue},
     merge,
     resolve::{ResolveContext, TargetTripleRef},
     value::{Definition, Value},
@@ -601,18 +600,6 @@ impl<'de> Deserialize<'de> for Rustflags {
         }
     }
 }
-impl FromConfigValue for Rustflags {
-    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
-        match value.list_or_string(&[current_key])? {
-            lazy::ArrayOrString::String(s, def) => Ok(Self::from_space_separated(s, Some(def))),
-            lazy::ArrayOrString::Array(v) => Ok(Self::from_array({
-                v.iter()
-                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
-                    .collect()
-            })),
-        }
-    }
-}
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/path.rs
 #[derive(Debug, Deserialize, PartialEq, Clone)]
@@ -730,19 +717,6 @@ impl<'de> Deserialize<'de> for PathAndArgs {
         }
     }
 }
-impl FromConfigValue for PathAndArgs {
-    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
-        match value.list_or_string(&[current_key])? {
-            lazy::ArrayOrString::String(s, def) => Self::from_string(s, Some(def.clone())),
-            lazy::ArrayOrString::Array(v) => Self::from_array({
-                v.iter()
-                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
-                    .collect()
-            }),
-        }
-        .context("invalid length 0, expected at least one element")
-    }
-}
 
 #[derive(Debug, Clone)]
 #[non_exhaustive]
@@ -816,18 +790,6 @@ impl<'de> Deserialize<'de> for StringList {
         }
     }
 }
-impl FromConfigValue for StringList {
-    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
-        match value.list_or_string(&[current_key])? {
-            lazy::ArrayOrString::String(s, def) => Ok(Self::from_string(s, Some(def))),
-            lazy::ArrayOrString::Array(v) => Ok(Self::from_array({
-                v.iter()
-                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
-                    .collect()
-            })),
-        }
-    }
-}
 
 /// A string or array of strings.
 #[allow(clippy::exhaustive_enums)]
@@ -855,21 +817,6 @@ impl StringOrArray {
         match self {
             Self::String(s) => slice::from_ref(s),
             Self::Array(v) => v,
-        }
-    }
-}
-
-impl FromConfigValue for StringOrArray {
-    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
-        match value.list_or_string(&[current_key])? {
-            lazy::ArrayOrString::String(s, def) => {
-                Ok(Self::String(Value { val: s.to_owned(), definition: Some(def.clone()) }))
-            }
-            lazy::ArrayOrString::Array(v) => Ok(Self::Array({
-                v.iter()
-                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
-                    .collect()
-            })),
         }
     }
 }

@@ -79,7 +79,6 @@ mod command;
 pub mod de;
 pub mod easy;
 mod env;
-pub mod lazy;
 mod merge;
 mod resolve;
 mod value;

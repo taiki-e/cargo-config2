@@ -31,14 +31,6 @@ fn reference(c: &mut Criterion) {
             black_box(config)
         });
     });
-    g.bench_function("load_config_lazy", |b| {
-        b.iter(|| {
-            let config =
-                cargo_config2::lazy::Config::with_context(dir, None, ResolveContext::no_env());
-            black_box(config.values().unwrap());
-            black_box(config)
-        });
-    });
     g.bench_function("apply_env_no_env", |b| {
         let config = &black_box(cargo_config2::de::Config::default());
         let cx = &mut black_box(ResolveContext::no_env());
