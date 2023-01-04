@@ -17,7 +17,14 @@ pub struct Config {
     cx: ResolveContext,
 
     values: OnceCell<HashMap<String, ConfigValue>>,
+    // alias
     build_config: OnceCell<easy::BuildConfig>,
+    doc_config: OnceCell<easy::DocConfig>,
+    // env
+    future_incompat_report_config: OnceCell<easy::FutureIncompatReportConfig>,
+    net_config: OnceCell<easy::NetConfig>,
+    // target
+    term_config: OnceCell<easy::TermConfig>,
 }
 
 impl Config {
@@ -32,6 +39,10 @@ impl Config {
             cx,
             values: OnceCell::new(),
             build_config: OnceCell::new(),
+            doc_config: OnceCell::new(),
+            future_incompat_report_config: OnceCell::new(),
+            net_config: OnceCell::new(),
+            term_config: OnceCell::new(),
         }
     }
 
@@ -53,6 +64,34 @@ impl Config {
             let mut de = self.get::<de::BuildConfig>("build")?;
             de.apply_env(&self.cx)?;
             easy::BuildConfig::from_unresolved(de, &self.cwd)
+        })
+    }
+    pub fn doc_config(&self) -> Result<&easy::DocConfig> {
+        self.doc_config.get_or_try_init(|| {
+            let mut de = self.get::<de::DocConfig>("doc")?;
+            de.apply_env(&self.cx)?;
+            easy::DocConfig::from_unresolved(de, &self.cwd)
+        })
+    }
+    pub fn future_incompat_report_config(&self) -> Result<&easy::FutureIncompatReportConfig> {
+        self.future_incompat_report_config.get_or_try_init(|| {
+            let mut de = self.get::<de::FutureIncompatReportConfig>("future-incompat-report")?;
+            de.apply_env(&self.cx)?;
+            easy::FutureIncompatReportConfig::from_unresolved(de)
+        })
+    }
+    pub fn net_config(&self) -> Result<&easy::NetConfig> {
+        self.net_config.get_or_try_init(|| {
+            let mut de = self.get::<de::NetConfig>("net")?;
+            de.apply_env(&self.cx)?;
+            easy::NetConfig::from_unresolved(de)
+        })
+    }
+    pub fn term_config(&self) -> Result<&easy::TermConfig> {
+        self.term_config.get_or_try_init(|| {
+            let mut de = self.get::<de::TermConfig>("term")?;
+            de.apply_env(&self.cx)?;
+            Ok(easy::TermConfig::from_unresolved(de))
         })
     }
 

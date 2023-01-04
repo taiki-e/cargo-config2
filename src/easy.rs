@@ -7,7 +7,6 @@ use std::{
 };
 
 use anyhow::{bail, Result};
-use once_cell::unsync::OnceCell;
 use serde::Serialize;
 
 use crate::de::{self, split_encoded, split_space_separated};
@@ -20,7 +19,7 @@ pub use crate::{
     walk::Walk,
 };
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct Config {
@@ -68,7 +67,7 @@ pub struct Config {
 
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
-    resolve_context: OnceCell<ResolveContext>,
+    cx: ResolveContext,
     #[serde(skip)]
     current_dir: PathBuf,
 }
@@ -89,15 +88,20 @@ impl Config {
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
-        Self::load_with_cwd_and_context(cwd, ResolveContext::new()?)
+        let cwd = cwd.as_ref();
+        Self::load_with_context(cwd, home::cargo_home_with_cwd(cwd).ok(), ResolveContext::new()?)
     }
 
     /// Read config files hierarchically from the given directory and merges them.
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_with_cwd_and_context(cwd: impl AsRef<Path>, cx: ResolveContext) -> Result<Self> {
+    pub fn load_with_context(
+        cwd: impl AsRef<Path>,
+        home: impl Into<Option<PathBuf>>,
+        cx: ResolveContext,
+    ) -> Result<Self> {
         let cwd = cwd.as_ref();
-        let de = de::Config::_load_with_cwd(cwd)?;
+        let de = de::Config::_load_with_context(cwd, home.into())?;
         Self::from_unresolved(de, cx, cwd.to_owned())
     }
 
@@ -133,7 +137,7 @@ impl Config {
             target: RefCell::new(BTreeMap::new()),
             de_target: de.target,
             term,
-            resolve_context: OnceCell::from(cx),
+            cx,
             current_dir,
         })
     }
@@ -279,7 +283,7 @@ impl Config {
         if !target_configs.contains_key(target) {
             let target_config = TargetConfig::from_unresolved(
                 de::Config::resolve_target(
-                    self.resolve_context.get_or_try_init(ResolveContext::new)?,
+                    &self.cx,
                     &self.de_target,
                     self.build.override_target_rustflags,
                     &self.build.de_rustflags,

@@ -1,7 +1,15 @@
 #[path = "gen/de.rs"]
 mod gen;
 
-use std::{borrow::Cow, collections::BTreeMap, ffi::OsStr, fs, path::Path, slice, str::FromStr};
+use std::{
+    borrow::Cow,
+    collections::BTreeMap,
+    ffi::OsStr,
+    fs,
+    path::{Path, PathBuf},
+    slice,
+    str::FromStr,
+};
 
 use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
@@ -69,12 +77,23 @@ impl Config {
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
-        Self::_load_with_cwd(cwd.as_ref())
+        let cwd = cwd.as_ref();
+        Self::_load_with_context(cwd, home::cargo_home_with_cwd(cwd).ok())
+    }
+
+    /// Read config files hierarchically from the given directory and merges them.
+    #[cfg(feature = "toml")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
+    pub fn load_with_context(
+        cwd: impl AsRef<Path>,
+        home: impl Into<Option<PathBuf>>,
+    ) -> Result<Self> {
+        Self::_load_with_context(cwd.as_ref(), home.into())
     }
     #[cfg(feature = "toml")]
-    pub(crate) fn _load_with_cwd(current_dir: &Path) -> Result<Config> {
+    pub(crate) fn _load_with_context(current_dir: &Path, home: Option<PathBuf>) -> Result<Config> {
         let mut base = None;
-        for path in crate::Walk::new(current_dir) {
+        for path in crate::Walk::with_cargo_home(current_dir, home) {
             let config = Self::_load_file(&path)?;
             match &mut base {
                 None => base = Some((path, config)),
