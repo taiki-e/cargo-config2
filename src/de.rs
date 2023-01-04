@@ -33,7 +33,7 @@ pub mod toml {
     use anyhow::{Context, Result};
 
     use super::Config;
-    use crate::paths::ConfigPaths;
+    use crate::walk::Walk;
 
     /// Reads cargo config file at the given path.
     ///
@@ -51,7 +51,7 @@ pub mod toml {
     /// Hierarchically reads cargo config files and merge them.
     pub fn read_hierarchical(current_dir: &Path) -> Result<Option<Config>> {
         let mut base = None;
-        for path in ConfigPaths::new(current_dir) {
+        for path in Walk::new(current_dir) {
             let config = read(path.clone())?;
             match &mut base {
                 None => base = Some(config),
@@ -70,7 +70,7 @@ pub mod toml {
     /// Hierarchically reads cargo config files.
     pub fn read_hierarchical_unmerged(current_dir: &Path) -> Result<Vec<Config>> {
         let mut v = vec![];
-        for path in ConfigPaths::new(current_dir) {
+        for path in Walk::new(current_dir) {
             let config = read(path)?;
             v.push(config);
         }

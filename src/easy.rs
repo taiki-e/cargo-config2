@@ -16,9 +16,9 @@ use crate::de::{self, split_encoded, split_space_separated};
 pub use crate::de::{Color, Frequency, When};
 pub use crate::{
     command::host_triple,
-    paths::ConfigPaths,
     resolve::{ResolveContext, TargetTriple, TargetTripleRef},
     value::{Definition, Value},
+    walk::Walk,
 };
 
 #[derive(Debug, Clone, Default, Serialize)]

@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{Context, Result};
 
-use crate::{paths::ConfigPaths, Config};
+use crate::{walk::Walk, Config};
 
 /// Reads cargo config file at the given path.
 ///
@@ -21,7 +21,7 @@ pub fn read(path: PathBuf) -> Result<Config> {
 /// Hierarchically reads cargo config files and merge them.
 pub(crate) fn read_hierarchical(current_dir: &Path) -> Result<Option<Config>> {
     let mut base = None;
-    for path in ConfigPaths::new(current_dir) {
+    for path in Walk::new(current_dir) {
         let mut config = read(path.clone())?;
         config.set_cwd(current_dir.to_owned());
         match &mut base {
@@ -41,7 +41,7 @@ pub(crate) fn read_hierarchical(current_dir: &Path) -> Result<Option<Config>> {
 /// Hierarchically reads cargo config files.
 pub(crate) fn read_hierarchical_unmerged(current_dir: &Path) -> Result<Vec<Config>> {
     let mut v = vec![];
-    for path in ConfigPaths::new(current_dir) {
+    for path in Walk::new(current_dir) {
         let mut config = read(path)?;
         config.set_cwd(current_dir.to_owned());
         v.push(config);

@@ -80,12 +80,12 @@ pub mod de;
 pub mod easy;
 mod env;
 mod merge;
-mod paths;
 mod resolve;
 #[cfg(feature = "toml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
 pub mod toml;
 mod value;
+mod walk;
 
 use std::{
     borrow::Borrow,
@@ -103,9 +103,9 @@ use serde::{Deserialize, Serialize};
 pub use crate::de::{Color, Frequency, When};
 pub use crate::{
     command::host_triple,
-    paths::ConfigPaths,
     resolve::{ResolveContext, TargetTriple, TargetTripleRef},
     value::{Definition, Value},
+    walk::Walk,
 };
 use crate::{
     de::{split_encoded, split_space_separated, target_u_upper},

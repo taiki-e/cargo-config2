@@ -38,12 +38,12 @@ fn config_path(path: &Path) -> Option<PathBuf> {
 /// An iterator over cargo config paths.
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct ConfigPaths<'a> {
+pub struct Walk<'a> {
     ancestors: std::path::Ancestors<'a>,
     cargo_home: Option<PathBuf>,
 }
 
-impl<'a> ConfigPaths<'a> {
+impl<'a> Walk<'a> {
     /// Creates an iterator over cargo config paths.
     pub fn new(current_dir: &'a Path) -> Self {
         Self {
@@ -53,7 +53,7 @@ impl<'a> ConfigPaths<'a> {
     }
 }
 
-impl Iterator for ConfigPaths<'_> {
+impl Iterator for Walk<'_> {
     type Item = PathBuf;
     fn next(&mut self) -> Option<Self::Item> {
         for p in self.ancestors.by_ref() {
