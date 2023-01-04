@@ -13,7 +13,6 @@ use syn::{
     visit_mut::{self, VisitMut},
     Fields,
 };
-use walkdir::WalkDir;
 
 fn main() -> Result<()> {
     gen_assert_impl()?;
@@ -59,7 +58,8 @@ fn write(function_name: &str, path: &Path, contents: TokenStream) -> Result<()> 
 fn gen_de() -> Result<()> {
     let files = &["src/de.rs"];
     // TODO: check if this list is outdated
-    let merge_exclude = &["Rustflags", "ResolveContext", "Env", "StringList", "PathAndArgs"];
+    let merge_exclude =
+        &["Rustflags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs"];
     let set_path_exclude = &["ResolveContext", "PathAndArgs"];
 
     let workspace_root = &workspace_root();
@@ -208,7 +208,7 @@ fn gen_de() -> Result<()> {
 fn gen_merge() -> Result<()> {
     let files = &["src/lib.rs"];
     // TODO: check if this list is outdated
-    let exclude = &["Rustflags", "ResolveContext", "Env"];
+    let exclude = &["Rustflags", "ResolveContext", "EnvConfigValue"];
 
     let workspace_root = &workspace_root();
 
@@ -265,7 +265,7 @@ fn gen_is_none() -> Result<()> {
         "TargetConfig",
         "Rustflags",
         "ResolveContext",
-        "Env",
+        "EnvConfigValue",
         "StringList",
         "PathAndArgs",
     ];
@@ -338,8 +338,7 @@ fn gen_assert_impl() -> Result<()> {
     let out_dir = &workspace_root.join("src/gen");
     fs::create_dir_all(out_dir)?;
 
-    let files: BTreeSet<String> = WalkDir::new(workspace_root.join("src"))
-        .into_iter()
+    let files: BTreeSet<String> = ignore::Walk::new(workspace_root.join("src"))
         .filter_map(Result::ok)
         .filter_map(|e| {
             let path = e.path();

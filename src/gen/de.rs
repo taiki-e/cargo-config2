@@ -88,7 +88,7 @@ impl SetPath for crate::de::DocConfig {
         self.browser.set_path(path);
     }
 }
-impl SetPath for crate::de::Env {
+impl SetPath for crate::de::EnvConfigValue {
     fn set_path(&mut self, path: &Path) {
         match self {
             Self::Value(v) => {

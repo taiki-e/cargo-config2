@@ -5,7 +5,7 @@ use std::collections::btree_map;
 use anyhow::{bail, Context as _, Result};
 
 use crate::{
-    de, BTreeMap, Env, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
+    de, BTreeMap, EnvConfigValue, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
     RustflagsDeserializedRepr, StringOrArray, Value, When,
 };
 
@@ -142,17 +142,17 @@ impl Merge for de::StringList {
         Ok(())
     }
 }
-impl Merge for Env {
+impl Merge for EnvConfigValue {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         match (self, from) {
             (
-                Env {
+                Self {
                     value: this,
                     force: None,
                     relative: None,
                     deserialized_repr: EnvDeserializedRepr::Value,
                 },
-                Env {
+                Self {
                     value: from,
                     force: None,
                     relative: None,
@@ -164,8 +164,8 @@ impl Merge for Env {
                 }
             }
             (
-                this @ Env { deserialized_repr: EnvDeserializedRepr::Table, .. },
-                from @ Env { deserialized_repr: EnvDeserializedRepr::Table, .. },
+                this @ Self { deserialized_repr: EnvDeserializedRepr::Table, .. },
+                from @ Self { deserialized_repr: EnvDeserializedRepr::Table, .. },
             ) => {
                 this.value.merge(from.value, force)?;
                 this.force.merge(from.force, force)?;
@@ -176,17 +176,17 @@ impl Merge for Env {
         Ok(())
     }
 }
-impl Merge for de::Env {
+impl Merge for de::EnvConfigValue {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         match (self, from) {
-            (de::Env::Value(this), de::Env::Value(from)) => {
+            (Self::Value(this), Self::Value(from)) => {
                 if force {
                     *this = from;
                 }
             }
             (
-                de::Env::Table { value: this_value, force: this_force, relative: this_relative },
-                de::Env::Table { value: from_value, force: from_force, relative: from_relative },
+                Self::Table { value: this_value, force: this_force, relative: this_relative },
+                Self::Table { value: from_value, force: from_force, relative: from_relative },
             ) => {
                 this_value.merge(from_value, force)?;
                 this_force.merge(from_force, force)?;

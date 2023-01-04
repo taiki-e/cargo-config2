@@ -46,7 +46,7 @@ impl Config {
         // representing the entire file.
         let mut cfg = ConfigValue::Table(HashMap::new(), Definition::Path(PathBuf::from(".")));
         for path in ConfigPaths::new(&self.cwd) {
-            let value = self.load_file(&path).context("could not load Cargo configuration")?;
+            let value = Self::load_file(&path).context("could not load Cargo configuration")?;
             cfg.merge(value, false).with_context(|| {
                 format!("failed to merge configuration at `{}`", path.display())
             })?;
@@ -57,7 +57,7 @@ impl Config {
         }
     }
 
-    fn load_file(&self, path: &Path) -> Result<ConfigValue> {
+    fn load_file(path: &Path) -> Result<ConfigValue> {
         let buf = fs::read_to_string(path)
             .with_context(|| format!("failed to read `{}`", path.display()))?;
         let value: toml::Value = toml::from_str(&buf)

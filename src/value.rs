@@ -31,25 +31,25 @@ impl Value<String> {
         Ok(Value { val: self.val.parse()?, definition: self.definition })
     }
     // https://doc.rust-lang.org/nightly/cargo/reference/config.html#config-relative-paths
-    pub(crate) fn resolve_as_program_path(&self, current_dir: Option<&Path>) -> PathBuf {
+    pub(crate) fn resolve_as_program_path<'a>(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
         if self.definition.is_none()
             || Path::new(&self.val).is_absolute()
             || !self.val.contains('/') && !self.val.contains('\\')
         {
-            PathBuf::from(&self.val)
-        } else if let Some(root) = self.definition.as_ref().unwrap().root_inner(current_dir) {
-            root.join(&self.val)
+            Cow::Borrowed(Path::new(&self.val))
+        } else if let Some(root) = self.definition.as_ref().unwrap().root(current_dir) {
+            Cow::Owned(root.join(&self.val))
         } else {
-            PathBuf::from(&self.val)
+            Cow::Borrowed(Path::new(&self.val))
         }
     }
-    pub(crate) fn resolve_as_path(&self, current_dir: Option<&Path>) -> PathBuf {
+    pub(crate) fn resolve_as_path(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
         if self.definition.is_none() || Path::new(&self.val).is_absolute() {
-            PathBuf::from(&self.val)
-        } else if let Some(root) = self.definition.as_ref().unwrap().root_inner(current_dir) {
-            root.join(&self.val)
+            Cow::Borrowed(Path::new(&self.val))
+        } else if let Some(root) = self.definition.as_ref().unwrap().root(current_dir) {
+            Cow::Owned(root.join(&self.val))
         } else {
-            PathBuf::from(&self.val)
+            Cow::Borrowed(Path::new(&self.val))
         }
     }
 }
@@ -72,10 +72,7 @@ impl Definition {
     ///
     /// If from a file, it is the directory above `.cargo/config`.
     /// CLI and env are the current working directory.
-    pub fn root<'a>(&'a self, config: &'a Config) -> Option<&'a Path> {
-        self.root_inner(config.current_dir.as_deref())
-    }
-    pub(crate) fn root_inner<'a>(&'a self, current_dir: Option<&'a Path>) -> Option<&'a Path> {
+    pub(crate) fn root<'a>(&'a self, current_dir: Option<&'a Path>) -> Option<&'a Path> {
         match self {
             Definition::Path(p) | Definition::Cli(Some(p)) => {
                 Some(p.parent().unwrap().parent().unwrap())
@@ -87,7 +84,7 @@ impl Definition {
     /// Returns true if self is a higher priority to other.
     ///
     /// CLI is preferred over environment, which is preferred over files.
-    pub fn is_higher_priority(&self, other: &Definition) -> bool {
+    pub(crate) fn is_higher_priority(&self, other: &Definition) -> bool {
         matches!(
             (self, other),
             (Definition::Cli(_), Definition::Environment(_) | Definition::Path(_))

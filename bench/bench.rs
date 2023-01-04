@@ -68,7 +68,7 @@ fn reference(c: &mut Criterion) {
             ("CARGO_TERM_PROGRESS_WHEN", "auto"),
             ("CARGO_TERM_PROGRESS_WIDTH", "100"),
         ];
-        let cx = &mut black_box(ResolveContext::from_env(env_list));
+        let cx = &mut black_box(ResolveContext::with_env(env_list));
         b.iter(|| {
             let mut config = black_box(config.clone());
             config.apply_env(cx).unwrap();

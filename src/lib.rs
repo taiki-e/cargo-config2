@@ -107,7 +107,7 @@ pub use crate::de::{Color, Frequency, When};
 pub use crate::{
     command::host_triple,
     paths::ConfigPaths,
-    resolve::{ResolveContext, TargetTriple},
+    resolve::{ResolveContext, TargetTriple, TargetTripleRef},
     value::{Definition, Value},
 };
 use crate::{
@@ -134,7 +134,7 @@ pub struct Config {
     pub doc: DocConfig,
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub env: BTreeMap<String, Env>,
+    pub env: BTreeMap<String, EnvConfigValue>,
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
@@ -198,16 +198,18 @@ impl Config {
     }
 
     /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
-    pub fn resolve<'a>(&mut self, target: impl Into<TargetTriple<'a>>) -> Result<()> {
+    #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
+    pub fn resolve<'a>(&mut self, target: impl Into<TargetTripleRef<'a>>) -> Result<()> {
         let cx = &mut ResolveContext::new()?;
         self.resolve_with_context(cx, target.into())
     }
 
     /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
+    #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
     pub fn resolve_with_context<'a>(
         &mut self,
         cx: &mut ResolveContext,
-        target: impl Into<TargetTriple<'a>>,
+        target: impl Into<TargetTripleRef<'a>>,
     ) -> Result<()> {
         self.resolve_env(cx)?;
         self.resolve_target(cx, &target.into())?;
@@ -225,7 +227,7 @@ impl Config {
     fn resolve_target(
         &mut self,
         cx: &mut ResolveContext,
-        target_triple: &TargetTriple<'_>,
+        target_triple: &TargetTripleRef<'_>,
     ) -> Result<()> {
         let target = target_triple.triple();
 
@@ -375,11 +377,12 @@ impl Config {
     /// }
     /// # Ok(()) }
     /// ```
+    #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
     pub fn build_target_for_config<'a, 'b>(
         &self,
-        targets: impl IntoIterator<Item = impl Into<TargetTriple<'a>>>,
-        host: impl Into<TargetTriple<'b>>,
-    ) -> Result<Vec<TargetTriple<'static>>> {
+        targets: impl IntoIterator<Item = impl Into<TargetTripleRef<'a>>>,
+        host: impl Into<TargetTripleRef<'b>>,
+    ) -> Result<Vec<TargetTriple>> {
         let targets: Vec<_> = targets.into_iter().map(|v| v.into().into_owned()).collect();
         if !targets.is_empty() {
             return Ok(targets);
@@ -440,7 +443,7 @@ impl Config {
             return Ok(config_targets
                 .iter()
                 .map(|v| {
-                    let t = TargetTriple::new(
+                    let t = TargetTripleRef::new(
                         (&v.val).into(),
                         v.definition.as_ref(),
                         self.current_dir.as_deref(),
@@ -503,7 +506,7 @@ impl Config {
     }
 }
 
-impl<'a, T: Borrow<TargetTriple<'a>>> ops::Index<T> for Config {
+impl<'a, T: Borrow<TargetTripleRef<'a>>> ops::Index<T> for Config {
     type Output = TargetConfig;
     fn index(&self, index: T) -> &Self::Output {
         &self.target[index.borrow().triple()]
@@ -717,7 +720,7 @@ impl DocConfig {
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub struct Env {
+pub struct EnvConfigValue {
     pub value: Value<String>,
     pub force: Option<bool>,
     pub relative: Option<bool>,
@@ -730,7 +733,7 @@ enum EnvDeserializedRepr {
     Table,
 }
 
-impl Serialize for Env {
+impl Serialize for EnvConfigValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -748,20 +751,20 @@ impl Serialize for Env {
             },
         }
         match self {
-            Env {
+            Self {
                 value,
                 force: None,
                 relative: None,
                 deserialized_repr: EnvDeserializedRepr::Value,
             } => EnvRepr::Value(&value.val).serialize(serializer),
-            Env { value, force, relative, .. } => {
+            Self { value, force, relative, .. } => {
                 EnvRepr::Table { value: &value.val, force: *force, relative: *relative }
                     .serialize(serializer)
             }
         }
     }
 }
-impl<'de> Deserialize<'de> for Env {
+impl<'de> Deserialize<'de> for EnvConfigValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -789,7 +792,7 @@ impl<'de> Deserialize<'de> for Env {
     }
 }
 
-impl Env {
+impl EnvConfigValue {
     fn set_path(&mut self, path: &Path) {
         self.value.set_path(path);
     }

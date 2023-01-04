@@ -49,33 +49,6 @@ impl crate::easy::BuildConfig {
             && self.incremental.is_none() && self.dep_info_basedir.is_none()
     }
 }
-impl crate::easy::DocConfig {
-    pub(crate) fn is_none(&self) -> bool {
-        self.browser.is_none()
-    }
-}
-impl crate::easy::FutureIncompatReportConfig {
-    pub(crate) fn is_none(&self) -> bool {
-        self.frequency.is_none()
-    }
-}
-impl crate::easy::NetConfig {
-    pub(crate) fn is_none(&self) -> bool {
-        self.retry.is_none() && self.git_fetch_with_cli.is_none()
-            && self.offline.is_none()
-    }
-}
-impl crate::easy::TermConfig {
-    pub(crate) fn is_none(&self) -> bool {
-        self.quiet.is_none() && self.verbose.is_none() && self.color.is_none()
-            && self.progress.is_none()
-    }
-}
-impl crate::easy::TermProgressConfig {
-    pub(crate) fn is_none(&self) -> bool {
-        self.when.is_none() && self.width.is_none()
-    }
-}
 impl crate::easy_old::BuildConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.jobs.is_none() && self.rustc.is_none() && self.rustc_wrapper.is_none()
@@ -83,6 +56,7 @@ impl crate::easy_old::BuildConfig {
             && self.target.is_none() && self.target_dir.is_none()
             && self.rustflags.is_none() && self.rustdocflags.is_none()
             && self.incremental.is_none() && self.dep_info_basedir.is_none()
+            && self.de_rustflags.is_none()
     }
 }
 impl crate::easy_old::DocConfig {
@@ -107,7 +81,7 @@ impl crate::easy_old::TermConfig {
             && self.progress.is_none()
     }
 }
-impl crate::easy_old::TermProgress {
+impl crate::easy_old::TermProgressConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.when.is_none() && self.width.is_none()
     }

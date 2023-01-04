@@ -4,7 +4,9 @@ mod env;
 mod gen;
 
 use std::{
+    borrow::Cow,
     collections::BTreeMap,
+    ffi::OsStr,
     num::NonZeroI32,
     path::{Path, PathBuf},
     slice,
@@ -13,6 +15,12 @@ use std::{
 
 use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    merge,
+    resolve::{ResolveContext, TargetTripleRef},
+    value::{Definition, SetPath, Value},
+};
 
 #[cfg(feature = "toml")]
 #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
@@ -72,12 +80,6 @@ pub mod toml {
     }
 }
 
-use crate::{
-    merge,
-    value::{SetPath, Value},
-    Definition, ResolveContext, TargetTriple,
-};
-
 /// Cargo configuration that environment variables, config overrides, and
 /// target-specific configurations have not been resolved.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -99,7 +101,7 @@ pub struct Config {
     pub doc: DocConfig,
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub env: BTreeMap<String, Env>,
+    pub env: BTreeMap<String, EnvConfigValue>,
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
@@ -154,7 +156,7 @@ impl Config {
         target_configs: &BTreeMap<String, TargetConfig>,
         override_target_rustflags: bool,
         build_rustflags: &Option<Rustflags>,
-        target_triple: &TargetTriple<'_>,
+        target_triple: &TargetTripleRef<'_>,
     ) -> Result<Option<TargetConfig>> {
         let target = target_triple.triple();
         let mut target_config = target_configs.get(target).cloned();
@@ -343,7 +345,7 @@ pub struct DocConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 #[non_exhaustive]
-pub enum Env {
+pub enum EnvConfigValue {
     Value(Value<String>),
     Table {
         value: Value<String>,
@@ -352,6 +354,24 @@ pub enum Env {
         #[serde(skip_serializing_if = "Option::is_none")]
         relative: Option<Value<bool>>,
     },
+}
+
+impl EnvConfigValue {
+    pub(crate) fn resolve(&self, current_dir: Option<&Path>) -> Cow<'_, OsStr> {
+        match self {
+            Self::Value(v) => Cow::Borrowed(OsStr::new(&v.val)),
+            Self::Table { value, force, relative } => {
+                if relative.as_ref().map_or(false, |v| v.val) {
+                    if let Some(def) = &value.definition {
+                        if let Some(p) = def.root(current_dir) {
+                            return Cow::Owned(p.join(&value.val).into_os_string());
+                        }
+                    }
+                }
+                Cow::Borrowed(OsStr::new(&value.val))
+            }
+        }
+    }
 }
 
 /// The `[future-incompat-report]` table.
@@ -607,7 +627,7 @@ impl ConfigRelativePath {
     ///
     /// This will always return an absolute path where it's relative to the
     /// location for configuration for this value.
-    pub(crate) fn resolve_path(&self, current_dir: Option<&Path>) -> PathBuf {
+    pub(crate) fn resolve_path(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
         self.0.resolve_as_path(current_dir)
     }
 
@@ -617,7 +637,7 @@ impl ConfigRelativePath {
     /// Values which don't look like a filesystem path (don't contain `/` or
     /// `\`) will be returned as-is, and everything else will fall through to an
     /// absolute path.
-    pub(crate) fn resolve_program(&self, current_dir: Option<&Path>) -> PathBuf {
+    pub(crate) fn resolve_program(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
         self.0.resolve_as_program_path(current_dir)
     }
 }

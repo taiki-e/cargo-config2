@@ -35,7 +35,7 @@ home = "0.5"
 serde = { version = "1.0.103", features = ["derive"] }
 shell-escape = "0.1.5"
 
-toml_edit = { version = "0.16", features = ["easy"], optional = true }
+toml_edit = { version = "0.17", features = ["easy"], optional = true }
 once_cell = { version = "1", default-features = false, optional = true }
 
 # TODO: use our own error type
