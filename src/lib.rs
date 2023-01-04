@@ -77,6 +77,7 @@ mod command;
 pub mod de;
 pub mod easy;
 mod env;
+pub mod lazy;
 mod merge;
 mod resolve;
 mod value;
@@ -85,7 +86,6 @@ mod walk;
 use std::{
     borrow::Borrow,
     collections::{BTreeMap, BTreeSet},
-    num::NonZeroI32,
     ops,
     path::{Path, PathBuf},
     slice,
@@ -535,7 +535,7 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub jobs: Option<NonZeroI32>,
+    pub jobs: Option<i32>,
     /// Sets the executable to use for `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)

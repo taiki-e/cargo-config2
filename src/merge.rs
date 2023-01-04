@@ -5,7 +5,7 @@ use std::collections::btree_map;
 use anyhow::{bail, Context as _, Result};
 
 use crate::{
-    de, BTreeMap, EnvConfigValue, EnvDeserializedRepr, Frequency, NonZeroI32, Rustflags,
+    de, BTreeMap, EnvConfigValue, EnvDeserializedRepr, Frequency, Rustflags,
     RustflagsDeserializedRepr, StringOrArray, Value, When,
 };
 
@@ -43,8 +43,8 @@ macro_rules! merge_non_container {
     };
 }
 merge_non_container!(bool);
+merge_non_container!(i32);
 merge_non_container!(u32);
-merge_non_container!(NonZeroI32);
 merge_non_container!(String);
 merge_non_container!(Frequency);
 merge_non_container!(When);

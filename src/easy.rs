@@ -2,7 +2,6 @@ use std::{
     cell::RefCell,
     collections::BTreeMap,
     ffi::{OsStr, OsString},
-    num::NonZeroI32,
     ops,
     path::{Path, PathBuf},
 };
@@ -104,10 +103,10 @@ impl Config {
 
     pub(crate) fn from_unresolved(
         mut de: de::Config,
-        mut cx: ResolveContext,
+        cx: ResolveContext,
         current_dir: PathBuf,
     ) -> Result<Self> {
-        de.apply_env(&mut cx)?;
+        de.apply_env(&cx)?;
 
         let mut alias = BTreeMap::new();
         for (k, v) in de.alias {
@@ -350,7 +349,7 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub jobs: Option<NonZeroI32>,
+    pub jobs: Option<i32>,
     /// Sets the executable to use for `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)

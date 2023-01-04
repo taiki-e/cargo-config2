@@ -1,15 +1,13 @@
 #[path = "gen/de.rs"]
 mod gen;
 
-use std::{
-    borrow::Cow, collections::BTreeMap, ffi::OsStr, fs, num::NonZeroI32, path::Path, slice,
-    str::FromStr,
-};
+use std::{borrow::Cow, collections::BTreeMap, ffi::OsStr, fs, path::Path, slice, str::FromStr};
 
 use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    lazy::{ConfigValue, FromConfigValue},
     merge,
     resolve::{ResolveContext, TargetTripleRef},
     value::{Definition, Value},
@@ -219,7 +217,7 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub jobs: Option<Value<NonZeroI32>>,
+    pub jobs: Option<Value<i32>>,
     /// Sets the executable to use for `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)
@@ -277,6 +275,80 @@ pub struct BuildConfig {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     pub(crate) override_target_rustflags: bool,
+}
+
+impl FromConfigValue for BuildConfig {
+    fn from_config_value(cv: &ConfigValue) -> Result<Self> {
+        let mut jobs = None;
+        let mut rustc = None;
+        let mut rustc_wrapper = None;
+        let mut rustc_workspace_wrapper = None;
+        let mut rustdoc = None;
+        let mut target = None;
+        let mut target_dir = None;
+        let mut rustflags = None;
+        let mut rustdocflags = None;
+        let mut incremental = None;
+        let mut dep_info_basedir = None;
+        for (k, v) in cv.table("build")?.0 {
+            match &**k {
+                "jobs" => {
+                    let (val, def) = v.i64("build.jobs")?;
+                    jobs = Some(Value { val: val.try_into()?, definition: Some(def.clone()) });
+                }
+                "rustc" => {
+                    let (val, def) = v.string("build.rustc")?;
+                    rustc = Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                "rustc-wrapper" => {
+                    let (val, def) = v.string("build.rustc-wrapper")?;
+                    rustc_wrapper =
+                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                "rustc-workspace-wrapper" => {
+                    let (val, def) = v.string("build.rustc-workspace-wrapper")?;
+                    rustc_workspace_wrapper =
+                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                "rustdoc" => {
+                    let (val, def) = v.string("build.rustdoc")?;
+                    rustdoc = Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                // TODO: target
+                "target-dir" => {
+                    let (val, def) = v.string("build.target-dir")?;
+                    target_dir = Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                // TODO: rustflags
+                // TODO: rustdocflags
+                "incremental" => {
+                    let (val, def) = v.boolean("build.incremental")?;
+                    incremental =
+                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                "dep-info-basedir" => {
+                    let (val, def) = v.string("build.dep-info-basedir")?;
+                    dep_info_basedir =
+                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
+                }
+                _ => {}
+            }
+        }
+        Ok(Self {
+            jobs,
+            rustc,
+            rustc_wrapper,
+            rustc_workspace_wrapper,
+            rustdoc,
+            target,
+            target_dir,
+            rustflags,
+            rustdocflags,
+            incremental,
+            dep_info_basedir,
+            override_target_rustflags: false,
+        })
+    }
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs

@@ -153,6 +153,45 @@ fn config_toml() {
     assert_eq!("", ser(&Config::default()));
 }
 
+#[test]
+fn lazy() -> Result<()> {
+    use cargo_config2::lazy::*;
+
+    let (_tmp, root) = test_project("reference")?;
+    let cwd = &root;
+    let config = Config::with_context(cwd, None, ResolveContext::no_env());
+    let build = config.build_config()?;
+
+    // let dir = &fixtures_path().join("reference");
+    // let base_config = &de(dir, )?;
+    // let config = base_config.clone();
+
+    // // [alias]
+    // for (k, v) in &config.alias {
+    //     match k.as_str() {
+    //         "b" => assert_eq!(*v, "build".into()),
+    //         "c" => assert_eq!(*v, "check".into()),
+    //         "t" => assert_eq!(*v, "test".into()),
+    //         "r" => assert_eq!(*v, "run".into()),
+    //         "rr" => assert_eq!(*v, "run --release".into()),
+    //         "recursive_example" => assert_eq!(*v, "rr --example recursions".into()),
+    //         "space_example" => {
+    //             assert_eq!(*v, ["run", "--release", "--", "\"command list\""].into())
+    //         }
+    //         _ => panic!("unexpected alias: name={k}, value={v:?}"),
+    //     }
+    // }
+
+    // [build]
+    assert_eq!(build.rustc.as_ref().unwrap().as_os_str(), "rustc");
+    assert_eq!(build.rustc_wrapper.as_ref().unwrap().as_os_str(), "…");
+    assert_eq!(build.rustc_workspace_wrapper.as_ref().unwrap().as_os_str(), "…");
+    assert_eq!(build.rustdoc.as_ref().unwrap().as_os_str(), "rustdoc");
+    // assert_eq!(build.target.as_ref().unwrap(), &vec!["triple".into()]);
+    assert_eq!(build.target_dir.as_ref().unwrap(), &cwd.join("target"));
+    Ok(())
+}
+
 // #[test]
 // fn custom_target() {
 //     struct IsBuiltin(bool);
@@ -243,7 +282,7 @@ mod helper {
         Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
     }
 
-    fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
+    pub fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
         let tmpdir = tempfile::tempdir()?;
         let tmpdir_path = tmpdir.path();
 

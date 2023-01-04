@@ -20,15 +20,15 @@ pub(crate) fn var(key: &str) -> Result<Option<String>> {
     }
 }
 
-trait ApplyEnv {
+pub(crate) trait ApplyEnv {
     /// Applies configuration environment variables.
     ///
     /// Returns `Ok(true)` if this config is modified.
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool>;
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool>;
 }
 
 impl<T: ApplyEnv + Default> ApplyEnv for Option<T> {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         match self {
             Some(v) => v.apply_env(cx),
             this @ None => {
@@ -52,7 +52,7 @@ impl Config {
     /// difficult to determine exactly which target the target-specific
     /// configuration defined in the environment variables are for.
     /// (e.g., In environment variables, `-` and `.` in the target triple are replaced by `_`)
-    pub fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<()> {
+    pub fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
         for (k, v) in &cx.env {
             if let Some(k) = k.strip_prefix("CARGO_ALIAS_") {
@@ -79,7 +79,7 @@ impl Config {
 }
 
 impl ApplyEnv for BuildConfig {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         let mut modified = false;
 
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs
@@ -212,7 +212,7 @@ impl ApplyEnv for BuildConfig {
 }
 
 impl ApplyEnv for DocConfig {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         let mut modified = false;
         // doc.browser config value is prefer over BROWSER environment variable.
         // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/ops/cargo_doc.rs#L52-L53
@@ -230,7 +230,7 @@ impl ApplyEnv for DocConfig {
 }
 
 impl ApplyEnv for FutureIncompatReportConfig {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         let mut modified = false;
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency
         if let Some(frequency) = cx.env("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY")? {
@@ -242,7 +242,7 @@ impl ApplyEnv for FutureIncompatReportConfig {
 }
 
 impl ApplyEnv for NetConfig {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         let mut modified = false;
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry
         if let Some(retry) = cx.env("CARGO_NET_RETRY")? {
@@ -264,7 +264,7 @@ impl ApplyEnv for NetConfig {
 }
 
 impl ApplyEnv for TermConfig {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         let mut modified = false;
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet
         if let Some(quiet) = cx.env("CARGO_TERM_QUIET")? {
@@ -287,7 +287,7 @@ impl ApplyEnv for TermConfig {
 }
 
 impl ApplyEnv for TermProgress {
-    fn apply_env(&mut self, cx: &mut ResolveContext) -> Result<bool> {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<bool> {
         let mut modified = false;
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswhen
         if let Some(when) = cx.env("CARGO_TERM_PROGRESS_WHEN")? {
