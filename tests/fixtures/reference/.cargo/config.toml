@@ -1,6 +1,6 @@
 # Adapted from https://doc.rust-lang.org/nightly/cargo/reference/config.html#configuration-format.
 
-paths = ["/path/to/override"] # path dependency overrides
+# paths = ["/path/to/override"] # path dependency overrides
 
 [alias]     # command aliases
 b = "build"
@@ -39,8 +39,8 @@ ENV_VAR_NAME_3 = { value = "relative/path", relative = true }
 [future-incompat-report]
 frequency = 'always' # when to display a notification about a future incompat report
 
-[cargo-new]
-vcs = "none"              # VCS to use ('git', 'hg', 'pijul', 'fossil', 'none')
+# [cargo-new]
+# vcs = "none"              # VCS to use ('git', 'hg', 'pijul', 'fossil', 'none')
 
 # [http]
 # debug = false               # HTTP debugging
@@ -86,9 +86,9 @@ offline = true              # do not access the network
 # index = "…"          # URL of the registry index
 # token = "…"          # authentication token for the registry
 
-[registry]
-default = "…"        # name of the default registry
-token = "…"          # authentication token for crates.io
+# [registry]
+# default = "…"        # name of the default registry
+# token = "…"          # authentication token for crates.io
 
 # [source.<name>]      # source definition and replacement
 # replace-with = "…"   # replace this source with the given named source
