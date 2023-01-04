@@ -6,8 +6,6 @@
 
 const _: fn() = || {
     fn assert_auto_traits<T: ?Sized + Send + Sync + Unpin>() {}
-    assert_auto_traits::<crate::api::Config>();
-    assert_auto_traits::<crate::api::ConfigValue>();
     assert_auto_traits::<crate::de::Config>();
     assert_auto_traits::<crate::de::BuildConfig>();
     assert_auto_traits::<crate::de::TargetConfig>();
@@ -27,18 +25,15 @@ const _: fn() = || {
     assert_auto_traits::<crate::easy::Config>();
     assert_auto_traits::<crate::easy::BuildConfig>();
     assert_auto_traits::<crate::easy::TargetConfig>();
-    assert_auto_traits::<crate::easy_old::Config>();
-    assert_auto_traits::<crate::easy_old::BuildConfig>();
-    assert_auto_traits::<crate::easy_old::TargetConfig>();
-    assert_auto_traits::<crate::easy_old::DocConfig>();
-    assert_auto_traits::<crate::easy_old::EnvConfigValue>();
-    assert_auto_traits::<crate::easy_old::FutureIncompatReportConfig>();
-    assert_auto_traits::<crate::easy_old::NetConfig>();
-    assert_auto_traits::<crate::easy_old::TermConfig>();
-    assert_auto_traits::<crate::easy_old::TermProgressConfig>();
-    assert_auto_traits::<crate::easy_old::Rustflags>();
-    assert_auto_traits::<crate::easy_old::PathAndArgs>();
-    assert_auto_traits::<crate::easy_old::StringList>();
+    assert_auto_traits::<crate::easy::DocConfig>();
+    assert_auto_traits::<crate::easy::EnvConfigValue>();
+    assert_auto_traits::<crate::easy::FutureIncompatReportConfig>();
+    assert_auto_traits::<crate::easy::NetConfig>();
+    assert_auto_traits::<crate::easy::TermConfig>();
+    assert_auto_traits::<crate::easy::TermProgressConfig>();
+    assert_auto_traits::<crate::easy::Rustflags>();
+    assert_auto_traits::<crate::easy::PathAndArgs>();
+    assert_auto_traits::<crate::easy::StringList>();
     assert_auto_traits::<crate::Config>();
     assert_auto_traits::<crate::BuildConfig>();
     assert_auto_traits::<crate::TargetConfig>();

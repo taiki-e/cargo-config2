@@ -75,12 +75,9 @@ mod merge_impl;
 #[macro_use]
 mod process;
 
-#[cfg(feature = "lazy")]
-pub mod api;
 mod command;
 pub mod de;
 pub mod easy;
-pub mod easy_old;
 mod env;
 mod merge;
 mod paths;

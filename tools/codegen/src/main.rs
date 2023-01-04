@@ -258,7 +258,7 @@ fn gen_merge() -> Result<()> {
 }
 
 fn gen_is_none() -> Result<()> {
-    let files = &["src/lib.rs", "src/easy.rs", "src/easy_old.rs", "src/de.rs"];
+    let files = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
     // TODO: check if this list is outdated
     let exclude = &[
         "Config",

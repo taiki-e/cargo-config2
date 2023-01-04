@@ -12,7 +12,7 @@ use std::{
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::{Config, StringOrArray};
+use crate::StringOrArray;
 
 #[allow(clippy::exhaustive_structs)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

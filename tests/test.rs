@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::{Context as _, Result};
-use cargo_config2::{de, easy_old::*};
+use cargo_config2::{de, easy::*};
 use toml_edit::easy as toml;
 
 fn assert_reference_example(de: fn(&Path, ResolveContext) -> Result<Config>) -> Result<()> {
