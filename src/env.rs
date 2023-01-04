@@ -12,14 +12,6 @@ use crate::{
     value::{Definition, Value},
 };
 
-pub(crate) fn var(key: &str) -> Result<Option<String>> {
-    match std::env::var(key) {
-        Ok(v) => Ok(Some(v)),
-        Err(std::env::VarError::NotPresent) => Ok(None),
-        Err(e) => Err(e.into()),
-    }
-}
-
 pub(crate) trait ApplyEnv {
     /// Applies configuration environment variables.
     ///

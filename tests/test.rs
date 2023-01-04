@@ -1,16 +1,14 @@
 #![allow(clippy::bool_assert_comparison)]
 
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::Path,
-};
+use std::path::Path;
 
-use anyhow::{Context as _, Result};
-use cargo_config2::{de, easy::*};
+use anyhow::Result;
+use cargo_config2::*;
 use toml_edit::easy as toml;
 
 fn assert_reference_example(de: fn(&Path, ResolveContext) -> Result<Config>) -> Result<()> {
-    let dir = &fixtures_path().join("reference");
+    let (_tmp, root) = test_project("reference")?;
+    let dir = &root;
     let base_config = &de(dir, ResolveContext::no_env())?;
     let config = base_config.clone();
 
@@ -54,9 +52,9 @@ fn assert_reference_example(de: fn(&Path, ResolveContext) -> Result<Config>) -> 
     assert_eq!(config.env["ENV_VAR_NAME_2"].value, "value");
     assert_eq!(config.env["ENV_VAR_NAME_2"].force, true);
     assert_eq!(config.env["ENV_VAR_NAME_2"].relative, false);
-    assert_eq!(config.env["ENV_VAR_NAME_3"].value, "relative/path");
+    assert_eq!(config.env["ENV_VAR_NAME_3"].value, dir.join("relative/path"));
     assert_eq!(config.env["ENV_VAR_NAME_3"].force, false);
-    assert_eq!(config.env["ENV_VAR_NAME_3"].relative, true);
+    assert_eq!(config.env["ENV_VAR_NAME_3"].relative, false); // false because it has been resolved
 
     // [future-incompat-report]
     assert_eq!(config.future_incompat_report.frequency, Some(Frequency::Always));
@@ -144,10 +142,10 @@ fn easy() {
     fn de(dir: &Path, cx: ResolveContext) -> Result<Config> {
         Config::load_with_context(dir, None, cx)
     }
-    #[track_caller]
-    fn ser(config: &Config) -> String {
-        toml::to_string(&config).unwrap()
-    }
+    // #[track_caller]
+    // fn ser(config: &Config) -> String {
+    //     toml::to_string(&config).unwrap()
+    // }
 
     assert_reference_example(de).unwrap();
 
@@ -156,9 +154,9 @@ fn easy() {
 
 #[test]
 fn de() {
-    fn de(dir: &Path, _cx: ResolveContext) -> Result<de::Config> {
-        de::Config::load_with_context(dir, None)
-    }
+    // fn de(dir: &Path, _cx: ResolveContext) -> Result<de::Config> {
+    //     de::Config::load_with_context(dir, None)
+    // }
     #[track_caller]
     fn ser(config: &de::Config) -> String {
         toml::to_string(&config).unwrap()

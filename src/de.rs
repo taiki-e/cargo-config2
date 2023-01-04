@@ -529,7 +529,7 @@ impl FromStr for Frequency {
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
 pub struct Rustflags {
-    pub(crate) flags: Vec<Value<String>>,
+    pub flags: Vec<Value<String>>,
     // for merge
     #[serde(skip)]
     pub(crate) deserialized_repr: StringListDeserializedRepr,
@@ -617,13 +617,13 @@ impl ConfigRelativePath {
         &self.0.val
     }
 
-    /// Resolves this configuration-relative path to an absolute path.
-    ///
-    /// This will always return an absolute path where it's relative to the
-    /// location for configuration for this value.
-    pub(crate) fn resolve_path(&self, current_dir: &Path) -> Cow<'_, Path> {
-        self.0.resolve_as_path(current_dir)
-    }
+    // /// Resolves this configuration-relative path to an absolute path.
+    // ///
+    // /// This will always return an absolute path where it's relative to the
+    // /// location for configuration for this value.
+    // pub(crate) fn resolve_path(&self, current_dir: &Path) -> Cow<'_, Path> {
+    //     self.0.resolve_as_path(current_dir)
+    // }
 
     /// Resolves this configuration-relative path to either an absolute path or
     /// something appropriate to execute from `PATH`.
@@ -801,18 +801,25 @@ pub enum StringOrArray {
 }
 
 impl StringOrArray {
-    pub(crate) fn string(&self) -> Option<&Value<String>> {
+    pub(crate) const fn kind(&self) -> &'static str {
         match self {
-            Self::String(s) => Some(s),
-            Self::Array(_) => None,
+            Self::String(..) => "string",
+            Self::Array(..) => "array",
         }
     }
-    pub(crate) fn array(&self) -> Option<&[Value<String>]> {
-        match self {
-            Self::String(_) => None,
-            Self::Array(v) => Some(v),
-        }
-    }
+
+    // pub(crate) fn string(&self) -> Option<&Value<String>> {
+    //     match self {
+    //         Self::String(s) => Some(s),
+    //         Self::Array(_) => None,
+    //     }
+    // }
+    // pub(crate) fn array(&self) -> Option<&[Value<String>]> {
+    //     match self {
+    //         Self::String(_) => None,
+    //         Self::Array(v) => Some(v),
+    //     }
+    // }
     pub(crate) fn as_array_no_split(&self) -> &[Value<String>] {
         match self {
             Self::String(s) => slice::from_ref(s),

@@ -12,8 +12,6 @@ use std::{
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::StringOrArray;
-
 #[allow(clippy::exhaustive_structs)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -85,16 +83,16 @@ impl Definition {
         }
     }
 
-    /// Returns true if self is a higher priority to other.
-    ///
-    /// CLI is preferred over environment, which is preferred over files.
-    pub(crate) fn is_higher_priority(&self, other: &Definition) -> bool {
-        matches!(
-            (self, other),
-            (Definition::Cli(_), Definition::Environment(_) | Definition::Path(_))
-                | (Definition::Environment(_), Definition::Path(_))
-        )
-    }
+    // /// Returns true if self is a higher priority to other.
+    // ///
+    // /// CLI is preferred over environment, which is preferred over files.
+    // pub(crate) fn is_higher_priority(&self, other: &Definition) -> bool {
+    //     matches!(
+    //         (self, other),
+    //         (Definition::Cli(_), Definition::Environment(_) | Definition::Path(_))
+    //             | (Definition::Environment(_), Definition::Path(_))
+    //     )
+    // }
 }
 
 impl fmt::Display for Definition {
@@ -145,17 +143,5 @@ impl<T: SetPath> SetPath for BTreeMap<String, T> {
 impl<T> SetPath for Value<T> {
     fn set_path(&mut self, path: &Path) {
         self.definition = Some(Definition::Path(path.to_owned()));
-    }
-}
-impl<T> SetPath for StringOrArray<Value<T>> {
-    fn set_path(&mut self, path: &Path) {
-        match self {
-            StringOrArray::String(s) => s.definition = Some(Definition::Path(path.to_owned())),
-            StringOrArray::Array(v) => {
-                for v in v {
-                    v.definition = Some(Definition::Path(path.to_owned()));
-                }
-            }
-        }
     }
 }

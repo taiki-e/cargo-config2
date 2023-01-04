@@ -26,7 +26,7 @@ fn reference(c: &mut Criterion) {
     g.bench_function("load_config_easy", |b| {
         b.iter(|| {
             let config =
-                cargo_config2::easy::Config::load_with_context(dir, None, ResolveContext::no_env())
+                cargo_config2::Config::load_with_context(dir, None, ResolveContext::no_env())
                     .unwrap();
             black_box(config)
         });

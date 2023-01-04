@@ -34,16 +34,7 @@ const _: fn() = || {
     assert_auto_traits::<crate::easy::Rustflags>();
     assert_auto_traits::<crate::easy::PathAndArgs>();
     assert_auto_traits::<crate::easy::StringList>();
-    assert_auto_traits::<crate::Config>();
-    assert_auto_traits::<crate::BuildConfig>();
-    assert_auto_traits::<crate::TargetConfig>();
-    assert_auto_traits::<crate::DocConfig>();
     assert_auto_traits::<crate::EnvConfigValue>();
-    assert_auto_traits::<crate::FutureIncompatReportConfig>();
-    assert_auto_traits::<crate::NetConfig>();
-    assert_auto_traits::<crate::TermConfig>();
-    assert_auto_traits::<crate::TermProgress>();
-    assert_auto_traits::<crate::Rustflags>();
     assert_auto_traits::<crate::resolve::ResolveContext>();
     assert_auto_traits::<crate::resolve::TargetTripleRef<'_>>();
     assert_auto_traits::<crate::resolve::TargetTriple>();

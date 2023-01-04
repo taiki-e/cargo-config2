@@ -9,14 +9,10 @@ use std::{
 use anyhow::{bail, Result};
 use serde::Serialize;
 
-use crate::de::{self, split_encoded, split_space_separated};
-#[doc(no_inline)]
-pub use crate::de::{Color, Frequency, When};
-pub use crate::{
-    command::host_triple,
+use crate::{
+    de::{self, split_encoded, split_space_separated, Color, Frequency, When},
     resolve::{ResolveContext, TargetTriple, TargetTripleRef},
-    value::{Definition, Value},
-    walk::Walk,
+    value::Value,
 };
 
 #[derive(Debug, Clone, Serialize)]
@@ -472,17 +468,17 @@ impl BuildConfig {
 pub struct TargetConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinker)
     #[serde(skip_serializing_if = "Option::is_none")]
-    linker: Option<PathBuf>,
+    pub linker: Option<PathBuf>,
     /// [reference (`target.<triple>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerunner)
     ///
     /// [reference (`target.<cfg>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrunner)
     #[serde(skip_serializing_if = "Option::is_none")]
-    runner: Option<PathAndArgs>,
+    pub runner: Option<PathAndArgs>,
     /// [reference (`target.<triple>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerustflags)
     ///
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    rustflags: Option<Rustflags>,
+    pub rustflags: Option<Rustflags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
 }
 
@@ -711,7 +707,7 @@ impl TermProgressConfig {
 }
 
 /// A representation of rustflags and rustdocflags.
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]
 pub struct Rustflags {
@@ -829,12 +825,6 @@ impl Rustflags {
     }
 }
 
-impl PartialEq for Rustflags {
-    fn eq(&self, other: &Self) -> bool {
-        self.flags == other.flags
-    }
-}
-
 impl From<Vec<String>> for Rustflags {
     fn from(value: Vec<String>) -> Self {
         Self { flags: value }
@@ -861,7 +851,7 @@ impl<const N: usize> From<[&str; N]> for Rustflags {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct PathAndArgs {
     pub path: PathBuf,
@@ -882,7 +872,7 @@ impl Serialize for PathAndArgs {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]
 pub struct StringList {
