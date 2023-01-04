@@ -60,7 +60,7 @@ impl Config {
                     k.to_owned(),
                     StringList::from_string(
                         v.to_str().ok_or_else(|| std::env::VarError::NotUnicode(v.clone()))?,
-                        &Some(Definition::Environment(k.to_owned().into())),
+                        Some(&Definition::Environment(k.to_owned().into())),
                     ),
                 );
                 continue;
@@ -164,11 +164,17 @@ impl ApplyEnv for BuildConfig {
             self.override_target_rustflags = true;
             modified = true;
         } else if let Some(rustflags) = cx.env("RUSTFLAGS")? {
-            self.rustflags = Some(Rustflags::from_space_separated(&rustflags));
+            self.rustflags = Some(Rustflags::from_space_separated(
+                &rustflags.val,
+                rustflags.definition.as_ref(),
+            ));
             self.override_target_rustflags = true;
             modified = true;
         } else if let Some(rustflags) = cx.env("CARGO_BUILD_RUSTFLAGS")? {
-            self.rustflags = Some(Rustflags::from_space_separated(&rustflags));
+            self.rustflags = Some(Rustflags::from_space_separated(
+                &rustflags.val,
+                rustflags.definition.as_ref(),
+            ));
             modified = true;
         }
         // 1. CARGO_ENCODED_RUSTDOCFLAGS
@@ -179,10 +185,16 @@ impl ApplyEnv for BuildConfig {
             self.rustdocflags = Some(Rustflags::from_encoded(&rustdocflags));
             modified = true;
         } else if let Some(rustdocflags) = cx.env("RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_space_separated(&rustdocflags));
+            self.rustdocflags = Some(Rustflags::from_space_separated(
+                &rustdocflags.val,
+                rustdocflags.definition.as_ref(),
+            ));
             modified = true;
         } else if let Some(rustdocflags) = cx.env("CARGO_BUILD_RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_space_separated(&rustdocflags));
+            self.rustdocflags = Some(Rustflags::from_space_separated(
+                &rustdocflags.val,
+                rustdocflags.definition.as_ref(),
+            ));
             modified = true;
         }
 

@@ -5,7 +5,11 @@
 #![cfg_attr(rustfmt, rustfmt::skip)]
 
 use std::path::Path;
-use crate::{merge::Merge, value::SetPath, Result};
+use crate::{
+    lazy::{FromConfigValue, ConfigValue},
+    merge::Merge, value::{SetPath, Value},
+    Result,
+};
 impl Merge for crate::de::Config {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.alias.merge(from.alias, force)?;
@@ -62,6 +66,112 @@ impl SetPath for crate::de::BuildConfig {
         self.dep_info_basedir.set_path(path);
     }
 }
+impl FromConfigValue for crate::de::BuildConfig {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut jobs = None;
+        let mut rustc = None;
+        let mut rustc_wrapper = None;
+        let mut rustc_workspace_wrapper = None;
+        let mut rustdoc = None;
+        let mut target = None;
+        let mut target_dir = None;
+        let mut rustflags = None;
+        let mut rustdocflags = None;
+        let mut incremental = None;
+        let mut dep_info_basedir = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "jobs" => {
+                    let (val, def) = v.i64(&[current_key, "jobs"])?;
+                    jobs = Some(Value {
+                        val: val.try_into()?,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "rustc" => {
+                    let (val, def) = v.string(&[current_key, "rustc"])?;
+                    rustc = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                "rustc-wrapper" => {
+                    let (val, def) = v.string(&[current_key, "rustc-wrapper"])?;
+                    rustc_wrapper = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                "rustc-workspace-wrapper" => {
+                    let (val, def) = v
+                        .string(&[current_key, "rustc-workspace-wrapper"])?;
+                    rustc_workspace_wrapper = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                "rustdoc" => {
+                    let (val, def) = v.string(&[current_key, "rustdoc"])?;
+                    rustdoc = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                "target" => {
+                    target = Some(
+                        crate::de::StringOrArray::from_config_value(v, "build.target")?,
+                    );
+                }
+                "target-dir" => {
+                    let (val, def) = v.string(&[current_key, "target-dir"])?;
+                    target_dir = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                "rustflags" => {
+                    rustflags = Some(
+                        crate::de::Rustflags::from_config_value(v, "build.rustflags")?,
+                    );
+                }
+                "rustdocflags" => {
+                    rustdocflags = Some(
+                        crate::de::Rustflags::from_config_value(v, "build.rustdocflags")?,
+                    );
+                }
+                "incremental" => {
+                    let (val, def) = v.boolean(&[current_key, "incremental"])?;
+                    incremental = Some(Value {
+                        val,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "dep-info-basedir" => {
+                    let (val, def) = v.string(&[current_key, "dep-info-basedir"])?;
+                    dep_info_basedir = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                _ => {}
+            }
+        }
+        Ok(Self {
+            jobs,
+            rustc,
+            rustc_wrapper,
+            rustc_workspace_wrapper,
+            rustdoc,
+            target,
+            target_dir,
+            rustflags,
+            rustdocflags,
+            incremental,
+            dep_info_basedir,
+            override_target_rustflags: Default::default(),
+        })
+    }
+}
 impl Merge for crate::de::TargetConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.linker.merge(from.linker, force)?;
@@ -77,6 +187,36 @@ impl SetPath for crate::de::TargetConfig {
         self.rustflags.set_path(path);
     }
 }
+impl FromConfigValue for crate::de::TargetConfig {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut linker = None;
+        let mut runner = None;
+        let mut rustflags = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "linker" => {
+                    let (val, def) = v.string(&[current_key, "linker"])?;
+                    linker = Some(Value {
+                        val: val.to_owned(),
+                        definition: Some(def.clone()),
+                    });
+                }
+                "runner" => {
+                    runner = Some(
+                        crate::de::PathAndArgs::from_config_value(v, "runner")?,
+                    );
+                }
+                "rustflags" => {
+                    rustflags = Some(
+                        crate::de::Rustflags::from_config_value(v, "rustflags")?,
+                    );
+                }
+                _ => {}
+            }
+        }
+        Ok(Self { linker, runner, rustflags })
+    }
+}
 impl Merge for crate::de::DocConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.browser.merge(from.browser, force)?;
@@ -86,6 +226,22 @@ impl Merge for crate::de::DocConfig {
 impl SetPath for crate::de::DocConfig {
     fn set_path(&mut self, path: &Path) {
         self.browser.set_path(path);
+    }
+}
+impl FromConfigValue for crate::de::DocConfig {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut browser = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "browser" => {
+                    browser = Some(
+                        crate::de::PathAndArgs::from_config_value(v, "doc.browser")?,
+                    );
+                }
+                _ => {}
+            }
+        }
+        Ok(Self { browser })
     }
 }
 impl SetPath for crate::de::EnvConfigValue {
@@ -113,6 +269,24 @@ impl SetPath for crate::de::FutureIncompatReportConfig {
         self.frequency.set_path(path);
     }
 }
+impl FromConfigValue for crate::de::FutureIncompatReportConfig {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut frequency = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "frequency" => {
+                    let (val, def) = v.string(&[current_key, "frequency"])?;
+                    frequency = Some(Value {
+                        val: val.parse::<crate::Frequency>()?,
+                        definition: Some(def.clone()),
+                    });
+                }
+                _ => {}
+            }
+        }
+        Ok(Self { frequency })
+    }
+}
 impl Merge for crate::de::NetConfig {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.retry.merge(from.retry, force)?;
@@ -126,6 +300,44 @@ impl SetPath for crate::de::NetConfig {
         self.retry.set_path(path);
         self.git_fetch_with_cli.set_path(path);
         self.offline.set_path(path);
+    }
+}
+impl FromConfigValue for crate::de::NetConfig {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut retry = None;
+        let mut git_fetch_with_cli = None;
+        let mut offline = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "retry" => {
+                    let (val, def) = v.i64(&[current_key, "retry"])?;
+                    retry = Some(Value {
+                        val: val.try_into()?,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "git-fetch-with-cli" => {
+                    let (val, def) = v.boolean(&[current_key, "git-fetch-with-cli"])?;
+                    git_fetch_with_cli = Some(Value {
+                        val,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "offline" => {
+                    let (val, def) = v.boolean(&[current_key, "offline"])?;
+                    offline = Some(Value {
+                        val,
+                        definition: Some(def.clone()),
+                    });
+                }
+                _ => {}
+            }
+        }
+        Ok(Self {
+            retry,
+            git_fetch_with_cli,
+            offline,
+        })
     }
 }
 impl Merge for crate::de::TermConfig {
@@ -145,6 +357,51 @@ impl SetPath for crate::de::TermConfig {
         self.progress.set_path(path);
     }
 }
+impl FromConfigValue for crate::de::TermConfig {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut quiet = None;
+        let mut verbose = None;
+        let mut color = None;
+        let mut progress = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "quiet" => {
+                    let (val, def) = v.boolean(&[current_key, "quiet"])?;
+                    quiet = Some(Value {
+                        val,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "verbose" => {
+                    let (val, def) = v.boolean(&[current_key, "verbose"])?;
+                    verbose = Some(Value {
+                        val,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "color" => {
+                    let (val, def) = v.string(&[current_key, "color"])?;
+                    color = Some(Value {
+                        val: val.parse::<crate::Color>()?,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "progress" => {
+                    progress = Some(
+                        crate::de::TermProgress::from_config_value(v, "term.progress")?,
+                    );
+                }
+                _ => {}
+            }
+        }
+        Ok(Self {
+            quiet,
+            verbose,
+            color,
+            progress: progress.unwrap_or_default(),
+        })
+    }
+}
 impl Merge for crate::de::TermProgress {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.when.merge(from.when, force)?;
@@ -156,6 +413,32 @@ impl SetPath for crate::de::TermProgress {
     fn set_path(&mut self, path: &Path) {
         self.when.set_path(path);
         self.width.set_path(path);
+    }
+}
+impl FromConfigValue for crate::de::TermProgress {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        let mut when = None;
+        let mut width = None;
+        for (k, v) in value.table(&[current_key])?.0 {
+            match k.as_str() {
+                "when" => {
+                    let (val, def) = v.string(&[current_key, "when"])?;
+                    when = Some(Value {
+                        val: val.parse::<crate::When>()?,
+                        definition: Some(def.clone()),
+                    });
+                }
+                "width" => {
+                    let (val, def) = v.i64(&[current_key, "width"])?;
+                    width = Some(Value {
+                        val: val.try_into()?,
+                        definition: Some(def.clone()),
+                    });
+                }
+                _ => {}
+            }
+        }
+        Ok(Self { when, width })
     }
 }
 impl SetPath for crate::de::Rustflags {

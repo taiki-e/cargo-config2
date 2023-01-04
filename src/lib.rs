@@ -57,6 +57,8 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::module_name_repetitions,
     clippy::must_use_candidate,
     clippy::single_match_else,
+    clippy::single_match,
+    clippy::too_many_lines,
     clippy::unnecessary_wraps
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]

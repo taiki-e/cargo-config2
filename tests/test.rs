@@ -187,7 +187,7 @@ fn lazy() -> Result<()> {
     assert_eq!(build.rustc_wrapper.as_ref().unwrap().as_os_str(), "…");
     assert_eq!(build.rustc_workspace_wrapper.as_ref().unwrap().as_os_str(), "…");
     assert_eq!(build.rustdoc.as_ref().unwrap().as_os_str(), "rustdoc");
-    // assert_eq!(build.target.as_ref().unwrap(), &vec!["triple".into()]);
+    assert_eq!(build.target.as_ref().unwrap(), &vec!["triple".into()]);
     assert_eq!(build.target_dir.as_ref().unwrap(), &cwd.join("target"));
     Ok(())
 }

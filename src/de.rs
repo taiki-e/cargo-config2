@@ -7,7 +7,7 @@ use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    lazy::{ConfigValue, FromConfigValue},
+    lazy::{self, ConfigValue, FromConfigValue},
     merge,
     resolve::{ResolveContext, TargetTripleRef},
     value::{Definition, Value},
@@ -149,7 +149,8 @@ impl Config {
             );
         }
         if let Some(rustflags) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
-            let mut rustflags = Rustflags::from_space_separated(&rustflags);
+            let mut rustflags =
+                Rustflags::from_space_separated(&rustflags.val, rustflags.definition.as_ref());
             match &mut target_rustflags {
                 Some(target_rustflags) => {
                     target_rustflags.flags.append(&mut rustflags.flags);
@@ -275,80 +276,6 @@ pub struct BuildConfig {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     pub(crate) override_target_rustflags: bool,
-}
-
-impl FromConfigValue for BuildConfig {
-    fn from_config_value(cv: &ConfigValue) -> Result<Self> {
-        let mut jobs = None;
-        let mut rustc = None;
-        let mut rustc_wrapper = None;
-        let mut rustc_workspace_wrapper = None;
-        let mut rustdoc = None;
-        let mut target = None;
-        let mut target_dir = None;
-        let mut rustflags = None;
-        let mut rustdocflags = None;
-        let mut incremental = None;
-        let mut dep_info_basedir = None;
-        for (k, v) in cv.table("build")?.0 {
-            match &**k {
-                "jobs" => {
-                    let (val, def) = v.i64("build.jobs")?;
-                    jobs = Some(Value { val: val.try_into()?, definition: Some(def.clone()) });
-                }
-                "rustc" => {
-                    let (val, def) = v.string("build.rustc")?;
-                    rustc = Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                "rustc-wrapper" => {
-                    let (val, def) = v.string("build.rustc-wrapper")?;
-                    rustc_wrapper =
-                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                "rustc-workspace-wrapper" => {
-                    let (val, def) = v.string("build.rustc-workspace-wrapper")?;
-                    rustc_workspace_wrapper =
-                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                "rustdoc" => {
-                    let (val, def) = v.string("build.rustdoc")?;
-                    rustdoc = Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                // TODO: target
-                "target-dir" => {
-                    let (val, def) = v.string("build.target-dir")?;
-                    target_dir = Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                // TODO: rustflags
-                // TODO: rustdocflags
-                "incremental" => {
-                    let (val, def) = v.boolean("build.incremental")?;
-                    incremental =
-                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                "dep-info-basedir" => {
-                    let (val, def) = v.string("build.dep-info-basedir")?;
-                    dep_info_basedir =
-                        Some(Value { val: val.to_owned(), definition: Some(def.clone()) });
-                }
-                _ => {}
-            }
-        }
-        Ok(Self {
-            jobs,
-            rustc,
-            rustc_wrapper,
-            rustc_workspace_wrapper,
-            rustdoc,
-            target,
-            target_dir,
-            rustflags,
-            rustdocflags,
-            incremental,
-            dep_info_basedir,
-            override_target_rustflags: false,
-        })
-    }
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
@@ -627,13 +554,17 @@ impl Rustflags {
     /// - `build.rustdocflags`
     ///
     /// See also [`encode_space_separated`](Self::encode_space_separated).
-    pub(crate) fn from_space_separated(s: &Value<String>) -> Self {
+    pub(crate) fn from_space_separated(s: &str, def: Option<&Definition>) -> Self {
         Self {
-            flags: split_space_separated(&s.val)
-                .map(|v| Value { val: v.to_owned(), definition: s.definition.clone() })
+            flags: split_space_separated(s)
+                .map(|v| Value { val: v.to_owned(), definition: def.cloned() })
                 .collect(),
             deserialized_repr: StringListDeserializedRepr::String,
         }
+    }
+
+    pub(crate) fn from_array(flags: Vec<Value<String>>) -> Self {
+        Self { flags, deserialized_repr: StringListDeserializedRepr::Array }
     }
 }
 
@@ -644,10 +575,22 @@ impl<'de> Deserialize<'de> for Rustflags {
     {
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
-            StringOrArray::String(s) => Ok(Self::from_space_separated(&s)),
-            StringOrArray::Array(v) => {
-                Ok(Self { flags: v, deserialized_repr: StringListDeserializedRepr::Array })
+            StringOrArray::String(s) => {
+                Ok(Self::from_space_separated(&s.val, s.definition.as_ref()))
             }
+            StringOrArray::Array(v) => Ok(Self::from_array(v)),
+        }
+    }
+}
+impl FromConfigValue for Rustflags {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        match value.list_or_string(&[current_key])? {
+            lazy::ArrayOrString::String(s, def) => Ok(Self::from_space_separated(s, Some(def))),
+            lazy::ArrayOrString::Array(v) => Ok(Self::from_array({
+                v.iter()
+                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
+                    .collect()
+            })),
         }
     }
 }
@@ -695,6 +638,29 @@ pub struct PathAndArgs {
 
     // for merge
     pub(crate) deserialized_repr: StringListDeserializedRepr,
+}
+
+impl PathAndArgs {
+    pub(crate) fn from_string(value: &str, definition: Option<Definition>) -> Option<Self> {
+        let mut s = split_space_separated(value);
+        let path = s.next()?;
+        Some(Self {
+            args: s.map(|v| Value { val: v.to_owned(), definition: definition.clone() }).collect(),
+            path: ConfigRelativePath(Value { val: path.to_owned(), definition }),
+            deserialized_repr: StringListDeserializedRepr::String,
+        })
+    }
+    pub(crate) fn from_array(mut list: Vec<Value<String>>) -> Option<Self> {
+        if list.is_empty() {
+            return None;
+        }
+        let path = list.remove(0);
+        Some(Self {
+            path: ConfigRelativePath(path),
+            args: list,
+            deserialized_repr: StringListDeserializedRepr::Array,
+        })
+    }
 }
 
 impl Serialize for PathAndArgs {
@@ -745,27 +711,17 @@ impl<'de> Deserialize<'de> for PathAndArgs {
         }
     }
 }
-
-impl PathAndArgs {
-    pub(crate) fn from_string(value: &str, definition: Option<Definition>) -> Option<Self> {
-        let mut s = split_space_separated(value);
-        let path = s.next()?;
-        Some(Self {
-            args: s.map(|v| Value { val: v.to_owned(), definition: definition.clone() }).collect(),
-            path: ConfigRelativePath(Value { val: path.to_owned(), definition }),
-            deserialized_repr: StringListDeserializedRepr::String,
-        })
-    }
-    pub(crate) fn from_array(mut list: Vec<Value<String>>) -> Option<Self> {
-        if list.is_empty() {
-            return None;
+impl FromConfigValue for PathAndArgs {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        match value.list_or_string(&[current_key])? {
+            lazy::ArrayOrString::String(s, def) => Self::from_string(s, Some(def.clone())),
+            lazy::ArrayOrString::Array(v) => Self::from_array({
+                v.iter()
+                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
+                    .collect()
+            }),
         }
-        let path = list.remove(0);
-        Some(Self {
-            path: ConfigRelativePath(path),
-            args: list,
-            deserialized_repr: StringListDeserializedRepr::Array,
-        })
+        .context("invalid length 0, expected at least one element")
     }
 }
 
@@ -789,6 +745,20 @@ impl StringListDeserializedRepr {
             Self::String => "string",
             Self::Array => "array",
         }
+    }
+}
+
+impl StringList {
+    pub(crate) fn from_string(value: &str, definition: Option<&Definition>) -> Self {
+        Self {
+            list: split_space_separated(value)
+                .map(|v| Value { val: v.to_owned(), definition: definition.cloned() })
+                .collect(),
+            deserialized_repr: StringListDeserializedRepr::String,
+        }
+    }
+    pub(crate) fn from_array(list: Vec<Value<String>>) -> Self {
+        Self { list, deserialized_repr: StringListDeserializedRepr::Array }
     }
 }
 
@@ -822,23 +792,21 @@ impl<'de> Deserialize<'de> for StringList {
     {
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
-            StringOrArray::String(s) => Ok(Self::from_string(&s.val, &s.definition)),
+            StringOrArray::String(s) => Ok(Self::from_string(&s.val, s.definition.as_ref())),
             StringOrArray::Array(v) => Ok(Self::from_array(v)),
         }
     }
 }
-
-impl StringList {
-    pub(crate) fn from_string(value: &str, definition: &Option<Definition>) -> Self {
-        Self {
-            list: split_space_separated(value)
-                .map(|v| Value { val: v.to_owned(), definition: definition.clone() })
-                .collect(),
-            deserialized_repr: StringListDeserializedRepr::String,
+impl FromConfigValue for StringList {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        match value.list_or_string(&[current_key])? {
+            lazy::ArrayOrString::String(s, def) => Ok(Self::from_string(s, Some(def))),
+            lazy::ArrayOrString::Array(v) => Ok(Self::from_array({
+                v.iter()
+                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
+                    .collect()
+            })),
         }
-    }
-    pub(crate) fn from_array(list: Vec<Value<String>>) -> Self {
-        Self { list, deserialized_repr: StringListDeserializedRepr::Array }
     }
 }
 
@@ -868,6 +836,21 @@ impl StringOrArray {
         match self {
             Self::String(s) => slice::from_ref(s),
             Self::Array(v) => v,
+        }
+    }
+}
+
+impl FromConfigValue for StringOrArray {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self> {
+        match value.list_or_string(&[current_key])? {
+            lazy::ArrayOrString::String(s, def) => {
+                Ok(Self::String(Value { val: s.to_owned(), definition: Some(def.clone()) }))
+            }
+            lazy::ArrayOrString::Array(v) => Ok(Self::Array({
+                v.iter()
+                    .map(|(v, def)| Value { val: v.clone(), definition: Some(def.clone()) })
+                    .collect()
+            })),
         }
     }
 }

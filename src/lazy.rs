@@ -10,6 +10,7 @@ use toml_edit::easy as toml;
 
 use crate::{de, easy, env::ApplyEnv, Definition, ResolveContext, Walk};
 
+#[derive(Debug)]
 pub struct Config {
     cwd: PathBuf,
     home: Option<PathBuf>,
@@ -38,13 +39,13 @@ impl Config {
         self.values.get_or_try_init(|| self.load_values())
     }
 
-    fn get<'de, T: FromConfigValue + Default>(&self, key: &str) -> Result<T> {
+    fn get<T: FromConfigValue + Default>(&self, key: &str) -> Result<T> {
         let values = self.values()?;
         let value = match values.get(key) {
             Some(value) => value,
             None => return Ok(T::default()),
         };
-        T::from_config_value(value)
+        T::from_config_value(value, key)
     }
 
     pub fn build_config(&self) -> Result<&easy::BuildConfig> {
@@ -84,8 +85,8 @@ impl Config {
     }
 }
 
-pub(crate) trait FromConfigValue: Default {
-    fn from_config_value(value: &ConfigValue) -> Result<Self>;
+pub(crate) trait FromConfigValue: Sized {
+    fn from_config_value(value: &ConfigValue, current_key: &str) -> Result<Self>;
 }
 
 #[allow(clippy::exhaustive_enums)]
@@ -218,38 +219,46 @@ impl ConfigValue {
         Ok(())
     }
 
-    pub fn i64(&self, key: &str) -> Result<(i64, &Definition)> {
+    pub fn i64(&self, key: &[&str]) -> Result<(i64, &Definition)> {
         match self {
             Self::Integer(i, def) => Ok((*i, def)),
             _ => self.expected("integer", key),
         }
     }
 
-    pub fn string(&self, key: &str) -> Result<(&str, &Definition)> {
+    pub fn string(&self, key: &[&str]) -> Result<(&str, &Definition)> {
         match self {
             Self::String(s, def) => Ok((s, def)),
             _ => self.expected("string", key),
         }
     }
 
-    pub fn table(&self, key: &str) -> Result<(&HashMap<String, ConfigValue>, &Definition)> {
+    pub fn table(&self, key: &[&str]) -> Result<(&HashMap<String, ConfigValue>, &Definition)> {
         match self {
             Self::Table(table, def) => Ok((table, def)),
             _ => self.expected("table", key),
         }
     }
 
-    pub fn list(&self, key: &str) -> Result<&[(String, Definition)]> {
+    pub fn list(&self, key: &[&str]) -> Result<&[(String, Definition)]> {
         match self {
             Self::List(list, _) => Ok(list),
             _ => self.expected("list", key),
         }
     }
 
-    pub fn boolean(&self, key: &str) -> Result<(bool, &Definition)> {
+    pub fn boolean(&self, key: &[&str]) -> Result<(bool, &Definition)> {
         match self {
             Self::Boolean(b, def) => Ok((*b, def)),
             _ => self.expected("bool", key),
+        }
+    }
+
+    pub(crate) fn list_or_string(&self, key: &[&str]) -> Result<ArrayOrString<'_>> {
+        match self {
+            Self::String(s, def) => Ok(ArrayOrString::String(s, def)),
+            Self::List(list, _) => Ok(ArrayOrString::Array(list)),
+            _ => self.expected("list or string", key),
         }
     }
 
@@ -273,13 +282,18 @@ impl ConfigValue {
         }
     }
 
-    fn expected<T>(&self, wanted: &str, key: &str) -> Result<T> {
+    fn expected<T>(&self, wanted: &str, key: &[&str]) -> Result<T> {
         bail!(
             "expected a {}, but found a {} for `{}` in {}",
             wanted,
             self.desc(),
-            key,
+            key.join("."),
             self.definition()
         )
     }
+}
+
+pub(crate) enum ArrayOrString<'a> {
+    String(&'a str, &'a Definition),
+    Array(&'a [(String, Definition)]),
 }

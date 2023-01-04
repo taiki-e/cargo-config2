@@ -34,6 +34,8 @@ const _: fn() = || {
     assert_auto_traits::<crate::easy::Rustflags>();
     assert_auto_traits::<crate::easy::PathAndArgs>();
     assert_auto_traits::<crate::easy::StringList>();
+    assert_auto_traits::<crate::lazy::Config>();
+    assert_auto_traits::<crate::lazy::ConfigValue>();
     assert_auto_traits::<crate::Config>();
     assert_auto_traits::<crate::BuildConfig>();
     assert_auto_traits::<crate::TargetConfig>();
