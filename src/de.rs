@@ -154,9 +154,9 @@ impl Config {
         target_configs: &BTreeMap<String, TargetConfig>,
         override_target_rustflags: bool,
         build_rustflags: &Option<Rustflags>,
-        target_triple: &TargetTriple,
+        target_triple: &TargetTriple<'_>,
     ) -> Result<Option<TargetConfig>> {
-        let target = &target_triple.triple;
+        let target = target_triple.triple();
         let mut target_config = target_configs.get(target).cloned();
 
         let target_u_upper = target_u_upper(target);

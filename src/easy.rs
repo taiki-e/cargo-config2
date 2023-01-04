@@ -43,7 +43,7 @@ pub struct Config {
     // TODO: registries
     // TODO: registry
     // TODO: source
-    target: RefCell<BTreeMap<TargetTriple, TargetConfig>>,
+    target: RefCell<BTreeMap<TargetTriple<'static>, TargetConfig>>,
     term: OnceCell<TermConfig>,
 
     // Resolve contexts.
@@ -177,7 +177,7 @@ impl Config {
         self.net.get_or_try_init(|| NetConfig::from_unresolved(self.de.net.take()))
     }
     /// Gets the `[target]` table.
-    pub fn target(&self, target: &TargetTriple) -> Result<TargetConfig> {
+    pub fn target(&self, target: &TargetTriple<'_>) -> Result<TargetConfig> {
         let mut target_configs = self.target.borrow_mut();
         if !target_configs.contains_key(target) {
             let target_config = TargetConfig::from_unresolved(
@@ -191,7 +191,7 @@ impl Config {
                 .unwrap_or_default(),
                 Some(&self.current_dir),
             )?;
-            target_configs.insert(target.clone(), target_config);
+            target_configs.insert(target.clone().into_owned(), target_config);
         }
         Ok(target_configs[target].clone())
     }
@@ -320,12 +320,12 @@ impl Config {
     /// }
     /// # Ok(()) }
     /// ```
-    pub fn build_target_for_config(
+    pub fn build_target_for_config<'a, 'b>(
         &self,
-        targets: impl IntoIterator<Item = impl Into<TargetTriple>>,
-        host: impl Into<TargetTriple>,
-    ) -> Result<Vec<TargetTriple>> {
-        let targets: Vec<_> = targets.into_iter().map(Into::into).collect();
+        targets: impl IntoIterator<Item = impl Into<TargetTriple<'a>>>,
+        host: impl Into<TargetTriple<'b>>,
+    ) -> Result<Vec<TargetTriple<'static>>> {
+        let targets: Vec<_> = targets.into_iter().map(|v| v.into().into_owned()).collect();
         if !targets.is_empty() {
             return Ok(targets);
         }
@@ -333,7 +333,7 @@ impl Config {
         if !config_targets.is_empty() {
             return Ok(config_targets);
         }
-        Ok(vec![host.into()])
+        Ok(vec![host.into().into_owned()])
     }
 
     /// Selects target triples to pass to CLI.
@@ -363,7 +363,7 @@ impl Config {
         if !config_targets.is_empty() {
             return Ok(config_targets
                 .iter()
-                .map(|t| t.spec_path.as_ref().unwrap_or(&t.triple).clone())
+                .map(|t| t.spec_path().unwrap_or(t.triple()).to_owned())
                 .collect());
         }
         Ok(vec![])
@@ -427,7 +427,7 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<Vec<TargetTriple>>,
+    pub target: Option<Vec<TargetTriple<'static>>>,
     /// The path to where all compiler output is placed. The default if not
     /// specified is a directory named target located at the root of the workspace.
     ///
@@ -473,7 +473,9 @@ impl BuildConfig {
         let target = de.target.map(|t| {
             t.as_array_no_split()
                 .iter()
-                .map(|v| TargetTriple::new((&v.val).into(), v.definition.as_ref(), current_dir))
+                .map(|v| {
+                    TargetTriple::new(v.val.clone().into(), v.definition.as_ref(), current_dir)
+                })
                 .collect()
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir));

@@ -198,16 +198,16 @@ impl Config {
     }
 
     /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
-    pub fn resolve(&mut self, target: impl Into<TargetTriple>) -> Result<()> {
+    pub fn resolve<'a>(&mut self, target: impl Into<TargetTriple<'a>>) -> Result<()> {
         let cx = &mut ResolveContext::new()?;
         self.resolve_with_context(cx, target.into())
     }
 
     /// Applies environment variables and resolves target-specific configuration (`target.<triple>` and `target.<cfg>`).
-    pub fn resolve_with_context(
+    pub fn resolve_with_context<'a>(
         &mut self,
         cx: &mut ResolveContext,
-        target: impl Into<TargetTriple>,
+        target: impl Into<TargetTriple<'a>>,
     ) -> Result<()> {
         self.resolve_env(cx)?;
         self.resolve_target(cx, &target.into())?;
@@ -225,15 +225,15 @@ impl Config {
     fn resolve_target(
         &mut self,
         cx: &mut ResolveContext,
-        target_triple: &TargetTriple,
+        target_triple: &TargetTriple<'_>,
     ) -> Result<()> {
-        let target = &target_triple.triple;
+        let target = target_triple.triple();
 
         // In target rustflags, all occurrences are merged, so we need to avoid multiple calls.
         if self.resolved_targets.contains(target) {
             return Ok(());
         }
-        self.resolved_targets.insert(target.clone());
+        self.resolved_targets.insert(target.to_owned());
 
         let target_u_upper = target_u_upper(target);
         let mut target_config = self.target.remove(target).unwrap_or_default();
@@ -285,7 +285,7 @@ impl Config {
         } else {
             target_config.rustflags = self.build.rustflags.clone();
         }
-        self.target.insert(target.clone(), target_config);
+        self.target.insert(target.to_owned(), target_config);
         Ok(())
     }
 
@@ -375,12 +375,12 @@ impl Config {
     /// }
     /// # Ok(()) }
     /// ```
-    pub fn build_target_for_config(
+    pub fn build_target_for_config<'a, 'b>(
         &self,
-        targets: impl IntoIterator<Item = impl Into<TargetTriple>>,
-        host: impl Into<TargetTriple>,
-    ) -> Result<Vec<TargetTriple>> {
-        let targets: Vec<_> = targets.into_iter().map(Into::into).collect();
+        targets: impl IntoIterator<Item = impl Into<TargetTriple<'a>>>,
+        host: impl Into<TargetTriple<'b>>,
+    ) -> Result<Vec<TargetTriple<'static>>> {
+        let targets: Vec<_> = targets.into_iter().map(|v| v.into().into_owned()).collect();
         if !targets.is_empty() {
             return Ok(targets);
         }
@@ -396,14 +396,14 @@ impl Config {
                 .iter()
                 .map(|v| {
                     TargetTriple::new(
-                        (&v.val).into(),
+                        v.val.clone().into(),
                         v.definition.as_ref(),
                         self.current_dir.as_deref(),
                     )
                 })
                 .collect());
         }
-        Ok(vec![host.into()])
+        Ok(vec![host.into().into_owned()])
     }
 
     /// Selects target triples to pass to CLI.
@@ -445,7 +445,7 @@ impl Config {
                         v.definition.as_ref(),
                         self.current_dir.as_deref(),
                     );
-                    t.spec_path.unwrap_or(t.triple)
+                    t.spec_path().unwrap_or(t.triple()).to_owned()
                 })
                 .collect());
         }
@@ -503,10 +503,10 @@ impl Config {
     }
 }
 
-impl<T: Borrow<TargetTriple>> ops::Index<T> for Config {
+impl<'a, T: Borrow<TargetTriple<'a>>> ops::Index<T> for Config {
     type Output = TargetConfig;
     fn index(&self, index: T) -> &Self::Output {
-        &self.target[&index.borrow().triple]
+        &self.target[index.borrow().triple()]
     }
 }
 

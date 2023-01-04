@@ -16,7 +16,7 @@ use crate::{Definition, Value};
 pub struct ResolveContext {
     pub(crate) env: HashMap<String, OsString>,
     rustc: Option<OsString>,
-    cfg: RefCell<HashMap<TargetTriple, Cfg>>,
+    cfg: RefCell<HashMap<TargetTriple<'static>, Cfg>>,
 }
 
 impl ResolveContext {
@@ -69,14 +69,14 @@ impl ResolveContext {
         }
     }
 
-    pub(crate) fn eval_cfg(&self, expr: &str, target: &TargetTriple) -> Result<bool> {
+    pub(crate) fn eval_cfg(&self, expr: &str, target: &TargetTriple<'_>) -> Result<bool> {
         let mut cfg_map = self.cfg.borrow_mut();
         let expr = Expression::parse(expr)?;
         let cfg = match cfg_map.get(target) {
             Some(cfg) => cfg,
             None => match cfg_for_target(self.rustc.as_deref(), target)? {
                 Some(cfg) => {
-                    cfg_map.insert(target.clone(), cfg);
+                    cfg_map.insert(target.clone().into_owned(), cfg);
                     &cfg_map[target]
                 }
                 None => return Ok(false),
@@ -100,7 +100,7 @@ impl ResolveContext {
     }
 }
 
-fn cfg_for_target(rustc: Option<&OsStr>, target: &TargetTriple) -> Result<Option<Cfg>> {
+fn cfg_for_target(rustc: Option<&OsStr>, target: &TargetTriple<'_>) -> Result<Option<Cfg>> {
     if let Some(rustc) = rustc {
         return Ok(Some(Cfg::from_rustc(rustc, target)?));
     }
@@ -152,13 +152,13 @@ impl Cfg {
         }
     }
 
-    fn from_rustc(rustc: &OsStr, target: &TargetTriple) -> Result<Self> {
+    fn from_rustc(rustc: &OsStr, target: &TargetTriple<'_>) -> Result<Self> {
         let list = cmd!(
             rustc,
             "--print",
             "cfg",
             "--target",
-            target.spec_path.as_ref().unwrap_or(&target.triple)
+            target.spec_path().unwrap_or(target.triple())
         )
         .read()?;
         Self::parse(&list)
@@ -267,9 +267,9 @@ impl Cfg {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TargetTriple {
-    pub(crate) triple: String,
-    pub(crate) spec_path: Option<String>,
+pub struct TargetTriple<'a> {
+    triple: Cow<'a, str>,
+    spec_path: Option<Cow<'a, str>>,
 }
 
 pub(crate) fn is_spec_path(triple_or_spec_path: &str) -> bool {
@@ -290,27 +290,36 @@ fn resolve_spec_path(
     None
 }
 
-impl TargetTriple {
+impl<'a> TargetTriple<'a> {
     pub(crate) fn new(
-        triple_or_spec_path: Cow<'_, str>,
+        triple_or_spec_path: Cow<'a, str>,
         def: Option<&Definition>,
         current_dir: Option<&Path>,
     ) -> Self {
         // Handles custom target
         if is_spec_path(&triple_or_spec_path) {
+            let triple = match &triple_or_spec_path {
+                &Cow::Borrowed(v) => Path::new(v).file_stem().unwrap().to_string_lossy(),
+                Cow::Owned(v) => {
+                    Path::new(v).file_stem().unwrap().to_string_lossy().into_owned().into()
+                }
+            };
             Self {
-                triple: Path::new(&*triple_or_spec_path)
-                    .file_stem()
-                    .unwrap()
-                    .to_string_lossy()
-                    .into_owned(),
-                spec_path: Some(
-                    resolve_spec_path(&triple_or_spec_path, def, current_dir)
-                        .unwrap_or_else(|| triple_or_spec_path.into_owned()),
-                ),
+                triple,
+                spec_path: Some(match resolve_spec_path(&triple_or_spec_path, def, current_dir) {
+                    Some(v) => Cow::Owned(v),
+                    None => triple_or_spec_path,
+                }),
             }
         } else {
-            Self { triple: triple_or_spec_path.into_owned(), spec_path: None }
+            Self { triple: triple_or_spec_path, spec_path: None }
+        }
+    }
+
+    pub(crate) fn into_owned(self) -> TargetTriple<'static> {
+        TargetTriple {
+            triple: self.triple.into_owned().into(),
+            spec_path: self.spec_path.map(|v| v.into_owned().into()),
         }
     }
 
@@ -322,28 +331,28 @@ impl TargetTriple {
     }
 }
 
-impl From<&TargetTriple> for TargetTriple {
-    fn from(value: &TargetTriple) -> Self {
-        value.clone()
+impl<'a> From<&'a TargetTriple<'_>> for TargetTriple<'a> {
+    fn from(value: &'a TargetTriple<'_>) -> Self {
+        TargetTriple { triple: value.triple().into(), spec_path: value.spec_path().map(Into::into) }
     }
 }
-impl From<String> for TargetTriple {
+impl From<String> for TargetTriple<'static> {
     fn from(value: String) -> Self {
         Self::new(value.into(), None, None)
     }
 }
-impl From<&String> for TargetTriple {
-    fn from(value: &String) -> Self {
+impl<'a> From<&'a String> for TargetTriple<'a> {
+    fn from(value: &'a String) -> Self {
         Self::new(value.into(), None, None)
     }
 }
-impl From<&str> for TargetTriple {
-    fn from(value: &str) -> Self {
+impl<'a> From<&'a str> for TargetTriple<'a> {
+    fn from(value: &'a str) -> Self {
         Self::new(value.into(), None, None)
     }
 }
 
-impl Serialize for TargetTriple {
+impl Serialize for TargetTriple<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -351,7 +360,7 @@ impl Serialize for TargetTriple {
         self.spec_path.as_ref().unwrap_or(&self.triple).serialize(serializer)
     }
 }
-impl<'de> Deserialize<'de> for TargetTriple {
+impl<'de> Deserialize<'de> for TargetTriple<'_> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -368,6 +377,14 @@ mod tests {
 
     fn fixtures_path() -> &'static Path {
         Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
+    }
+
+    #[test]
+    fn target_triple() {
+        let t = TargetTriple::from("x86_64-unknown-linux-gnu");
+        assert_eq!(t.triple, "x86_64-unknown-linux-gnu");
+        assert!(matches!(t.triple, Cow::Borrowed(..)));
+        assert!(t.spec_path.is_none());
     }
 
     #[test]

@@ -1,6 +1,9 @@
 #![allow(clippy::bool_assert_comparison)]
 
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::Path,
+};
 
 use anyhow::{Context as _, Result};
 use cargo_config2::{de, easy_old::*};

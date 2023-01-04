@@ -56,7 +56,7 @@ pub struct Config {
     // TODO: source
     #[serde(skip_deserializing)]
     #[serde(skip_serializing_if = "ref_cell_bree_map_is_empty")]
-    target: RefCell<BTreeMap<TargetTriple, TargetConfig>>,
+    target: RefCell<BTreeMap<TargetTriple<'static>, TargetConfig>>,
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "target")]
@@ -108,19 +108,16 @@ impl Config {
         for (k, v) in de.alias {
             resolved.alias.insert(k, v.into());
         }
-        resolved.build =
-            BuildConfig::from_unresolved(de.build, de.current_dir.as_deref(), &mut cx)?;
-        resolved.doc.from_unresolved(de.doc, de.current_dir.as_deref(), &mut cx)?;
+        resolved.build = BuildConfig::from_unresolved(de.build, de.current_dir.as_deref())?;
+        resolved.doc.from_unresolved(de.doc, de.current_dir.as_deref())?;
         for (k, v) in de.env {
             resolved.env.insert(k, v.into());
         }
-        resolved.future_incompat_report.from_unresolved(
-            de.future_incompat_report,
-            de.current_dir.as_deref(),
-            &mut cx,
-        )?;
-        resolved.net.from_unresolved(de.net, de.current_dir.as_deref(), &mut cx)?;
-        resolved.term.from_unresolved(de.term, de.current_dir.as_deref(), &mut cx)?;
+        resolved
+            .future_incompat_report
+            .from_unresolved(de.future_incompat_report, de.current_dir.as_deref())?;
+        resolved.net.from_unresolved(de.net, de.current_dir.as_deref())?;
+        resolved.term.from_unresolved(de.term, de.current_dir.as_deref())?;
 
         resolved.de_target = de.target;
         resolved.resolve_context = OnceCell::from(cx);
@@ -213,12 +210,12 @@ impl Config {
     /// }
     /// # Ok(()) }
     /// ```
-    pub fn build_target_for_config(
+    pub fn build_target_for_config<'a, 'b>(
         &self,
-        targets: impl IntoIterator<Item = impl Into<TargetTriple>>,
-        host: impl Into<TargetTriple>,
-    ) -> Result<Vec<TargetTriple>> {
-        let targets: Vec<_> = targets.into_iter().map(Into::into).collect();
+        targets: impl IntoIterator<Item = impl Into<TargetTriple<'a>>>,
+        host: impl Into<TargetTriple<'b>>,
+    ) -> Result<Vec<TargetTriple<'static>>> {
+        let targets: Vec<_> = targets.into_iter().map(|v| v.into().into_owned()).collect();
         if !targets.is_empty() {
             return Ok(targets);
         }
@@ -226,7 +223,7 @@ impl Config {
         if !config_targets.is_empty() {
             return Ok(config_targets);
         }
-        Ok(vec![host.into()])
+        Ok(vec![host.into().into_owned()])
     }
 
     /// Selects target triples to pass to CLI.
@@ -256,13 +253,13 @@ impl Config {
         if !config_targets.is_empty() {
             return Ok(config_targets
                 .iter()
-                .map(|t| t.spec_path.as_ref().unwrap_or(&t.triple).clone())
+                .map(|t| t.spec_path().unwrap_or(t.triple()).to_owned())
                 .collect());
         }
         Ok(vec![])
     }
 
-    fn init_target_config(&self, target: &TargetTriple) -> Result<()> {
+    fn init_target_config(&self, target: &TargetTriple<'_>) -> Result<()> {
         let mut target_configs = self.target.borrow_mut();
         if !target_configs.contains_key(target) {
             let target_config = TargetConfig::from_unresolved(
@@ -276,21 +273,21 @@ impl Config {
                 .unwrap_or_default(),
                 self.current_dir.as_deref(),
             )?;
-            target_configs.insert(target.clone(), target_config);
+            target_configs.insert(target.clone().into_owned(), target_config);
         }
         Ok(())
     }
-    pub fn linker(&self, target: impl Into<TargetTriple>) -> Result<Option<PathBuf>> {
+    pub fn linker<'a>(&self, target: impl Into<TargetTriple<'a>>) -> Result<Option<PathBuf>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].linker.clone())
     }
-    pub fn runner(&self, target: impl Into<TargetTriple>) -> Result<Option<PathAndArgs>> {
+    pub fn runner<'a>(&self, target: impl Into<TargetTriple<'a>>) -> Result<Option<PathAndArgs>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].runner.clone())
     }
-    pub fn rustflags(&self, target: impl Into<TargetTriple>) -> Result<Option<Rustflags>> {
+    pub fn rustflags<'a>(&self, target: impl Into<TargetTriple<'a>>) -> Result<Option<Rustflags>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].rustflags.clone())
@@ -347,7 +344,7 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<Vec<TargetTriple>>,
+    pub target: Option<Vec<TargetTriple<'static>>>,
     /// The path to where all compiler output is placed. The default if not
     /// specified is a directory named target located at the root of the workspace.
     ///
@@ -384,11 +381,7 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    pub(crate) fn from_unresolved(
-        de: de::BuildConfig,
-        current_dir: Option<&Path>,
-        cx: &mut ResolveContext,
-    ) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: Option<&Path>) -> Result<Self> {
         let jobs = de.jobs.map(|v| v.val);
         let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir));
         let rustc_wrapper = de.rustc_wrapper.map(|v| v.resolve_as_program_path(current_dir));
@@ -398,7 +391,9 @@ impl BuildConfig {
         let target = de.target.map(|t| {
             t.as_array_no_split()
                 .iter()
-                .map(|v| TargetTriple::new((&v.val).into(), v.definition.as_ref(), current_dir))
+                .map(|v| {
+                    TargetTriple::new(v.val.clone().into(), v.definition.as_ref(), current_dir)
+                })
                 .collect()
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir));
@@ -482,12 +477,7 @@ pub struct DocConfig {
 }
 
 impl DocConfig {
-    fn from_unresolved(
-        &mut self,
-        mut de: de::DocConfig,
-        current_dir: Option<&Path>,
-        cx: &mut ResolveContext,
-    ) -> Result<()> {
+    fn from_unresolved(&mut self, mut de: de::DocConfig, current_dir: Option<&Path>) -> Result<()> {
         if let Some(v) = de.browser {
             self.browser =
                 Some(PathAndArgs { path: v.path.resolve_program(current_dir), args: v.args });
@@ -588,7 +578,6 @@ impl FutureIncompatReportConfig {
         &mut self,
         mut de: de::FutureIncompatReportConfig,
         current_dir: Option<&Path>,
-        cx: &mut ResolveContext,
     ) -> Result<()> {
         self.frequency = de.frequency.map(|v| v.val);
         Ok(())
@@ -625,12 +614,7 @@ pub struct NetConfig {
 }
 
 impl NetConfig {
-    fn from_unresolved(
-        &mut self,
-        de: de::NetConfig,
-        current_dir: Option<&Path>,
-        cx: &mut ResolveContext,
-    ) -> Result<()> {
+    fn from_unresolved(&mut self, de: de::NetConfig, current_dir: Option<&Path>) -> Result<()> {
         self.retry = de.retry.map(|v| v.val);
         self.git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
         self.offline = de.offline.map(|v| v.val);
@@ -666,16 +650,11 @@ pub struct TermConfig {
 }
 
 impl TermConfig {
-    fn from_unresolved(
-        &mut self,
-        de: de::TermConfig,
-        current_dir: Option<&Path>,
-        cx: &mut ResolveContext,
-    ) -> Result<()> {
+    fn from_unresolved(&mut self, de: de::TermConfig, current_dir: Option<&Path>) -> Result<()> {
         self.quiet = de.quiet.map(|v| v.val);
         self.verbose = de.verbose.map(|v| v.val);
         self.color = de.color.map(|v| v.val);
-        self.progress.from_unresolved(de.progress, current_dir, cx)?;
+        self.progress.from_unresolved(de.progress, current_dir)?;
         Ok(())
     }
 }
@@ -701,7 +680,6 @@ impl TermProgress {
         &mut self,
         mut de: de::TermProgress,
         current_dir: Option<&Path>,
-        cx: &mut ResolveContext,
     ) -> Result<()> {
         self.when = de.when.map(|v| v.val);
         self.width = de.width.map(|v| v.val);
