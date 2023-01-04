@@ -9,7 +9,7 @@ use std::{
 
 use anyhow::{bail, Result};
 use once_cell::unsync::OnceCell;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::de::{self, split_encoded, split_space_separated};
 #[doc(no_inline)]
@@ -70,7 +70,8 @@ pub struct Config {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     resolve_context: OnceCell<ResolveContext>,
-    current_dir: Option<PathBuf>,
+    #[serde(skip)]
+    current_dir: PathBuf,
 }
 
 fn ref_cell_bree_map_is_empty<K, V>(map: &RefCell<BTreeMap<K, V>>) -> bool {
@@ -96,22 +97,27 @@ impl Config {
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_cwd_and_context(cwd: impl AsRef<Path>, cx: ResolveContext) -> Result<Self> {
-        let de = de::toml::read_hierarchical(cwd.as_ref())?.unwrap_or_default();
-        Self::from_unresolved(de, cx)
+        let cwd = cwd.as_ref();
+        let de = de::toml::read_hierarchical(cwd)?.unwrap_or_default();
+        Self::from_unresolved(de, cx, cwd.to_owned())
     }
 
-    pub(crate) fn from_unresolved(mut de: de::Config, mut cx: ResolveContext) -> Result<Self> {
+    pub(crate) fn from_unresolved(
+        mut de: de::Config,
+        mut cx: ResolveContext,
+        current_dir: PathBuf,
+    ) -> Result<Self> {
         de.apply_env(&mut cx)?;
 
         let mut alias = BTreeMap::new();
         for (k, v) in de.alias {
             alias.insert(k, v.into());
         }
-        let build = BuildConfig::from_unresolved(de.build, de.current_dir.as_deref())?;
-        let doc = DocConfig::from_unresolved(de.doc, de.current_dir.as_deref())?;
+        let build = BuildConfig::from_unresolved(de.build, &current_dir)?;
+        let doc = DocConfig::from_unresolved(de.doc, &current_dir)?;
         let mut env = BTreeMap::new();
         for (k, v) in de.env {
-            env.insert(k, EnvConfigValue::from_unresolved(v, de.current_dir.as_deref()));
+            env.insert(k, EnvConfigValue::from_unresolved(v, &current_dir));
         }
         let future_incompat_report =
             FutureIncompatReportConfig::from_unresolved(de.future_incompat_report)?;
@@ -129,7 +135,7 @@ impl Config {
             de_target: de.target,
             term,
             resolve_context: OnceCell::from(cx),
-            current_dir: de.current_dir,
+            current_dir,
         })
     }
 
@@ -281,7 +287,7 @@ impl Config {
                     target,
                 )?
                 .unwrap_or_default(),
-                self.current_dir.as_deref(),
+                &self.current_dir,
             )?;
             target_configs.insert(target.clone().into_owned(), target_config);
         }
@@ -334,7 +340,7 @@ impl Config {
 /// The `[build]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct BuildConfig {
@@ -406,7 +412,7 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: Option<&Path>) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Result<Self> {
         let jobs = de.jobs.map(|v| v.val);
         let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let rustc_wrapper =
@@ -418,7 +424,11 @@ impl BuildConfig {
             t.as_array_no_split()
                 .iter()
                 .map(|v| {
-                    TargetTriple::new(v.val.clone().into(), v.definition.as_ref(), current_dir)
+                    TargetTriple::new(
+                        v.val.clone().into(),
+                        v.definition.as_ref(),
+                        Some(current_dir),
+                    )
                 })
                 .collect()
         });
@@ -453,7 +463,7 @@ impl BuildConfig {
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct TargetConfig {
@@ -474,10 +484,7 @@ pub struct TargetConfig {
 }
 
 impl TargetConfig {
-    pub(crate) fn from_unresolved(
-        de: de::TargetConfig,
-        current_dir: Option<&Path>,
-    ) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::TargetConfig, current_dir: &Path) -> Result<Self> {
         let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let runner = match de.runner {
             Some(v) => Some(PathAndArgs {
@@ -495,7 +502,7 @@ impl TargetConfig {
 /// The `[doc]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct DocConfig {
@@ -508,7 +515,7 @@ pub struct DocConfig {
 }
 
 impl DocConfig {
-    pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: Option<&Path>) -> Result<Self> {
+    pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Result<Self> {
         let browser = de.browser.map(|v| PathAndArgs {
             path: v.path.resolve_program(current_dir).into_owned(),
             args: v.args,
@@ -553,32 +560,9 @@ impl Serialize for EnvConfigValue {
         }
     }
 }
-impl<'de> Deserialize<'de> for EnvConfigValue {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum EnvRepr {
-            Value(OsString),
-            Table {
-                value: OsString,
-                #[serde(default)]
-                force: bool,
-                #[serde(default)]
-                relative: bool,
-            },
-        }
-        match EnvRepr::deserialize(deserializer)? {
-            EnvRepr::Value(value) => Ok(Self { value, force: false, relative: false }),
-            EnvRepr::Table { value, force, relative } => Ok(Self { value, force, relative }),
-        }
-    }
-}
 
 impl EnvConfigValue {
-    pub(crate) fn from_unresolved(de: de::EnvConfigValue, current_dir: Option<&Path>) -> Self {
+    pub(crate) fn from_unresolved(de: de::EnvConfigValue, current_dir: &Path) -> Self {
         if let de::EnvConfigValue::Table {
             force, relative: Some(Value { val: true, .. }), ..
         } = &de
@@ -606,7 +590,7 @@ impl EnvConfigValue {
 /// The `[future-incompat-report]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct FutureIncompatReportConfig {
@@ -627,7 +611,7 @@ impl FutureIncompatReportConfig {
 /// The `[net]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct NetConfig {
@@ -665,7 +649,7 @@ impl NetConfig {
 /// The `[term]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct TermConfig {
@@ -699,7 +683,7 @@ impl TermConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct TermProgressConfig {
@@ -848,19 +832,6 @@ impl PartialEq for Rustflags {
     }
 }
 
-impl<'de> Deserialize<'de> for Rustflags {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
-        match v {
-            StringOrArray::String(s) => Ok(Self::from_space_separated(&s)),
-            StringOrArray::Array(v) => Ok(Self { flags: v }),
-        }
-    }
-}
-
 impl From<Vec<String>> for Rustflags {
     fn from(value: Vec<String>) -> Self {
         Self { flags: value }
@@ -899,33 +870,12 @@ impl Serialize for PathAndArgs {
     where
         S: serde::Serializer,
     {
-        todo!()
-    }
-}
-impl<'de> Deserialize<'de> for PathAndArgs {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        use serde::de::Error;
-        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
-        match v {
-            StringOrArray::String(s) => {
-                let mut s = split_space_separated(&s);
-                let path = match s.next() {
-                    Some(path) => path,
-                    None => return Err(D::Error::invalid_length(0, &"at least one element")),
-                };
-                Ok(Self { path: path.into(), args: s.map(str::to_owned).collect() })
-            }
-            StringOrArray::Array(mut v) => {
-                if v.is_empty() {
-                    return Err(D::Error::invalid_length(0, &"at least one element"));
-                }
-                let path = v.remove(0);
-                Ok(Self { path: path.into(), args: v })
-            }
+        let mut v = Vec::with_capacity(1 + self.args.len());
+        v.push(self.path.to_string_lossy().into_owned());
+        for arg in &self.args {
+            v.push(arg.clone());
         }
+        v.serialize(serializer)
     }
 }
 
@@ -934,21 +884,6 @@ impl<'de> Deserialize<'de> for PathAndArgs {
 #[non_exhaustive]
 pub struct StringList {
     pub list: Vec<String>,
-}
-
-impl<'de> Deserialize<'de> for StringList {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
-        match v {
-            StringOrArray::String(s) => {
-                Ok(Self { list: split_space_separated(&s).map(str::to_owned).collect() })
-            }
-            StringOrArray::Array(v) => Ok(Self { list: v }),
-        }
-    }
 }
 
 impl StringList {
@@ -1005,12 +940,4 @@ impl<const N: usize> From<[&str; N]> for StringList {
     fn from(value: [&str; N]) -> Self {
         Self::from_array(value[..].iter().map(|&v| v.to_owned()).collect())
     }
-}
-
-/// A string or array of strings.
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-enum StringOrArray {
-    String(String),
-    Array(Vec<String>),
 }

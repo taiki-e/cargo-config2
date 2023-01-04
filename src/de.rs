@@ -52,8 +52,7 @@ pub mod toml {
     pub fn read_hierarchical(current_dir: &Path) -> Result<Option<Config>> {
         let mut base = None;
         for path in ConfigPaths::new(current_dir) {
-            let mut config = read(path.clone())?;
-            config.set_cwd(current_dir.to_owned());
+            let config = read(path.clone())?;
             match &mut base {
                 None => base = Some(config),
                 Some(base) => base.merge(config, false).with_context(|| {
@@ -72,8 +71,7 @@ pub mod toml {
     pub fn read_hierarchical_unmerged(current_dir: &Path) -> Result<Vec<Config>> {
         let mut v = vec![];
         for path in ConfigPaths::new(current_dir) {
-            let mut config = read(path)?;
-            config.set_cwd(current_dir.to_owned());
+            let config = read(path)?;
             v.push(config);
         }
         Ok(v)
@@ -125,8 +123,6 @@ pub struct Config {
 
     // Load contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
-    pub(crate) current_dir: Option<PathBuf>,
-    #[serde(skip)]
     pub(crate) path: Option<PathBuf>,
 }
 
@@ -140,10 +136,6 @@ impl Config {
     /// overrides config.
     pub(crate) fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         merge::Merge::merge(self, from, force)
-    }
-
-    pub(crate) fn set_cwd(&mut self, path: PathBuf) {
-        self.current_dir = Some(path);
     }
 
     pub(crate) fn set_path(&mut self, path: PathBuf) {
@@ -357,15 +349,13 @@ pub enum EnvConfigValue {
 }
 
 impl EnvConfigValue {
-    pub(crate) fn resolve(&self, current_dir: Option<&Path>) -> Cow<'_, OsStr> {
+    pub(crate) fn resolve(&self, current_dir: &Path) -> Cow<'_, OsStr> {
         match self {
             Self::Value(v) => Cow::Borrowed(OsStr::new(&v.val)),
             Self::Table { value, relative, .. } => {
                 if relative.as_ref().map_or(false, |v| v.val) {
                     if let Some(def) = &value.definition {
-                        if let Some(p) = def.root(current_dir) {
-                            return Cow::Owned(p.join(&value.val).into_os_string());
-                        }
+                        return Cow::Owned(def.root(current_dir).join(&value.val).into_os_string());
                     }
                 }
                 Cow::Borrowed(OsStr::new(&value.val))
@@ -627,7 +617,7 @@ impl ConfigRelativePath {
     ///
     /// This will always return an absolute path where it's relative to the
     /// location for configuration for this value.
-    pub(crate) fn resolve_path(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
+    pub(crate) fn resolve_path(&self, current_dir: &Path) -> Cow<'_, Path> {
         self.0.resolve_as_path(current_dir)
     }
 
@@ -637,7 +627,7 @@ impl ConfigRelativePath {
     /// Values which don't look like a filesystem path (don't contain `/` or
     /// `\`) will be returned as-is, and everything else will fall through to an
     /// absolute path.
-    pub(crate) fn resolve_program(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
+    pub(crate) fn resolve_program(&self, current_dir: &Path) -> Cow<'_, Path> {
         self.0.resolve_as_program_path(current_dir)
     }
 }

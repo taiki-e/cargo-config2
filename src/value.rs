@@ -31,25 +31,23 @@ impl Value<String> {
         Ok(Value { val: self.val.parse()?, definition: self.definition })
     }
     // https://doc.rust-lang.org/nightly/cargo/reference/config.html#config-relative-paths
-    pub(crate) fn resolve_as_program_path<'a>(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
-        if self.definition.is_none()
-            || Path::new(&self.val).is_absolute()
-            || !self.val.contains('/') && !self.val.contains('\\')
-        {
-            Cow::Borrowed(Path::new(&self.val))
-        } else if let Some(root) = self.definition.as_ref().unwrap().root(current_dir) {
-            Cow::Owned(root.join(&self.val))
-        } else {
-            Cow::Borrowed(Path::new(&self.val))
+    pub(crate) fn resolve_as_program_path(&self, current_dir: &Path) -> Cow<'_, Path> {
+        match &self.definition {
+            Some(def)
+                if !Path::new(&self.val).is_absolute()
+                    && (self.val.contains('/') || self.val.contains('\\')) =>
+            {
+                Cow::Owned(def.root(current_dir).join(&self.val))
+            }
+            _ => Cow::Borrowed(Path::new(&self.val)),
         }
     }
-    pub(crate) fn resolve_as_path(&self, current_dir: Option<&Path>) -> Cow<'_, Path> {
-        if self.definition.is_none() || Path::new(&self.val).is_absolute() {
-            Cow::Borrowed(Path::new(&self.val))
-        } else if let Some(root) = self.definition.as_ref().unwrap().root(current_dir) {
-            Cow::Owned(root.join(&self.val))
-        } else {
-            Cow::Borrowed(Path::new(&self.val))
+    pub(crate) fn resolve_as_path(&self, current_dir: &Path) -> Cow<'_, Path> {
+        match &self.definition {
+            Some(def) if !Path::new(&self.val).is_absolute() => {
+                Cow::Owned(def.root(current_dir).join(&self.val))
+            }
+            _ => Cow::Borrowed(Path::new(&self.val)),
         }
     }
 }
@@ -72,7 +70,13 @@ impl Definition {
     ///
     /// If from a file, it is the directory above `.cargo/config`.
     /// CLI and env are the current working directory.
-    pub(crate) fn root<'a>(&'a self, current_dir: Option<&'a Path>) -> Option<&'a Path> {
+    pub(crate) fn root<'a>(&'a self, current_dir: &'a Path) -> &'a Path {
+        match self {
+            Definition::Path(p) | Definition::Cli(Some(p)) => p.parent().unwrap().parent().unwrap(),
+            Definition::Environment(_) | Definition::Cli(None) => current_dir,
+        }
+    }
+    pub(crate) fn root_opt<'a>(&'a self, current_dir: Option<&'a Path>) -> Option<&'a Path> {
         match self {
             Definition::Path(p) | Definition::Cli(Some(p)) => {
                 Some(p.parent().unwrap().parent().unwrap())

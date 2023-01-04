@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Definition, Value};
 
 #[derive(Debug, Clone)]
+#[must_use]
 pub struct ResolveContext {
     pub(crate) env: HashMap<String, OsString>,
     rustc: Option<OsString>,
@@ -281,11 +282,11 @@ pub(crate) fn is_spec_path(triple_or_spec_path: &str) -> bool {
 }
 fn resolve_spec_path(
     spec_path: &str,
-    definition: Option<&Definition>,
+    def: Option<&Definition>,
     current_dir: Option<&Path>,
 ) -> Option<String> {
-    if let Some(definition) = definition {
-        if let Some(root) = definition.root(current_dir) {
+    if let Some(def) = def {
+        if let Some(root) = def.root_opt(current_dir) {
             return Some(root.join(spec_path).into_os_string().to_string_lossy().into_owned());
         }
     }
