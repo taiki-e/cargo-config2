@@ -85,6 +85,7 @@ impl ResolveContext {
         };
         Ok(expr.eval(|pred| match pred {
             Predicate::Target(pred) => match &cfg.target_info {
+                TargetInfo::Cfg(target_info) => target_info.matches(pred),
                 TargetInfo::CfgExpr(target_info) => pred.matches(target_info),
                 TargetInfo::TargetLexicon(target_info) => pred.matches(target_info),
             },
@@ -139,6 +140,7 @@ struct Cfg {
 #[derive(Debug, Clone)]
 #[allow(clippy::large_enum_variant)]
 enum TargetInfo {
+    Cfg(TargetCfg),
     CfgExpr(cfg_expr::targets::TargetInfo),
     TargetLexicon(target_lexicon::Triple),
 }
@@ -246,8 +248,7 @@ impl Cfg {
         }
 
         Ok(Cfg {
-            target_info: TargetInfo::CfgExpr(cfg_expr::targets::TargetInfo {
-                triple: cfg_expr::targets::Triple::new_const(""), // we don't use this field
+            target_info: TargetInfo::Cfg(TargetCfg {
                 os,
                 abi,
                 arch: arch.unwrap(),
@@ -257,13 +258,61 @@ impl Cfg {
                 pointer_width: pointer_width.unwrap(),
                 endian: endian.unwrap(),
                 has_atomics: cfg_expr::targets::HasAtomics::new(has_atomics),
-                // TODO: don't unwrap -- cfg(panic) doesn't available on old stable rustc
-                panic: panic.unwrap(),
+                panic,
             }),
             target_features,
             flags,
             key_values,
         })
+    }
+}
+
+// Based on cfg_expr::targets::TargetInfo, but compatible with old rustc's cfg output.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+struct TargetCfg {
+    os: Option<cfg_expr::targets::Os>,
+    abi: Option<cfg_expr::targets::Abi>,
+    arch: cfg_expr::targets::Arch,
+    env: Option<cfg_expr::targets::Env>,
+    vendor: Option<cfg_expr::targets::Vendor>,
+    families: cfg_expr::targets::Families,
+    pointer_width: u8,
+    endian: cfg_expr::targets::Endian,
+    // available on stable 1.60+ or nightly
+    has_atomics: cfg_expr::targets::HasAtomics,
+    // available on stable 1.60+ or nightly
+    panic: Option<cfg_expr::targets::Panic>,
+}
+
+impl TargetCfg {
+    fn matches(&self, tp: &cfg_expr::TargetPredicate) -> bool {
+        use cfg_expr::TargetPredicate::{
+            Abi, Arch, Endian, Env, Family, HasAtomic, Os, Panic, PointerWidth, Vendor,
+        };
+
+        match tp {
+            // The ABI is allowed to be an empty string
+            Abi(abi) => match &self.abi {
+                Some(a) => abi == a,
+                None => abi.0.is_empty(),
+            },
+            Arch(a) => a == &self.arch,
+            Endian(end) => *end == self.endian,
+            // The environment is allowed to be an empty string
+            Env(env) => match &self.env {
+                Some(e) => env == e,
+                None => env.0.is_empty(),
+            },
+            Family(fam) => self.families.contains(fam),
+            HasAtomic(has_atomic) => self.has_atomics.contains(*has_atomic),
+            Os(os) => Some(os) == self.os.as_ref(),
+            PointerWidth(w) => *w == self.pointer_width,
+            Vendor(ven) => match &self.vendor {
+                Some(v) => ven == v,
+                None => ven == &cfg_expr::targets::Vendor::unknown,
+            },
+            Panic(panic) => Some(panic) == self.panic.as_ref(),
+        }
     }
 }
 

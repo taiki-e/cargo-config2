@@ -15,7 +15,6 @@ use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    merge,
     resolve::{ResolveContext, TargetTripleRef},
     value::{Definition, Value},
 };
@@ -135,7 +134,7 @@ impl Config {
     /// If `force` is `true`, this matches the way cargo's `--config` CLI option
     /// overrides config.
     pub(crate) fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        merge::Merge::merge(self, from, force)
+        crate::merge::Merge::merge(self, from, force)
     }
 
     pub(crate) fn set_path(&mut self, path: &Path) {
