@@ -444,7 +444,7 @@ mod tests {
 
     #[test]
     fn parse_cfg_list() {
-        // builtins
+        // builtin targets
         for target in duct::cmd!("rustc", "--print", "target-list").read().unwrap().lines() {
             let _cfg = Cfg::from_rustc(OsStr::new("rustc"), &target.into()).unwrap();
         }

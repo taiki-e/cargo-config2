@@ -2,11 +2,16 @@
 // It is not intended for manual editing.
 
 anyhow
+cargo
 clap
+config
+criterion
 duct
 edit
 escape
+expr
 home
+ignore
 json
 lexopt
 macro
@@ -16,8 +21,6 @@ quote
 rustversion
 serde
 shell
-spec
-target
 tempfile
 toml
 walkdir

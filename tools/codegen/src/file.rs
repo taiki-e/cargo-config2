@@ -4,6 +4,18 @@ use anyhow::Result;
 use fs_err as fs;
 use proc_macro2::TokenStream;
 
+// Inspired by https://stackoverflow.com/a/63904992.
+macro_rules! function_name {
+    () => {{
+        fn f() {}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        let name = type_name_of(f);
+        name[..name.len() - 3].rsplit_once(':').unwrap().1
+    }};
+}
+
 pub fn workspace_root() -> PathBuf {
     let mut dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     dir.pop(); // codegen

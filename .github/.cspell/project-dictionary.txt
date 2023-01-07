@@ -1,5 +1,8 @@
-bindeps
+cfgs
 docsrs
 incompat
+tempdir
+tmpdir
+tmppath
 unparse
 USERPROFILE

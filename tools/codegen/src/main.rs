@@ -1,5 +1,6 @@
 #![warn(rust_2018_idioms, single_use_lifetimes)]
 
+#[macro_use]
 mod file;
 
 use std::{collections::BTreeSet, path::Path};
@@ -172,7 +173,7 @@ fn gen_de() -> Result<()> {
         .visit_file_mut(&mut ast);
     }
 
-    write("gen_de", &workspace_root.join("src/gen/de.rs"), tokens)?;
+    write(function_name!(), &workspace_root.join("src/gen/de.rs"), tokens)?;
 
     Ok(())
 }
@@ -229,7 +230,7 @@ fn gen_is_none() -> Result<()> {
         .visit_file_mut(&mut ast);
     }
 
-    write("gen_is_none", &workspace_root.join("src/gen/is_none.rs"), tokens)?;
+    write(function_name!(), &workspace_root.join("src/gen/is_none.rs"), tokens)?;
 
     Ok(())
 }
@@ -319,7 +320,7 @@ fn gen_assert_impl() -> Result<()> {
             #tokens
         };
     };
-    write("gen_assert_impl", &out_dir.join("assert_impl.rs"), out)?;
+    write(function_name!(), &out_dir.join("assert_impl.rs"), out)?;
 
     Ok(())
 }
