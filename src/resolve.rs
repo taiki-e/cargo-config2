@@ -386,24 +386,24 @@ impl<'a> TargetTripleRef<'a> {
 impl<'a> From<&'a TargetTripleRef<'_>> for TargetTripleRef<'a> {
     fn from(value: &'a TargetTripleRef<'_>) -> Self {
         TargetTripleRef {
-            triple: value.triple().into(),
+            triple: Cow::Borrowed(value.triple()),
             spec_path: value.spec_path().map(Into::into),
         }
     }
 }
 impl From<String> for TargetTripleRef<'static> {
     fn from(value: String) -> Self {
-        Self::new(value.into(), None, None)
+        Self::new(Cow::Owned(value), None, None)
     }
 }
 impl<'a> From<&'a String> for TargetTripleRef<'a> {
     fn from(value: &'a String) -> Self {
-        Self::new(value.into(), None, None)
+        Self::new(Cow::Borrowed(value), None, None)
     }
 }
 impl<'a> From<&'a str> for TargetTripleRef<'a> {
     fn from(value: &'a str) -> Self {
-        Self::new(value.into(), None, None)
+        Self::new(Cow::Borrowed(value), None, None)
     }
 }
 

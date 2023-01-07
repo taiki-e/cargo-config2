@@ -34,7 +34,6 @@ const _: fn() = || {
     assert_auto_traits::<crate::easy::Rustflags>();
     assert_auto_traits::<crate::easy::PathAndArgs>();
     assert_auto_traits::<crate::easy::StringList>();
-    assert_auto_traits::<crate::EnvConfigValue>();
     assert_auto_traits::<crate::resolve::ResolveContext>();
     assert_auto_traits::<crate::resolve::TargetTripleRef<'_>>();
     assert_auto_traits::<crate::resolve::TargetTriple>();

@@ -93,11 +93,11 @@ impl Config {
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_context(
         cwd: impl AsRef<Path>,
-        home: impl Into<Option<PathBuf>>,
+        cargo_home: impl Into<Option<PathBuf>>,
         cx: ResolveContext,
     ) -> Result<Self> {
         let cwd = cwd.as_ref();
-        let de = de::Config::_load_with_context(cwd, home.into())?;
+        let de = de::Config::_load_with_context(cwd, cargo_home.into())?;
         Self::from_unresolved(de, cx, cwd.to_owned())
     }
 

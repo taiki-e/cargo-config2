@@ -84,14 +84,17 @@ impl Config {
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_context(
         cwd: impl AsRef<Path>,
-        home: impl Into<Option<PathBuf>>,
+        cargo_home: impl Into<Option<PathBuf>>,
     ) -> Result<Self> {
-        Self::_load_with_context(cwd.as_ref(), home.into())
+        Self::_load_with_context(cwd.as_ref(), cargo_home.into())
     }
     #[cfg(feature = "toml")]
-    pub(crate) fn _load_with_context(current_dir: &Path, home: Option<PathBuf>) -> Result<Config> {
+    pub(crate) fn _load_with_context(
+        current_dir: &Path,
+        cargo_home: Option<PathBuf>,
+    ) -> Result<Config> {
         let mut base = None;
-        for path in crate::Walk::with_cargo_home(current_dir, home) {
+        for path in crate::Walk::with_cargo_home(current_dir, cargo_home) {
             let config = Self::_load_file(&path)?;
             match &mut base {
                 None => base = Some((path, config)),
