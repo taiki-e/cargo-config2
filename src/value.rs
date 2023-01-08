@@ -35,17 +35,17 @@ impl Value<String> {
                 if !Path::new(&self.val).is_absolute()
                     && (self.val.contains('/') || self.val.contains('\\')) =>
             {
-                Cow::Owned(def.root(current_dir).join(&self.val))
+                def.root(current_dir).join(&self.val).into()
             }
-            _ => Cow::Borrowed(Path::new(&self.val)),
+            _ => Path::new(&self.val).into(),
         }
     }
     pub(crate) fn resolve_as_path(&self, current_dir: &Path) -> Cow<'_, Path> {
         match &self.definition {
             Some(def) if !Path::new(&self.val).is_absolute() => {
-                Cow::Owned(def.root(current_dir).join(&self.val))
+                def.root(current_dir).join(&self.val).into()
             }
-            _ => Cow::Borrowed(Path::new(&self.val)),
+            _ => Path::new(&self.val).into(),
         }
     }
 }

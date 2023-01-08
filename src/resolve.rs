@@ -3,7 +3,7 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     ffi::{OsStr, OsString},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use anyhow::Result;
@@ -156,14 +156,7 @@ impl Cfg {
     }
 
     fn from_rustc(rustc: &OsStr, target: &TargetTripleRef<'_>) -> Result<Self> {
-        let list = cmd!(
-            rustc,
-            "--print",
-            "cfg",
-            "--target",
-            target.spec_path().unwrap_or(target.triple())
-        )
-        .read()?;
+        let list = cmd!(rustc, "--print", "cfg", "--target", &*target.cli_target()).read()?;
         Self::parse(&list)
     }
 
@@ -319,7 +312,7 @@ impl TargetCfg {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TargetTripleRef<'a> {
     triple: Cow<'a, str>,
-    spec_path: Option<Cow<'a, str>>,
+    spec_path: Option<Cow<'a, Path>>,
 }
 
 pub type TargetTriple = TargetTripleRef<'static>;
@@ -333,10 +326,10 @@ fn resolve_spec_path(
     spec_path: &str,
     def: Option<&Definition>,
     current_dir: Option<&Path>,
-) -> Option<String> {
+) -> Option<PathBuf> {
     if let Some(def) = def {
         if let Some(root) = def.root_opt(current_dir) {
-            return Some(root.join(spec_path).into_os_string().to_string_lossy().into_owned());
+            return Some(root.join(spec_path));
         }
     }
     None
@@ -351,16 +344,20 @@ impl<'a> TargetTripleRef<'a> {
         // Handles custom target
         if is_spec_path(&triple_or_spec_path) {
             let triple = match &triple_or_spec_path {
-                &Cow::Borrowed(v) => Path::new(v).file_stem().unwrap().to_string_lossy(),
+                // `triple_or_spec_path` is valid UTF-8, so unwrap here will never panic.
+                &Cow::Borrowed(v) => Path::new(v).file_stem().unwrap().to_str().unwrap().into(),
                 Cow::Owned(v) => {
-                    Path::new(v).file_stem().unwrap().to_string_lossy().into_owned().into()
+                    Path::new(v).file_stem().unwrap().to_str().unwrap().to_owned().into()
                 }
             };
             Self {
                 triple,
                 spec_path: Some(match resolve_spec_path(&triple_or_spec_path, def, current_dir) {
-                    Some(v) => Cow::Owned(v),
-                    None => triple_or_spec_path,
+                    Some(v) => v.into(),
+                    None => match triple_or_spec_path {
+                        Cow::Borrowed(v) => Path::new(v).into(),
+                        Cow::Owned(v) => PathBuf::from(v).into(),
+                    },
                 }),
             }
         } else {
@@ -378,32 +375,38 @@ impl<'a> TargetTripleRef<'a> {
     pub fn triple(&self) -> &str {
         &self.triple
     }
-    pub fn spec_path(&self) -> Option<&str> {
+    pub fn spec_path(&self) -> Option<&Path> {
         self.spec_path.as_deref()
+    }
+    pub(crate) fn cli_target(&self) -> Cow<'_, str> {
+        match self.spec_path.as_deref() {
+            Some(p) => p.to_string_lossy(),
+            None => self.triple().into(),
+        }
     }
 }
 
 impl<'a> From<&'a TargetTripleRef<'_>> for TargetTripleRef<'a> {
     fn from(value: &'a TargetTripleRef<'_>) -> Self {
         TargetTripleRef {
-            triple: Cow::Borrowed(value.triple()),
+            triple: value.triple().into(),
             spec_path: value.spec_path().map(Into::into),
         }
     }
 }
 impl From<String> for TargetTripleRef<'static> {
     fn from(value: String) -> Self {
-        Self::new(Cow::Owned(value), None, None)
+        Self::new(value.into(), None, None)
     }
 }
 impl<'a> From<&'a String> for TargetTripleRef<'a> {
     fn from(value: &'a String) -> Self {
-        Self::new(Cow::Borrowed(value), None, None)
+        Self::new(value.into(), None, None)
     }
 }
 impl<'a> From<&'a str> for TargetTripleRef<'a> {
     fn from(value: &'a str) -> Self {
-        Self::new(Cow::Borrowed(value), None, None)
+        Self::new(value.into(), None, None)
     }
 }
 
@@ -412,10 +415,10 @@ impl Serialize for TargetTripleRef<'_> {
     where
         S: serde::Serializer,
     {
-        self.spec_path.as_ref().unwrap_or(&self.triple).serialize(serializer)
+        self.cli_target().serialize(serializer)
     }
 }
-impl<'de> Deserialize<'de> for TargetTripleRef<'_> {
+impl<'de> Deserialize<'de> for TargetTripleRef<'static> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,

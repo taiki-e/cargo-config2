@@ -361,14 +361,14 @@ impl EnvConfigValue {
 
     pub(crate) fn resolve(&self, current_dir: &Path) -> Cow<'_, OsStr> {
         match self {
-            Self::Value(v) => Cow::Borrowed(OsStr::new(&v.val)),
+            Self::Value(v) => OsStr::new(&v.val).into(),
             Self::Table { value, relative, .. } => {
                 if relative.as_ref().map_or(false, |v| v.val) {
                     if let Some(def) = &value.definition {
-                        return Cow::Owned(def.root(current_dir).join(&value.val).into_os_string());
+                        return def.root(current_dir).join(&value.val).into_os_string().into();
                     }
                 }
-                Cow::Borrowed(OsStr::new(&value.val))
+                OsStr::new(&value.val).into()
             }
         }
     }

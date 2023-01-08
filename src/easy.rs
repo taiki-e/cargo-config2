@@ -264,10 +264,7 @@ impl Config {
         }
         let config_targets = self.build.target.as_deref().unwrap_or_default();
         if !config_targets.is_empty() {
-            return Ok(config_targets
-                .iter()
-                .map(|t| t.spec_path().unwrap_or(t.triple()).to_owned())
-                .collect());
+            return Ok(config_targets.iter().map(|t| t.cli_target().into_owned()).collect());
         }
         Ok(vec![])
     }
