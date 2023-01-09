@@ -10,11 +10,14 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.1] - 2023-01-09
+
 - Fix `serde::Serialize` impl of `Config` after target resolved.
 
 ## [0.1.0] - 2023-01-09
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/taiki-e/cargo-config2/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/taiki-e/cargo-config2/releases/tag/v0.1.0
