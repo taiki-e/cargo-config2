@@ -10,7 +10,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
-- Fix serialization of `Config` after target resolved.
+- Fix `serde::Serialize` impl of `Config` after target resolved.
 
 ## [0.1.0] - 2023-01-09
 
