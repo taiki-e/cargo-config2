@@ -519,7 +519,7 @@ impl Serialize for TargetTripleRef<'_> {
     where
         S: serde::Serializer,
     {
-        self.cli_target().serialize(serializer)
+        self.cli_target().to_string_lossy().serialize(serializer)
     }
 }
 impl<'de> Deserialize<'de> for TargetTripleRef<'static> {

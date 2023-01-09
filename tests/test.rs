@@ -130,6 +130,8 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     assert_eq!(config.term.progress.when, Some(When::Auto));
     assert_eq!(config.term.progress.width, Some(80));
 
+    let _config = toml_edit::easy::to_string(&config).unwrap();
+
     Ok(())
 }
 
@@ -144,15 +146,20 @@ fn easy() {
 
 #[test]
 fn de() {
-    // fn de(dir: &Path, _cx: ResolveContext) -> Result<de::Config> {
-    //     de::Config::load_with_context(dir, None)
-    // }
+    fn de(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
+        Ok(de::Config::load_with_options(dir, None)?)
+    }
     #[track_caller]
     fn ser(config: &de::Config) -> String {
         toml::to_string(&config).unwrap()
     }
 
-    // assert_reference_example(de).unwrap();
+    let (_tmp, root) = test_project("reference").unwrap();
+    let dir = &root;
+    let base_config = &de(dir, test_options()).unwrap();
+    let config = base_config.clone();
+
+    let _config = toml_edit::easy::to_string(&config).unwrap();
 
     assert_eq!("", ser(&de::Config::default()));
 }
@@ -193,6 +200,8 @@ fn custom_target() {
 
         assert_eq!(config.linker(cli_target)?.unwrap().as_os_str(), "avr-gcc");
         assert_eq!(config.rustflags(cli_target)?, Some(["-C", "opt-level=s"].into()));
+
+        let _config = toml_edit::easy::to_string(&config).unwrap();
 
         Ok(())
     }
