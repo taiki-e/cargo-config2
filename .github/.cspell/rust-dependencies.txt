@@ -2,7 +2,9 @@
 // It is not intended for manual editing.
 
 anyhow
+assertions
 cargo
+cell
 clap
 config
 criterion
@@ -15,12 +17,14 @@ ignore
 json
 lexopt
 macro
+once
 prettyplease
 proc
 quote
 rustversion
 serde
 shell
+static
 tempfile
 toml
 walkdir
