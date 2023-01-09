@@ -1,0 +1,8 @@
+cfgs
+incompat
+tempdir
+tmpdir
+tmppath
+unparse
+unsync
+USERPROFILE

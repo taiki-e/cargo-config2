@@ -1,0 +1,44 @@
+[package]
+name = "cargo-config2"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.60"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/taiki-e/cargo-config2"
+keywords = ["cargo", "config"]
+categories = []
+exclude = ["/.*", "/tools"]
+description = """
+Load and resolve Cargo configuration.
+"""
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[workspace]
+resolver = "2"
+members = ["bench", "tools/codegen"]
+
+[lib]
+doc-scrape-examples = false
+
+# Note: serde is public dependencies.
+[dependencies]
+cfg-expr = "0.13"
+home = "0.5"
+once_cell = { version = "1", default-features = false }
+serde = { version = "1.0.103", features = ["derive"] }
+shell-escape = "0.1.5"
+toml_edit = { version = "0.17", features = ["easy"] }
+
+[dev-dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+duct = "0.13"
+fs-err = "2"
+lexopt = "0.2"
+rustversion = "1"
+serde_json = "1"
+static_assertions = "1"
+tempfile = "3"
+walkdir = "2"

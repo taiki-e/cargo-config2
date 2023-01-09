@@ -1,0 +1,80 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+      - staging
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTDOCFLAGS: -D warnings
+  RUSTFLAGS: -D warnings
+  RUSTUP_MAX_RETRIES: 10
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check-external-types:
+    uses: taiki-e/workflows/.github/workflows/check-external-types.yml@main
+  deny:
+    uses: taiki-e/workflows/.github/workflows/deny.yml@main
+  docs:
+    uses: taiki-e/workflows/.github/workflows/docs.yml@main
+  msrv:
+    uses: taiki-e/workflows/.github/workflows/msrv.yml@main
+    with:
+      event_name: ${{ github.event_name }}
+  tidy:
+    uses: taiki-e/workflows/.github/workflows/tidy-rust.yml@main
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rust: stable
+          - rust: beta
+          - rust: nightly
+          - rust: nightly
+            os: macos-latest
+          - rust: nightly
+            os: windows-latest
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: rustup toolchain add ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
+      - run: rustup toolchain add nightly --no-self-update
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: taiki-e/install-action@cargo-minimal-versions
+      - run: cargo test --workspace --all-features
+      - run: cargo hack build --workspace --ignore-private --feature-powerset --no-dev-deps
+      - run: cargo minimal-versions build --workspace --all-features --ignore-private
+
+  # ALL THE PREVIOUS JOBS NEEDS TO BE ADDED TO THE `needs` SECTION OF THIS JOB!
+
+  ci-success:
+    name: ci
+    if: github.event_name == 'push' && success()
+    # prettier-ignore
+    needs: [check-external-types, deny, docs, msrv, tidy, test] # tidy:needs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark the job as a success
+        run: exit 0

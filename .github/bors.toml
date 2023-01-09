@@ -1,0 +1,2 @@
+status = ["ci"]
+timeout_sec = 7200
