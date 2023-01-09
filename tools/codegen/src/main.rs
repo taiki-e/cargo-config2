@@ -24,9 +24,8 @@ fn main() -> Result<()> {
 
 fn gen_de() -> Result<()> {
     const FILES: &[&str] = &["src/de.rs"];
-    // TODO: check if this list is outdated
     const MERGE_EXCLUDE: &[&str] =
-        &["Flags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs"];
+        &["de::Flags", "de::EnvConfigValue", "de::StringList", "de::PathAndArgs"];
     const SET_PATH_EXCLUDE: &[&str] = &[];
 
     let workspace_root = &workspace_root();
@@ -40,6 +39,7 @@ fn gen_de() -> Result<()> {
         };
     };
 
+    let mut visited_types = BTreeSet::new();
     for &f in FILES {
         let s = fs::read_to_string(workspace_root.join(f))?;
         let mut ast = syn::parse_file(&s)?;
@@ -56,121 +56,143 @@ fn gen_de() -> Result<()> {
             match item {
                 syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
                     if matches!(vis, syn::Visibility::Public(..))
-                        && matches!(fields, syn::Fields::Named(..))
-                        && !MERGE_EXCLUDE.iter().any(|&e| ident == e) =>
+                        && matches!(fields, syn::Fields::Named(..)) =>
                 {
-                    let fields = fields
-                        .iter()
-                        .filter(|f| {
-                            !serde_skip(&f.attrs)
-                                && f.ident.as_ref().unwrap() != "serialized_repr"
-                                && f.ident.as_ref().unwrap() != "deserialized_repr"
-                        })
-                        .map(|syn::Field { ident, .. }| {
-                            quote! { self.#ident.merge(from.#ident, force)?; }
-                        });
-                    tokens.extend(quote! {
-                        impl Merge for crate:: #(#module::)* #ident {
-                            fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-                                #(#fields)*
-                                Ok(())
+                    let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
+                    visited_types.insert(path_string.clone());
+                    if !MERGE_EXCLUDE.contains(&path_string.as_str()) {
+                        let fields = fields
+                            .iter()
+                            .filter(|f| {
+                                !serde_skip(&f.attrs)
+                                    && f.ident.as_ref().unwrap() != "serialized_repr"
+                                    && f.ident.as_ref().unwrap() != "deserialized_repr"
+                            })
+                            .map(|syn::Field { ident, .. }| {
+                                quote! { self.#ident.merge(from.#ident, force)?; }
+                            });
+                        tokens.extend(quote! {
+                            impl Merge for crate:: #(#module::)* #ident {
+                                fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+                                    #(#fields)*
+                                    Ok(())
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
                 _ => {}
             }
             // impl SetPath
             match item {
                 syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
-                    if matches!(vis, syn::Visibility::Public(..))
-                        && !SET_PATH_EXCLUDE.iter().any(|&e| ident == e) =>
+                    if matches!(vis, syn::Visibility::Public(..)) =>
                 {
-                    match fields {
-                        Fields::Named(fields) => {
-                            let fields = fields
-                                .named
-                                .iter()
-                                .filter(|f| {
-                                    !serde_skip(&f.attrs)
-                                        && f.ident.as_ref().unwrap() != "serialized_repr"
-                                        && f.ident.as_ref().unwrap() != "deserialized_repr"
-                                })
-                                .map(|syn::Field { ident, .. }| {
-                                    quote! { self.#ident.set_path(path); }
-                                });
-                            tokens.extend(quote! {
-                                impl SetPath for crate:: #(#module::)* #ident {
-                                    fn set_path(&mut self, path: &Path) {
-                                        #(#fields)*
-                                    }
-                                }
-                            });
-                        }
-                        Fields::Unnamed(fields) => {
-                            assert_eq!(fields.unnamed.len(), 1);
-                            tokens.extend(quote! {
-                                impl SetPath for crate:: #(#module::)* #ident {
-                                    fn set_path(&mut self, path: &Path) {
-                                        self.0.set_path(path);
-                                    }
-                                }
-                            });
-                        }
-                        Fields::Unit => unreachable!(),
-                    }
-                }
-                syn::Item::Enum(syn::ItemEnum { vis, ident, variants, .. })
-                    if matches!(vis, syn::Visibility::Public(..))
-                        && variants.iter().all(|v| !v.fields.is_empty())
-                        && SET_PATH_EXCLUDE.iter().all(|&e| ident != e) =>
-                {
-                    let mut arms = vec![];
-                    for syn::Variant { ident, fields, .. } in variants {
+                    let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
+                    visited_types.insert(path_string.clone());
+                    if !SET_PATH_EXCLUDE.contains(&path_string.as_str()) {
                         match fields {
                             Fields::Named(fields) => {
-                                let pat = fields
+                                let fields = fields
                                     .named
                                     .iter()
-                                    .filter(|f| !serde_skip(&f.attrs))
-                                    .map(|syn::Field { ident, .. }| ident);
-                                let calls =
-                                    fields.named.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                                        |syn::Field { ident, .. }| {
-                                            quote! { #ident.set_path(path); }
-                                        },
-                                    );
-                                arms.push(quote! {
-                                    Self::#ident { #(#pat),* } => {
-                                        #(#calls)*
+                                    .filter(|f| {
+                                        !serde_skip(&f.attrs)
+                                            && f.ident.as_ref().unwrap() != "serialized_repr"
+                                            && f.ident.as_ref().unwrap() != "deserialized_repr"
+                                    })
+                                    .map(|syn::Field { ident, .. }| {
+                                        quote! { self.#ident.set_path(path); }
+                                    });
+                                tokens.extend(quote! {
+                                    impl SetPath for crate:: #(#module::)* #ident {
+                                        fn set_path(&mut self, path: &Path) {
+                                            #(#fields)*
+                                        }
                                     }
                                 });
                             }
                             Fields::Unnamed(fields) => {
                                 assert_eq!(fields.unnamed.len(), 1);
-                                arms.push(quote! {
-                                    Self::#ident(v) => {
-                                        v.set_path(path);
+                                tokens.extend(quote! {
+                                    impl SetPath for crate:: #(#module::)* #ident {
+                                        fn set_path(&mut self, path: &Path) {
+                                            self.0.set_path(path);
+                                        }
                                     }
                                 });
                             }
                             Fields::Unit => unreachable!(),
                         }
                     }
-                    tokens.extend(quote! {
-                        impl SetPath for crate:: #(#module::)* #ident {
-                            fn set_path(&mut self, path: &Path) {
-                                match self {
-                                    #(#arms,)*
+                }
+                syn::Item::Enum(syn::ItemEnum { vis, ident, variants, .. })
+                    if matches!(vis, syn::Visibility::Public(..))
+                        && variants.iter().all(|v| !v.fields.is_empty()) =>
+                {
+                    let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
+                    visited_types.insert(path_string.clone());
+                    if !SET_PATH_EXCLUDE.contains(&path_string.as_str()) {
+                        let mut arms = vec![];
+                        for syn::Variant { ident, fields, .. } in variants {
+                            match fields {
+                                Fields::Named(fields) => {
+                                    let pat = fields
+                                        .named
+                                        .iter()
+                                        .filter(|f| !serde_skip(&f.attrs))
+                                        .map(|syn::Field { ident, .. }| ident);
+                                    let calls =
+                                        fields.named.iter().filter(|f| !serde_skip(&f.attrs)).map(
+                                            |syn::Field { ident, .. }| {
+                                                quote! { #ident.set_path(path); }
+                                            },
+                                        );
+                                    arms.push(quote! {
+                                        Self::#ident { #(#pat),* } => {
+                                            #(#calls)*
+                                        }
+                                    });
                                 }
+                                Fields::Unnamed(fields) => {
+                                    assert_eq!(fields.unnamed.len(), 1);
+                                    arms.push(quote! {
+                                        Self::#ident(v) => {
+                                            v.set_path(path);
+                                        }
+                                    });
+                                }
+                                Fields::Unit => unreachable!(),
                             }
                         }
-                    });
+                        tokens.extend(quote! {
+                            impl SetPath for crate:: #(#module::)* #ident {
+                                fn set_path(&mut self, path: &Path) {
+                                    match self {
+                                        #(#arms,)*
+                                    }
+                                }
+                            }
+                        });
+                    }
                 }
                 _ => {}
             }
         })
         .visit_file_mut(&mut ast);
+    }
+
+    for &t in MERGE_EXCLUDE {
+        assert!(
+            visited_types.contains(t),
+            "unknown type `{t}` specified in MERGE_EXCLUDE constant"
+        );
+    }
+    for &t in SET_PATH_EXCLUDE {
+        assert!(
+            visited_types.contains(t),
+            "unknown type `{t}` specified in SET_PATH_EXCLUDE constant"
+        );
     }
 
     write(function_name!(), &workspace_root.join("src/gen/de.rs"), tokens)?;
@@ -182,19 +204,24 @@ fn gen_is_none() -> Result<()> {
     const FILES: &[&str] = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
     // TODO: check if this list is outdated
     const EXCLUDE: &[&str] = &[
-        "Config",
-        "TargetConfig",
-        "Flags",
-        "ResolveContext",
-        "EnvConfigValue",
-        "StringList",
-        "PathAndArgs",
+        "de::Config",
+        "de::Flags",
+        "de::PathAndArgs",
+        "de::StringList",
+        "de::TargetConfig",
+        "easy::Config",
+        "easy::EnvConfigValue",
+        "easy::Flags",
+        "easy::PathAndArgs",
+        "easy::StringList",
+        "easy::TargetConfig",
     ];
 
     let workspace_root = &workspace_root();
 
     let mut tokens = quote! {};
 
+    let mut visited_types = BTreeSet::new();
     for &f in FILES {
         let s = fs::read_to_string(workspace_root.join(f))?;
         let mut ast = syn::parse_file(&s)?;
@@ -209,25 +236,32 @@ fn gen_is_none() -> Result<()> {
         ItemVisitor::new(module, |item, module| match item {
             syn::Item::Struct(syn::ItemStruct { vis, ident, fields, .. })
                 if matches!(vis, syn::Visibility::Public(..))
-                    && matches!(fields, syn::Fields::Named(..))
-                    && !EXCLUDE.iter().any(|&e| ident == e) =>
+                    && matches!(fields, syn::Fields::Named(..)) =>
             {
-                let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                    |syn::Field { ident, .. }| {
-                        quote! { self.#ident.is_none() }
-                    },
-                );
-                tokens.extend(quote! {
-                    impl crate:: #(#module::)* #ident {
-                        pub(crate) fn is_none(&self) -> bool {
-                            #(#fields) &&*
+                let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
+                visited_types.insert(path_string.clone());
+                if !EXCLUDE.contains(&path_string.as_str()) {
+                    let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
+                        |syn::Field { ident, .. }| {
+                            quote! { self.#ident.is_none() }
+                        },
+                    );
+                    tokens.extend(quote! {
+                        impl crate:: #(#module::)* #ident {
+                            pub(crate) fn is_none(&self) -> bool {
+                                #(#fields) &&*
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
             _ => {}
         })
         .visit_file_mut(&mut ast);
+    }
+
+    for &t in EXCLUDE {
+        assert!(visited_types.contains(t), "unknown type `{t}` specified in EXCLUDE constant");
     }
 
     write(function_name!(), &workspace_root.join("src/gen/is_none.rs"), tokens)?;
@@ -255,7 +289,6 @@ fn serde_skip(attrs: &[syn::Attribute]) -> bool {
 }
 
 fn gen_assert_impl() -> Result<()> {
-    // TODO: check if this list is outdated
     const NOT_SEND: &[&str] = &[];
     const NOT_SYNC: &[&str] = &["easy::Config", "resolve::ResolveContext"];
     const NOT_UNPIN: &[&str] = &[];
@@ -313,6 +346,7 @@ fn gen_assert_impl() -> Result<()> {
             };
         }
     };
+    let mut visited_types = BTreeSet::new();
     for f in &files {
         let s = fs::read_to_string(f)?;
         let mut ast = syn::parse_file(&s)?;
@@ -333,6 +367,7 @@ fn gen_assert_impl() -> Result<()> {
                 if matches!(vis, syn::Visibility::Public(..)) =>
             {
                 let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
+                visited_types.insert(path_string.clone());
 
                 let has_generics = generics.type_params().count() != 0;
                 if generics.const_params().count() != 0 {
@@ -409,6 +444,16 @@ fn gen_assert_impl() -> Result<()> {
             _ => {}
         })
         .visit_file_mut(&mut ast);
+    }
+
+    for &t in NOT_SEND {
+        assert!(visited_types.contains(t), "unknown type `{t}` specified in NOT_SEND constant");
+    }
+    for &t in NOT_SYNC {
+        assert!(visited_types.contains(t), "unknown type `{t}` specified in NOT_SYNC constant");
+    }
+    for &t in NOT_UNPIN {
+        assert!(visited_types.contains(t), "unknown type `{t}` specified in NOT_UNPIN constant");
     }
 
     let out = quote! {
