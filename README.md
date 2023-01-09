@@ -11,7 +11,7 @@ Load and resolve [Cargo configuration](https://doc.rust-lang.org/nightly/cargo/r
 This library is intended to accurately emulate the actual behavior of Cargo configuration, for example, this supports the following behaviors:
 
 - [Hierarchical structure and merge](https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure)
-- Environment variables and relative paths resolution.
+- [Environment variables](https://doc.rust-lang.org/nightly/cargo/reference/config.html#environment-variables) and [relative paths](https://doc.rust-lang.org/nightly/cargo/reference/config.html#config-relative-paths) resolution.
 - `target.<triple>` and `target.<cfg>` resolution.
 
 Supported tables and fields are mainly based on [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)'s use cases, but feel free to submit an issue if you see something missing in your use case.

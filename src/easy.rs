@@ -565,6 +565,8 @@ impl DocConfig {
     }
 }
 
+/// A value of the `[env]` table.
+///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
 #[derive(Debug, Clone)]
 #[non_exhaustive]
@@ -896,6 +898,9 @@ impl<const N: usize> From<[&str; N]> for Flags {
     }
 }
 
+/// An executable path with arguments.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments)
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct PathAndArgs {

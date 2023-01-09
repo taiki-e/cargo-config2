@@ -357,6 +357,8 @@ pub struct DocConfig {
 }
 
 // TODO: hide internal repr, change to struct
+/// A value of the `[env]` table.
+///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -712,6 +714,9 @@ impl ConfigRelativePath {
     }
 }
 
+/// An executable path with arguments.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments)
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct PathAndArgs {
