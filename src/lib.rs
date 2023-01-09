@@ -36,7 +36,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 #![forbid(unsafe_code)]
 #![warn(
     missing_debug_implementations,
-    // missing_docs,
+    missing_docs,
     rust_2018_idioms,
     single_use_lifetimes,
     unreachable_pub
@@ -73,7 +73,6 @@ mod is_none_impl;
 #[macro_use]
 mod process;
 
-mod command;
 pub mod de;
 mod easy;
 mod env;
@@ -87,12 +86,10 @@ use anyhow::Result;
 #[doc(no_inline)]
 pub use crate::de::{Color, Frequency, When};
 pub use crate::{
-    command::host_triple,
     easy::{
-        BuildConfig, Config, DocConfig, EnvConfigValue, FutureIncompatReportConfig, NetConfig,
-        PathAndArgs, Rustflags, StringList, TargetConfig, TermConfig, TermProgressConfig,
+        BuildConfig, Config, DocConfig, EnvConfigValue, Flags, FutureIncompatReportConfig,
+        NetConfig, PathAndArgs, StringList, TargetConfig, TermConfig, TermProgressConfig,
     },
-    resolve::{ResolveContext, TargetTriple, TargetTripleRef},
-    value::{Definition, Value},
+    resolve::{ResolveOptions, TargetTriple, TargetTripleRef},
     walk::Walk,
 };

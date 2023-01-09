@@ -29,8 +29,9 @@ default = ["toml"]
 toml = ["toml_edit"]
 
 [dependencies]
-cfg-expr = { version = "0.13", features = ["targets"] }
+cfg-expr = "0.13"
 home = "0.5"
+once_cell = { version = "1", default-features = false }
 serde = { version = "1.0.103", features = ["derive"] }
 shell-escape = "0.1.5"
 

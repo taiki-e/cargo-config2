@@ -6,47 +6,148 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
-use cfg_expr::{target_lexicon, Expression, Predicate};
+use anyhow::{format_err, Result};
+use cfg_expr::{Expression, Predicate};
+use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 
-use crate::{Definition, Value};
+use crate::{
+    easy,
+    process::ProcessBuilder,
+    value::{Definition, Value},
+    PathAndArgs,
+};
+
+#[derive(Debug, Clone, Default)]
+#[must_use]
+pub struct ResolveOptions {
+    pub(crate) env: Option<HashMap<String, OsString>>,
+    pub(crate) cargo: Option<OsString>,
+    #[allow(clippy::option_option)]
+    pub(crate) cargo_home: Option<Option<PathBuf>>,
+    pub(crate) host_triple: Option<String>,
+}
+
+impl ResolveOptions {
+    /// Sets `cargo` path.
+    ///
+    /// # Default value
+    ///
+    /// The value of the `CARGO` environment variable if it is set. Otherwise, "cargo".
+    pub fn cargo(mut self, cargo: impl Into<OsString>) -> Self {
+        self.cargo = Some(cargo.into());
+        self
+    }
+    /// Sets `CARGO_HOME` path.
+    ///
+    /// # Default value
+    ///
+    /// [`home::cargo_home_with_cwd`] if the current directory was specified when
+    /// loading config. Otherwise, [`home::cargo_home`].
+    pub fn cargo_home(mut self, cargo_home: impl Into<Option<PathBuf>>) -> Self {
+        self.cargo_home = Some(cargo_home.into());
+        self
+    }
+    /// Sets host target triple.
+    ///
+    /// # Default value
+    ///
+    /// Parse the version output of `cargo` specified by [`Self::cargo`].
+    pub fn host_triple(mut self, triple: impl Into<String>) -> Self {
+        self.host_triple = Some(triple.into());
+        self
+    }
+    /// Sets the specified key-values as environment variables to be read during config resolution.
+    ///
+    /// # Default value
+    ///
+    /// [`std::env::vars_os`]
+    pub fn env(
+        mut self,
+        vars: impl IntoIterator<Item = (impl Into<OsString>, impl Into<OsString>)>,
+    ) -> Self {
+        let mut env = HashMap::default();
+        for (k, v) in vars {
+            if let Ok(k) = k.into().into_string() {
+                if k.starts_with("CARGO_") || k.starts_with("RUST") || k == "BROWSER" {
+                    env.insert(k, v.into());
+                }
+            }
+        }
+        self.env = Some(env);
+        self
+    }
+    pub fn no_env(mut self) -> Self {
+        self.env = Some(HashMap::default());
+        self
+    }
+
+    pub(crate) fn into_context(mut self) -> ResolveContext {
+        if self.env.is_none() {
+            self = self.env(std::env::vars_os());
+        }
+        let env = self.env.unwrap();
+        let cargo = match self.cargo {
+            Some(cargo) => cargo,
+            None => std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()),
+        };
+        let host_triple = match self.host_triple {
+            Some(host_triple) => OnceCell::from(host_triple),
+            None => OnceCell::new(),
+        };
+        let cargo_home = match self.cargo_home {
+            Some(cargo_home) => OnceCell::from(cargo_home),
+            None => OnceCell::new(),
+        };
+
+        ResolveContext {
+            env,
+            rustc: OnceCell::new(),
+            cargo,
+            cargo_home,
+            host_triple,
+            cfg: RefCell::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct ResolveContext {
+pub(crate) struct ResolveContext {
     pub(crate) env: HashMap<String, OsString>,
-    rustc: Option<OsString>,
+    rustc: OnceCell<easy::PathAndArgs>,
+    pub(crate) cargo: OsString,
+    cargo_home: OnceCell<Option<PathBuf>>,
+    host_triple: OnceCell<String>,
     cfg: RefCell<HashMap<TargetTriple, Cfg>>,
 }
 
 impl ResolveContext {
-    pub fn new() -> Result<Self> {
-        Ok(Self::with_env(std::env::vars_os()))
-    }
-
-    pub fn with_env(
-        vars: impl IntoIterator<Item = (impl Into<OsString>, impl Into<OsString>)>,
-    ) -> Self {
-        let mut this = Self::no_env();
-        for (k, v) in vars {
-            if let Ok(k) = k.into().into_string() {
-                if k.starts_with("CARGO_") || k.starts_with("RUST") || k == "BROWSER" {
-                    this.env.insert(k, v.into());
+    pub(crate) fn rustc(&self, build_config: &easy::BuildConfig) -> &PathAndArgs {
+        self.rustc.get_or_init(|| {
+            // TODO: Update comment based on https://github.com/rust-lang/cargo/pull/10896?
+            // The following priorities are not documented, but at as of cargo
+            // 1.63.0-nightly (2022-05-31), `RUSTC_WRAPPER` is preferred over `RUSTC_WORKSPACE_WRAPPER`.
+            let rustc =
+                build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
+            match build_config
+                .rustc_wrapper
+                .as_ref()
+                .or(build_config.rustc_workspace_wrapper.as_ref())
+            {
+                // The wrapper's first argument is supposed to be the path to rustc.
+                Some(wrapper) => {
+                    PathAndArgs { path: wrapper.clone(), args: vec![rustc.into_os_string()] }
                 }
+                None => PathAndArgs { path: rustc, args: vec![] },
             }
-        }
-        this
+        })
     }
-
-    pub fn no_env() -> Self {
-        Self { env: HashMap::default(), rustc: None, cfg: RefCell::new(HashMap::default()) }
+    pub(crate) fn cargo_home(&self, cwd: &Path) -> &Option<PathBuf> {
+        self.cargo_home.get_or_init(|| home::cargo_home_with_cwd(cwd).ok())
     }
-
-    pub fn set_rustc(mut self, rustc: impl Into<OsString>) -> Self {
-        self.rustc = Some(rustc.into());
-        self.cfg = RefCell::new(HashMap::default());
-        self
+    pub(crate) fn host_triple(&self) -> Result<&str> {
+        Ok(self.host_triple.get_or_try_init(|| host_triple(&self.cargo))?)
     }
 
     //  micro-optimization for static name -- avoiding name allocation can speed up
@@ -70,30 +171,30 @@ impl ResolveContext {
         }
     }
 
-    pub(crate) fn eval_cfg(&self, expr: &str, target: &TargetTripleRef<'_>) -> Result<bool> {
+    pub(crate) fn eval_cfg(
+        &self,
+        expr: &str,
+        target: &TargetTripleRef<'_>,
+        build_config: &easy::BuildConfig,
+    ) -> Result<bool> {
         let mut cfg_map = self.cfg.borrow_mut();
         let expr = Expression::parse(expr)?;
         let cfg = match cfg_map.get(target) {
             Some(cfg) => cfg,
-            None => match cfg_for_target(self.rustc.as_deref(), target)? {
-                Some(cfg) => {
-                    cfg_map.insert(target.clone().into_owned(), cfg);
-                    &cfg_map[target]
-                }
-                None => return Ok(false),
-            },
+            None => {
+                let cfg = Cfg::from_rustc(self.rustc(build_config).clone().into(), target)?;
+                cfg_map.insert(target.clone().into_owned(), cfg);
+                &cfg_map[target]
+            }
         };
         Ok(expr.eval(|pred| match pred {
-            Predicate::Target(pred) => match &cfg.target_info {
-                TargetInfo::Cfg(target_info) => target_info.matches(pred),
-                TargetInfo::CfgExpr(target_info) => pred.matches(target_info),
-                TargetInfo::TargetLexicon(target_info) => pred.matches(target_info),
-            },
+            Predicate::Target(pred) => cfg.target_info.matches(pred),
             Predicate::TargetFeature(feature) => cfg.target_features.contains(*feature),
             Predicate::Flag(flag) => cfg.flags.contains(*flag),
             Predicate::KeyValue { key, val } => {
                 cfg.key_values.get(*key).map_or(false, |values| values.contains(*val))
             }
+            // https://github.com/rust-lang/cargo/pull/7660
             Predicate::Test
             | Predicate::DebugAssertions
             | Predicate::ProcMacro
@@ -102,61 +203,17 @@ impl ResolveContext {
     }
 }
 
-fn cfg_for_target(rustc: Option<&OsStr>, target: &TargetTripleRef<'_>) -> Result<Option<Cfg>> {
-    if let Some(rustc) = rustc {
-        return Ok(Some(Cfg::from_rustc(rustc, target)?));
-    }
-    if let Some(target_info) = cfg_expr::targets::get_builtin_target_by_triple(&target.triple) {
-        return Ok(Some(Cfg::from_target_info(TargetInfo::CfgExpr(target_info.clone()))));
-    }
-    // HACK: work around for https://github.com/bytecodealliance/target-lexicon/issues/63
-    // Inspired by https://github.com/EmbarkStudios/cfg-expr/blob/0.13.0/tests/eval.rs#L19-L31.
-    let triple = if target.triple.starts_with("avr-unknown-gnu-at") {
-        target_lexicon::Triple {
-            architecture: target_lexicon::Architecture::Avr,
-            vendor: target_lexicon::Vendor::Unknown,
-            operating_system: target_lexicon::OperatingSystem::Unknown,
-            environment: target_lexicon::Environment::Unknown,
-            binary_format: target_lexicon::BinaryFormat::Unknown,
-        }
-    } else {
-        match target.triple.parse::<target_lexicon::Triple>() {
-            Ok(triple) => triple,
-            // TODO
-            Err(_e) => return Ok(None),
-        }
-    };
-    Ok(Some(Cfg::from_target_info(TargetInfo::TargetLexicon(triple))))
-}
-
 #[derive(Debug, Clone)]
 struct Cfg {
-    target_info: TargetInfo,
+    target_info: TargetCfg,
     target_features: HashSet<String>,
     flags: HashSet<String>,
     key_values: HashMap<String, HashSet<String>>,
 }
 
-#[derive(Debug, Clone)]
-#[allow(clippy::large_enum_variant)]
-enum TargetInfo {
-    Cfg(TargetCfg),
-    CfgExpr(cfg_expr::targets::TargetInfo),
-    TargetLexicon(target_lexicon::Triple),
-}
-
 impl Cfg {
-    fn from_target_info(target_info: TargetInfo) -> Self {
-        Self {
-            target_info,
-            target_features: HashSet::default(),
-            flags: HashSet::default(),
-            key_values: HashMap::default(),
-        }
-    }
-
-    fn from_rustc(rustc: &OsStr, target: &TargetTripleRef<'_>) -> Result<Self> {
-        let list = cmd!(rustc, "--print", "cfg", "--target", &*target.cli_target()).read()?;
+    fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
+        let list = rustc.args(["--print", "cfg", "--target", &*target.cli_target()]).read()?;
         Self::parse(&list)
     }
 
@@ -241,7 +298,7 @@ impl Cfg {
         }
 
         Ok(Cfg {
-            target_info: TargetInfo::Cfg(TargetCfg {
+            target_info: TargetCfg {
                 os,
                 abi,
                 arch: arch.unwrap(),
@@ -252,7 +309,7 @@ impl Cfg {
                 endian: endian.unwrap(),
                 has_atomics: cfg_expr::targets::HasAtomics::new(has_atomics),
                 panic,
-            }),
+            },
             target_features,
             flags,
             key_values,
@@ -427,6 +484,33 @@ impl<'de> Deserialize<'de> for TargetTripleRef<'static> {
     }
 }
 
+/// Gets host triple of the given `rustc` or `cargo`.
+pub(crate) fn host_triple(rustc_or_cargo: &OsStr) -> Result<String> {
+    let mut cmd = cmd!(rustc_or_cargo, "--version", "--verbose");
+    let verbose_version = cmd.read()?;
+    let host = verbose_version
+        .lines()
+        .find_map(|line| line.strip_prefix("host: "))
+        .ok_or_else(|| format_err!("unexpected version output from `{cmd}`: {verbose_version}"))?
+        .to_owned();
+    Ok(host)
+}
+
+pub(crate) fn rustc_path(cargo: &OsStr) -> PathBuf {
+    // When toolchain override shorthand (`+toolchain`) is used, `rustc` in
+    // PATH and `CARGO` environment variable may be different toolchains.
+    // When Rust was installed using rustup, the same toolchain's rustc
+    // binary is in the same directory as the cargo binary, so we use it.
+    let mut rustc = PathBuf::from(cargo);
+    rustc.pop(); // cargo
+    rustc.push(format!("rustc{}", std::env::consts::EXE_SUFFIX));
+    if rustc.exists() {
+        rustc
+    } else {
+        "rustc".into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use fs_err as fs;
@@ -449,7 +533,7 @@ mod tests {
     fn parse_cfg_list() {
         // builtin targets
         for target in duct::cmd!("rustc", "--print", "target-list").read().unwrap().lines() {
-            let _cfg = Cfg::from_rustc(OsStr::new("rustc"), &target.into()).unwrap();
+            let _cfg = Cfg::from_rustc(cmd!("rustc"), &target.into()).unwrap();
         }
         // custom targets
         for spec_path in fs::read_dir(fixtures_path().join("target-specs"))
@@ -457,8 +541,7 @@ mod tests {
             .filter_map(Result::ok)
             .map(|e| e.path())
         {
-            let _cfg =
-                Cfg::from_rustc(OsStr::new("rustc"), &spec_path.to_str().unwrap().into()).unwrap();
+            let _cfg = Cfg::from_rustc(cmd!("rustc"), &spec_path.to_str().unwrap().into()).unwrap();
         }
     }
 
@@ -499,7 +582,7 @@ mod tests {
             ("CARGO_TERM_PROGRESS_WIDTH", "100"),
         ];
         let mut config = crate::de::Config::default();
-        let cx = &mut ResolveContext::with_env(env_list);
+        let cx = &mut ResolveOptions::default().env(env_list).into_context();
         for (k, v) in env_list {
             assert_eq!(cx.env[k], v, "key={k},value={v}");
         }

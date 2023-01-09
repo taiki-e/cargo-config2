@@ -1,9 +1,11 @@
 use std::{
+    borrow::Cow,
     cell::RefCell,
     collections::BTreeMap,
-    ffi::{OsStr, OsString},
+    ffi::OsString,
     ops,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use anyhow::{bail, Result};
@@ -11,36 +13,53 @@ use serde::Serialize;
 
 use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, When},
-    resolve::{ResolveContext, TargetTriple, TargetTripleRef},
+    process::ProcessBuilder,
+    resolve::{ResolveContext, ResolveOptions, TargetTriple, TargetTripleRef},
     value::Value,
 };
 
+/// Cargo configuration.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct Config {
     // TODO: paths
-    /// Command aliases.
+    /// The `[alias]` table.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub alias: BTreeMap<String, StringList>,
+    /// The `[build]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
     #[serde(default)]
     #[serde(skip_serializing_if = "BuildConfig::is_none")]
     pub build: BuildConfig,
+    /// The `[doc]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
     #[serde(default)]
     #[serde(skip_serializing_if = "DocConfig::is_none")]
     pub doc: DocConfig,
+    /// The `[env]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, EnvConfigValue>,
+    /// The `[future-incompat-report]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
+    /// The `[net]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
     #[serde(default)]
     #[serde(skip_serializing_if = "NetConfig::is_none")]
     pub net: NetConfig,
@@ -49,14 +68,19 @@ pub struct Config {
     // TODO: registries
     // TODO: registry
     // TODO: source
+    /// The resolved `[target]` table.
     #[serde(skip_deserializing)]
     #[serde(skip_serializing_if = "ref_cell_bree_map_is_empty")]
     target: RefCell<BTreeMap<TargetTriple, TargetConfig>>,
+    /// The unresolved `[target]` table.
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "target")]
     de_target: BTreeMap<String, de::TargetConfig>,
 
+    /// The `[term]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
     #[serde(default)]
     #[serde(skip_serializing_if = "TermConfig::is_none")]
     pub term: TermConfig,
@@ -85,19 +109,17 @@ impl Config {
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
         let cwd = cwd.as_ref();
-        Self::load_with_context(cwd, home::cargo_home_with_cwd(cwd).ok(), ResolveContext::new()?)
+        Self::load_with_options(cwd, ResolveOptions::default())
     }
 
     /// Read config files hierarchically from the given directory and merges them.
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_with_context(
-        cwd: impl AsRef<Path>,
-        cargo_home: impl Into<Option<PathBuf>>,
-        cx: ResolveContext,
-    ) -> Result<Self> {
+    pub fn load_with_options(cwd: impl AsRef<Path>, options: ResolveOptions) -> Result<Self> {
         let cwd = cwd.as_ref();
-        let de = de::Config::_load_with_context(cwd, cargo_home.into())?;
+        let cx = options.into_context();
+
+        let de = de::Config::_load_with_options(cwd, cx.cargo_home(cwd).clone())?;
         Self::from_unresolved(de, cx, cwd.to_owned())
     }
 
@@ -186,9 +208,7 @@ impl Config {
     /// let args = Args::parse();
     /// let config = cargo_config2::Config::load()?;
     ///
-    /// let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    /// let host = cargo_config2::host_triple(cargo)?;
-    /// let mut targets = config.build_target_for_config(args.target.as_ref(), &host)?;
+    /// let mut targets = config.build_target_for_config(args.target.as_ref())?;
     /// if targets.len() != 1 {
     ///     bail!("multi-target build is not supported: {targets:?}");
     /// }
@@ -213,9 +233,7 @@ impl Config {
     /// let args = Args::parse();
     /// let config = cargo_config2::Config::load()?;
     ///
-    /// let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    /// let host = cargo_config2::host_triple(cargo)?;
-    /// let targets = config.build_target_for_config(&args.target, &host)?;
+    /// let targets = config.build_target_for_config(&args.target)?;
     ///
     /// for target in targets {
     ///     println!("{:?}", config.rustflags(target)?);
@@ -223,10 +241,9 @@ impl Config {
     /// # Ok(()) }
     /// ```
     #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
-    pub fn build_target_for_config<'a, 'b>(
+    pub fn build_target_for_config<'a>(
         &self,
         targets: impl IntoIterator<Item = impl Into<TargetTripleRef<'a>>>,
-        host: impl Into<TargetTripleRef<'b>>,
     ) -> Result<Vec<TargetTriple>> {
         let targets: Vec<_> = targets.into_iter().map(|v| v.into().into_owned()).collect();
         if !targets.is_empty() {
@@ -236,7 +253,7 @@ impl Config {
         if !config_targets.is_empty() {
             return Ok(config_targets);
         }
-        Ok(vec![host.into().into_owned()])
+        Ok(vec![TargetTripleRef::from(self.cx.host_triple()?).into_owned()])
     }
 
     /// Selects target triples to pass to CLI.
@@ -279,6 +296,7 @@ impl Config {
                     self.build.override_target_rustflags,
                     &self.build.de_rustflags,
                     target,
+                    &self.build,
                 )?
                 .unwrap_or_default(),
                 &self.current_dir,
@@ -287,18 +305,21 @@ impl Config {
         }
         Ok(())
     }
+    /// Returns the resolved `[target]` table for the given target.
     #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
     pub fn target<'a>(&self, target: impl Into<TargetTripleRef<'a>>) -> Result<TargetConfig> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].clone())
     }
+    /// Returns the resolved linker path for the given target.
     #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
     pub fn linker<'a>(&self, target: impl Into<TargetTripleRef<'a>>) -> Result<Option<PathBuf>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].linker.clone())
     }
+    /// Returns the resolved runner path and args for the given target.
     #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
     pub fn runner<'a>(
         &self,
@@ -308,14 +329,26 @@ impl Config {
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].runner.clone())
     }
+    /// Returns the resolved rustflags for the given target.
     #[allow(single_use_lifetimes)] // https://github.com/rust-lang/rust/issues/105705
-    pub fn rustflags<'a>(
-        &self,
-        target: impl Into<TargetTripleRef<'a>>,
-    ) -> Result<Option<Rustflags>> {
+    pub fn rustflags<'a>(&self, target: impl Into<TargetTripleRef<'a>>) -> Result<Option<Flags>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[&target].rustflags.clone())
+    }
+
+    /// Returns the path and args that calls rustc.
+    ///
+    /// If [`RUSTC_WRAPPER`](BuildConfig::rustc_wrapper) or
+    /// [`RUSTC_WORKSPACE_WRAPPER`](BuildConfig::rustc_workspace_wrapper) is set,
+    /// the path is the wrapper path and the argument is the rustc path.
+    /// Otherwise, the path is the rustc path.
+    pub fn rustc(&self) -> &PathAndArgs {
+        self.cx.rustc(&self.build)
+    }
+    /// Returns the host triple.
+    pub fn host_triple(&self) -> Result<&str> {
+        self.cx.host_triple()
     }
 
     // TODO: add override instead?
@@ -348,16 +381,28 @@ pub struct BuildConfig {
     /// Sets the executable to use for `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)
+    ///
+    /// **Note:** If a wrapper is set, cargo's actual rustc call goes through
+    /// the wrapper, so you may want to use [`Config::rustc`], which respects
+    /// that behavior instead of referencing this value directly.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustc: Option<PathBuf>,
     /// Sets a wrapper to execute instead of `rustc`.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper)
+    ///
+    /// **Note:** If a wrapper is set, cargo's actual rustc call goes through
+    /// the wrapper, so you may want to use [`Config::rustc`], which respects
+    /// that behavior instead of referencing this value directly.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustc_wrapper: Option<PathBuf>,
     /// Sets a wrapper to execute instead of `rustc`, for workspace members only.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper)
+    ///
+    /// **Note:** If a wrapper is set, cargo's actual rustc call goes through
+    /// the wrapper, so you may want to use [`Config::rustc`], which respects
+    /// that behavior instead of referencing this value directly.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustc_workspace_wrapper: Option<PathBuf>,
     /// Sets the executable to use for `rustdoc`.
@@ -380,14 +425,18 @@ pub struct BuildConfig {
     /// of strings or a space-separated string.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustflags)
+    ///
+    /// **Note:** This field does not reflect the target-specific rustflags
+    /// configuration, so you may want to use [`Config::rustflags`] which respects
+    /// the target-specific rustflags configuration.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) rustflags: Option<Rustflags>,
+    pub rustflags: Option<Flags>,
     /// Extra command-line flags to pass to `rustdoc`. The value may be an array
     /// of strings or a space-separated string.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustdocflags: Option<Rustflags>,
+    pub rustdocflags: Option<Flags>,
     /// Whether or not to perform incremental compilation.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildincremental)
@@ -402,7 +451,7 @@ pub struct BuildConfig {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     override_target_rustflags: bool,
-    pub(crate) de_rustflags: Option<de::Rustflags>,
+    pub(crate) de_rustflags: Option<de::Flags>,
 }
 
 impl BuildConfig {
@@ -429,10 +478,9 @@ impl BuildConfig {
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
         let de_rustflags = de.rustflags.clone();
         let rustflags =
-            de.rustflags.map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
-        let rustdocflags = de
-            .rustdocflags
-            .map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+            de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+        let rustdocflags =
+            de.rustdocflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
         let incremental = de.incremental.map(|v| v.val);
         let dep_info_basedir =
             de.dep_info_basedir.map(|v| v.resolve_as_path(current_dir).into_owned());
@@ -456,6 +504,8 @@ impl BuildConfig {
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
+/// A `[target.<triple>]` or `[target.<cfg>]` table.
+///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -473,7 +523,7 @@ pub struct TargetConfig {
     ///
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustflags: Option<Rustflags>,
+    pub rustflags: Option<Flags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
 }
 
@@ -483,12 +533,12 @@ impl TargetConfig {
         let runner = match de.runner {
             Some(v) => Some(PathAndArgs {
                 path: v.path.resolve_program(current_dir).into_owned(),
-                args: v.args.into_iter().map(|v| v.val).collect(),
+                args: v.args.into_iter().map(|v| v.val.into()).collect(),
             }),
             None => None,
         };
         let rustflags =
-            de.rustflags.map(|v| Rustflags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+            de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
         Self { linker, runner, rustflags }
     }
 }
@@ -512,7 +562,7 @@ impl DocConfig {
     pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Self {
         let browser = de.browser.map(|v| PathAndArgs {
             path: v.path.resolve_program(current_dir).into_owned(),
-            args: v.args.into_iter().map(|v| v.val).collect(),
+            args: v.args.into_iter().map(|v| v.val.into()).collect(),
         });
         Self { browser }
     }
@@ -561,9 +611,9 @@ impl Serialize for EnvConfigValue {
         #[derive(Serialize)]
         #[serde(untagged)]
         enum EnvRepr<'a> {
-            Value(&'a OsStr),
+            Value(Cow<'a, str>),
             Table {
-                value: &'a OsStr,
+                value: Cow<'a, str>,
                 #[serde(skip_serializing_if = "ops::Not::not")]
                 force: bool,
                 #[serde(skip_serializing_if = "ops::Not::not")]
@@ -572,11 +622,14 @@ impl Serialize for EnvConfigValue {
         }
         match self {
             Self { value, force: false, relative: false } => {
-                EnvRepr::Value(value).serialize(serializer)
+                EnvRepr::Value(value.to_string_lossy()).serialize(serializer)
             }
-            Self { value, force, relative, .. } => {
-                EnvRepr::Table { value, force: *force, relative: *relative }.serialize(serializer)
+            Self { value, force, relative, .. } => EnvRepr::Table {
+                value: value.to_string_lossy(),
+                force: *force,
+                relative: *relative,
             }
+            .serialize(serializer),
         }
     }
 }
@@ -705,11 +758,11 @@ impl TermProgressConfig {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]
-pub struct Rustflags {
+pub struct Flags {
     pub flags: Vec<String>,
 }
 
-impl Rustflags {
+impl Flags {
     /// Creates a rustflags from a string separated with ASCII unit separator ('\x1f').
     ///
     /// This is a valid format for the following environment variables:
@@ -820,27 +873,27 @@ impl Rustflags {
     }
 }
 
-impl From<Vec<String>> for Rustflags {
+impl From<Vec<String>> for Flags {
     fn from(value: Vec<String>) -> Self {
         Self { flags: value }
     }
 }
-impl From<&[String]> for Rustflags {
+impl From<&[String]> for Flags {
     fn from(value: &[String]) -> Self {
         Self { flags: value.to_owned() }
     }
 }
-impl From<&[&str]> for Rustflags {
+impl From<&[&str]> for Flags {
     fn from(value: &[&str]) -> Self {
         Self { flags: value.iter().map(|&v| v.to_owned()).collect() }
     }
 }
-impl<const N: usize> From<[String; N]> for Rustflags {
+impl<const N: usize> From<[String; N]> for Flags {
     fn from(value: [String; N]) -> Self {
         Self { flags: value[..].to_owned() }
     }
 }
-impl<const N: usize> From<[&str; N]> for Rustflags {
+impl<const N: usize> From<[&str; N]> for Flags {
     fn from(value: [&str; N]) -> Self {
         Self { flags: value[..].iter().map(|&v| v.to_owned()).collect() }
     }
@@ -850,7 +903,7 @@ impl<const N: usize> From<[&str; N]> for Rustflags {
 #[non_exhaustive]
 pub struct PathAndArgs {
     pub path: PathBuf,
-    pub args: Vec<String>,
+    pub args: Vec<OsString>,
 }
 
 impl Serialize for PathAndArgs {
@@ -861,12 +914,28 @@ impl Serialize for PathAndArgs {
         let mut v = Vec::with_capacity(1 + self.args.len());
         v.push(self.path.to_string_lossy().into_owned());
         for arg in &self.args {
-            v.push(arg.clone());
+            v.push(arg.to_string_lossy().into_owned());
         }
         v.serialize(serializer)
     }
 }
 
+impl From<PathAndArgs> for Command {
+    fn from(value: PathAndArgs) -> Self {
+        let mut cmd = Command::new(value.path);
+        cmd.args(value.args);
+        cmd
+    }
+}
+impl From<PathAndArgs> for ProcessBuilder {
+    fn from(value: PathAndArgs) -> Self {
+        let mut cmd = ProcessBuilder::new(value.path);
+        cmd.args(value.args);
+        cmd
+    }
+}
+
+/// A list of string.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]

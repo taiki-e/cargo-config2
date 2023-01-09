@@ -158,7 +158,7 @@ impl SetPath for crate::de::TermProgress {
         self.width.set_path(path);
     }
 }
-impl SetPath for crate::de::Rustflags {
+impl SetPath for crate::de::Flags {
     fn set_path(&mut self, path: &Path) {
         self.flags.set_path(path);
     }

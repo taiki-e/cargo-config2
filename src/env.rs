@@ -5,8 +5,8 @@ use anyhow::{Context as _, Result};
 
 use crate::{
     de::{
-        BuildConfig, Config, DocConfig, FutureIncompatReportConfig, NetConfig, PathAndArgs,
-        Rustflags, StringList, StringOrArray, TermConfig, TermProgress,
+        BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, NetConfig, PathAndArgs,
+        StringList, StringOrArray, TermConfig, TermProgress,
     },
     resolve::ResolveContext,
     value::{Definition, Value},
@@ -25,7 +25,7 @@ impl Config {
     /// difficult to determine exactly which target the target-specific
     /// configuration defined in the environment variables are for.
     /// (e.g., In environment variables, `-` and `.` in the target triple are replaced by `_`)
-    pub fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
+    pub(crate) fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
         for (k, v) in &cx.env {
             if let Some(k) = k.strip_prefix("CARGO_ALIAS_") {
@@ -119,33 +119,29 @@ impl ApplyEnv for BuildConfig {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustflags
         self.override_target_rustflags = false;
         if let Some(rustflags) = cx.env("CARGO_ENCODED_RUSTFLAGS")? {
-            self.rustflags = Some(Rustflags::from_encoded(&rustflags));
+            self.rustflags = Some(Flags::from_encoded(&rustflags));
             self.override_target_rustflags = true;
         } else if let Some(rustflags) = cx.env("RUSTFLAGS")? {
-            self.rustflags = Some(Rustflags::from_space_separated(
-                &rustflags.val,
-                rustflags.definition.as_ref(),
-            ));
+            self.rustflags =
+                Some(Flags::from_space_separated(&rustflags.val, rustflags.definition.as_ref()));
             self.override_target_rustflags = true;
         } else if let Some(rustflags) = cx.env("CARGO_BUILD_RUSTFLAGS")? {
-            self.rustflags = Some(Rustflags::from_space_separated(
-                &rustflags.val,
-                rustflags.definition.as_ref(),
-            ));
+            self.rustflags =
+                Some(Flags::from_space_separated(&rustflags.val, rustflags.definition.as_ref()));
         }
         // 1. CARGO_ENCODED_RUSTDOCFLAGS
         // 2. RUSTDOCFLAGS
         // 3. build.rustdocflags (CARGO_BUILD_RUSTDOCFLAGS)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags
         if let Some(rustdocflags) = cx.env("CARGO_ENCODED_RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_encoded(&rustdocflags));
+            self.rustdocflags = Some(Flags::from_encoded(&rustdocflags));
         } else if let Some(rustdocflags) = cx.env("RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_space_separated(
+            self.rustdocflags = Some(Flags::from_space_separated(
                 &rustdocflags.val,
                 rustdocflags.definition.as_ref(),
             ));
         } else if let Some(rustdocflags) = cx.env("CARGO_BUILD_RUSTDOCFLAGS")? {
-            self.rustdocflags = Some(Rustflags::from_space_separated(
+            self.rustdocflags = Some(Flags::from_space_separated(
                 &rustdocflags.val,
                 rustdocflags.definition.as_ref(),
             ));

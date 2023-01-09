@@ -20,6 +20,7 @@ macro_rules! cmd {
 
 // A builder for an external process, inspired by https://github.com/rust-lang/cargo/blob/0.47.0/src/cargo/util/process_builder.rs
 #[must_use]
+#[derive(Debug, Clone)]
 pub(crate) struct ProcessBuilder {
     /// The program to execute.
     program: OsString,
@@ -36,6 +37,15 @@ impl ProcessBuilder {
     /// Adds an argument to pass to the program.
     pub(crate) fn arg(&mut self, arg: impl Into<OsString>) -> &mut Self {
         self.args.push(arg.into());
+        self
+    }
+
+    /// Adds multiple arguments to pass to the program.
+    pub(crate) fn args(
+        &mut self,
+        args: impl IntoIterator<Item = impl Into<OsString>>,
+    ) -> &mut Self {
+        self.args.extend(args.into_iter().map(Into::into));
         self
     }
 
@@ -68,7 +78,7 @@ impl ProcessBuilder {
         Ok(output)
     }
 
-    fn build(&self) -> Command {
+    pub(crate) fn build(&self) -> Command {
         let mut cmd = Command::new(&self.program);
         cmd.args(&self.args);
         cmd

@@ -26,7 +26,7 @@ fn gen_de() -> Result<()> {
     const FILES: &[&str] = &["src/de.rs"];
     // TODO: check if this list is outdated
     const MERGE_EXCLUDE: &[&str] =
-        &["Rustflags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs"];
+        &["Flags", "ResolveContext", "EnvConfigValue", "StringList", "PathAndArgs"];
     const SET_PATH_EXCLUDE: &[&str] = &[];
 
     let workspace_root = &workspace_root();
@@ -184,7 +184,7 @@ fn gen_is_none() -> Result<()> {
     const EXCLUDE: &[&str] = &[
         "Config",
         "TargetConfig",
-        "Rustflags",
+        "Flags",
         "ResolveContext",
         "EnvConfigValue",
         "StringList",

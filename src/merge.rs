@@ -4,7 +4,7 @@ use std::collections::{btree_map, BTreeMap};
 
 use anyhow::{bail, Context as _, Result};
 
-use crate::{de, Frequency, Value, When};
+use crate::{de, value::Value, Color, Frequency, When};
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/mod.rs#L1900-L1908
 //
@@ -43,6 +43,7 @@ merge_non_container!(bool);
 merge_non_container!(i32);
 merge_non_container!(u32);
 merge_non_container!(String);
+merge_non_container!(Color);
 merge_non_container!(Frequency);
 merge_non_container!(When);
 
@@ -144,7 +145,7 @@ impl Merge for de::EnvConfigValue {
         Ok(())
     }
 }
-impl Merge for de::Rustflags {
+impl Merge for de::Flags {
     fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, from.deserialized_repr) {
             (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {

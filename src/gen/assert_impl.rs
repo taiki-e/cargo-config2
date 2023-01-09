@@ -15,9 +15,10 @@ const _: fn() = || {
     assert_auto_traits::<crate::de::NetConfig>();
     assert_auto_traits::<crate::de::TermConfig>();
     assert_auto_traits::<crate::de::TermProgress>();
+    assert_auto_traits::<crate::de::Color>();
     assert_auto_traits::<crate::de::When>();
     assert_auto_traits::<crate::de::Frequency>();
-    assert_auto_traits::<crate::de::Rustflags>();
+    assert_auto_traits::<crate::de::Flags>();
     assert_auto_traits::<crate::de::ConfigRelativePath>();
     assert_auto_traits::<crate::de::PathAndArgs>();
     assert_auto_traits::<crate::de::StringList>();
@@ -31,7 +32,7 @@ const _: fn() = || {
     assert_auto_traits::<crate::easy::NetConfig>();
     assert_auto_traits::<crate::easy::TermConfig>();
     assert_auto_traits::<crate::easy::TermProgressConfig>();
-    assert_auto_traits::<crate::easy::Rustflags>();
+    assert_auto_traits::<crate::easy::Flags>();
     assert_auto_traits::<crate::easy::PathAndArgs>();
     assert_auto_traits::<crate::easy::StringList>();
     assert_auto_traits::<crate::resolve::ResolveContext>();

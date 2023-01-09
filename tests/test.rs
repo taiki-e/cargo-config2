@@ -6,10 +6,10 @@ use anyhow::Result;
 use cargo_config2::*;
 use toml_edit::easy as toml;
 
-fn assert_reference_example(de: fn(&Path, ResolveContext) -> Result<Config>) -> Result<()> {
+fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> Result<()> {
     let (_tmp, root) = test_project("reference")?;
     let dir = &root;
-    let base_config = &de(dir, ResolveContext::no_env())?;
+    let base_config = &de(dir, ResolveOptions::default().no_env().cargo_home(None))?;
     let config = base_config.clone();
 
     // [alias]
@@ -98,7 +98,7 @@ fn assert_reference_example(de: fn(&Path, ResolveContext) -> Result<Config>) -> 
     // [term]
     assert_eq!(config.term.quiet, Some(false));
     assert_eq!(config.term.verbose, Some(false));
-    assert_eq!(config.term.color, Some(When::Auto));
+    assert_eq!(config.term.color, Some(Color::Auto));
     assert_eq!(config.term.progress.when, Some(When::Auto));
     assert_eq!(config.term.progress.width, Some(80));
 
@@ -139,8 +139,8 @@ fn assert_reference_example(de: fn(&Path, ResolveContext) -> Result<Config>) -> 
 
 #[test]
 fn easy() {
-    fn de(dir: &Path, cx: ResolveContext) -> Result<Config> {
-        Config::load_with_context(dir, None, cx)
+    fn de(dir: &Path, options: ResolveOptions) -> Result<Config> {
+        Config::load_with_options(dir, options)
     }
     // #[track_caller]
     // fn ser(config: &Config) -> String {

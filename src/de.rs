@@ -1,3 +1,6 @@
+//! Cargo configuration that environment variables, config overrides, and
+//! target-specific configurations have not been resolved.
+
 #[path = "gen/de.rs"]
 mod gen;
 
@@ -14,9 +17,10 @@ use std::{
 use anyhow::{bail, Context as _, Error, Result};
 use serde::{Deserialize, Serialize};
 
+pub use crate::value::{Definition, Value};
 use crate::{
+    easy,
     resolve::{ResolveContext, TargetTripleRef},
-    value::{Definition, Value},
 };
 
 /// Cargo configuration that environment variables, config overrides, and
@@ -26,27 +30,42 @@ use crate::{
 #[non_exhaustive]
 pub struct Config {
     // TODO: paths
-    /// Command aliases.
+    /// The `[alias]` table.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub alias: BTreeMap<String, StringList>,
+    /// The `[build]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
     #[serde(default)]
     #[serde(skip_serializing_if = "BuildConfig::is_none")]
     pub build: BuildConfig,
+    /// The `[doc]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
     #[serde(default)]
     #[serde(skip_serializing_if = "DocConfig::is_none")]
     pub doc: DocConfig,
+    /// The `[env]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, EnvConfigValue>,
+    /// The `[future-incompat-report]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
     // TODO: cargo-new
     // TODO: http
     // TODO: install
+    /// The `[net]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
     #[serde(default)]
     #[serde(skip_serializing_if = "NetConfig::is_none")]
     pub net: NetConfig,
@@ -55,9 +74,15 @@ pub struct Config {
     // TODO: registries
     // TODO: registry
     // TODO: source
+    /// The `[target]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub target: BTreeMap<String, TargetConfig>,
+    /// The `[term]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
     #[serde(default)]
     #[serde(skip_serializing_if = "TermConfig::is_none")]
     pub term: TermConfig,
@@ -76,20 +101,20 @@ impl Config {
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
     pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
         let cwd = cwd.as_ref();
-        Self::_load_with_context(cwd, home::cargo_home_with_cwd(cwd).ok())
+        Self::_load_with_options(cwd, home::cargo_home_with_cwd(cwd).ok())
     }
 
     /// Read config files hierarchically from the given directory and merges them.
     #[cfg(feature = "toml")]
     #[cfg_attr(docsrs, doc(cfg(feature = "toml")))]
-    pub fn load_with_context(
+    pub fn load_with_options(
         cwd: impl AsRef<Path>,
         cargo_home: impl Into<Option<PathBuf>>,
     ) -> Result<Self> {
-        Self::_load_with_context(cwd.as_ref(), cargo_home.into())
+        Self::_load_with_options(cwd.as_ref(), cargo_home.into())
     }
     #[cfg(feature = "toml")]
-    pub(crate) fn _load_with_context(
+    pub(crate) fn _load_with_options(
         current_dir: &Path,
         cargo_home: Option<PathBuf>,
     ) -> Result<Config> {
@@ -148,8 +173,9 @@ impl Config {
         cx: &ResolveContext,
         target_configs: &BTreeMap<String, TargetConfig>,
         override_target_rustflags: bool,
-        build_rustflags: &Option<Rustflags>,
+        build_rustflags: &Option<Flags>,
         target_triple: &TargetTripleRef<'_>,
+        build_config: &easy::BuildConfig,
     ) -> Result<Option<TargetConfig>> {
         let target = target_triple.triple();
         let mut target_config = target_configs.get(target).cloned();
@@ -157,7 +183,7 @@ impl Config {
         let target_u_upper = target_u_upper(target);
         let mut target_linker = target_config.as_mut().and_then(|c| c.linker.take());
         let mut target_runner = target_config.as_mut().and_then(|c| c.runner.take());
-        let mut target_rustflags: Option<Rustflags> =
+        let mut target_rustflags: Option<Flags> =
             target_config.as_mut().and_then(|c| c.rustflags.take());
         if let Some(linker) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
             target_linker = Some(linker);
@@ -170,7 +196,7 @@ impl Config {
         }
         if let Some(rustflags) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUSTFLAGS"))? {
             let mut rustflags =
-                Rustflags::from_space_separated(&rustflags.val, rustflags.definition.as_ref());
+                Flags::from_space_separated(&rustflags.val, rustflags.definition.as_ref());
             match &mut target_rustflags {
                 Some(target_rustflags) => {
                     target_rustflags.flags.append(&mut rustflags.flags);
@@ -182,7 +208,7 @@ impl Config {
             if !k.starts_with("cfg(") {
                 continue;
             }
-            if cx.eval_cfg(k, target_triple)? {
+            if cx.eval_cfg(k, target_triple, build_config)? {
                 // Priorities (as of 1.68.0-nightly (2022-12-23)):
                 // 1. CARGO_TARGET_<triple>_RUNNER
                 // 2. target.<triple>.runner
@@ -275,13 +301,13 @@ pub struct BuildConfig {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustflags: Option<Rustflags>,
+    pub rustflags: Option<Flags>,
     /// Extra command-line flags to pass to `rustdoc`. The value may be an array
     /// of strings or a space-separated string.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustdocflags: Option<Rustflags>,
+    pub rustdocflags: Option<Flags>,
     /// Whether or not to perform incremental compilation.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildincremental)
@@ -299,6 +325,8 @@ pub struct BuildConfig {
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
+/// A `[target.<triple>]` or `[target.<cfg>]` table.
+///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -316,7 +344,7 @@ pub struct TargetConfig {
     ///
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rustflags: Option<Rustflags>,
+    pub rustflags: Option<Flags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
 }
 
@@ -460,14 +488,56 @@ pub struct TermProgress {
     pub width: Option<Value<u32>>,
 }
 
-pub use self::When as Color;
+#[allow(clippy::exhaustive_enums)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Color {
+    /// (default) Automatically detect if color support is available on the terminal.
+    Auto,
+    /// Always display colors.
+    Always,
+    /// Never display colors.
+    Never,
+}
+
+impl Color {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Always => "always",
+            Self::Never => "never",
+        }
+    }
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
+
+impl FromStr for Color {
+    type Err = Error;
+
+    fn from_str(color: &str) -> Result<Self, Self::Err> {
+        match color {
+            "auto" => Ok(Self::Auto),
+            "always" => Ok(Self::Always),
+            "never" => Ok(Self::Never),
+            other => bail!("must be auto, always, or never, but found `{other}`"),
+        }
+    }
+}
 
 #[allow(clippy::exhaustive_enums)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
+    /// (default) Intelligently guess whether to show progress bar.
     Auto,
+    /// Always show progress bar.
     Always,
+    /// Never show progress bar.
     Never,
 }
 
@@ -504,7 +574,10 @@ impl FromStr for When {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Frequency {
+    /// (default) Always display a notification when a command (e.g. `cargo build`)
+    /// produces a future incompat report.
     Always,
+    /// Never display a notification.
     Never,
 }
 
@@ -538,14 +611,14 @@ impl FromStr for Frequency {
 /// A representation of rustflags and rustdocflags.
 #[derive(Debug, Clone, Serialize)]
 #[serde(transparent)]
-pub struct Rustflags {
+pub struct Flags {
     pub flags: Vec<Value<String>>,
     // for merge
     #[serde(skip)]
     pub(crate) deserialized_repr: StringListDeserializedRepr,
 }
 
-impl Rustflags {
+impl Flags {
     /// Creates a rustflags from a string separated with ASCII unit separator ('\x1f').
     ///
     /// This is a valid format for the following environment variables:
@@ -596,7 +669,7 @@ impl Rustflags {
     }
 }
 
-impl<'de> Deserialize<'de> for Rustflags {
+impl<'de> Deserialize<'de> for Flags {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
