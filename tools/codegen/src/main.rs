@@ -259,7 +259,6 @@ fn gen_assert_impl() -> Result<()> {
     const NOT_SEND: &[&str] = &[];
     const NOT_SYNC: &[&str] = &["easy::Config", "resolve::ResolveContext"];
     const NOT_UNPIN: &[&str] = &[];
-    const GENERICS_INHERITED: &[&str] = &["value::Value"];
 
     let workspace_root = &workspace_root();
     let out_dir = &workspace_root.join("src/gen");
@@ -325,6 +324,7 @@ fn gen_assert_impl() -> Result<()> {
             vec![name.into()]
         };
 
+        // TODO: assert impl trait returned from public functions
         ItemVisitor::new(module, |item, module| match item {
             syn::Item::Struct(syn::ItemStruct { vis, ident, generics, .. })
             | syn::Item::Enum(syn::ItemEnum { vis, ident, generics, .. })
@@ -335,13 +335,6 @@ fn gen_assert_impl() -> Result<()> {
                 let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
 
                 let has_generics = generics.type_params().count() != 0;
-                let generics_inherited = GENERICS_INHERITED.contains(&path_string.as_str());
-                if has_generics && !generics_inherited {
-                    panic!(
-                        "gen_assert_impl doesn't support non-inherited generics yet; \
-                        skipped `{path_string}`"
-                    );
-                }
                 if generics.const_params().count() != 0 {
                     panic!(
                         "gen_assert_impl doesn't support const generics yet; \
@@ -419,6 +412,7 @@ fn gen_assert_impl() -> Result<()> {
     }
 
     let out = quote! {
+        #[allow(clippy::std_instead_of_alloc)]
         const _: fn() = || {
             #tokens
         };

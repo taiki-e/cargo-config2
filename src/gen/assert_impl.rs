@@ -4,6 +4,7 @@
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
 
+#[allow(clippy::std_instead_of_alloc)]
 const _: fn() = || {
     #[allow(unused_imports)]
     use core::marker::PhantomPinned;
