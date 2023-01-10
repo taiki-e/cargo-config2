@@ -10,6 +10,12 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Improve error messages.
+
+- Add `Config::cargo` method.
+
+- Documentation improvements.
+
 ## [0.1.1] - 2023-01-09
 
 - Fix `serde::Serialize` impl of `Config` after target resolved.
