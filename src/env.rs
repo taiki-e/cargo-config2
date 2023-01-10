@@ -63,6 +63,7 @@ impl ApplyEnv for BuildConfig {
         // 1. RUSTC
         // 2. build.rustc (CARGO_BUILD_RUSTC)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc
+        // See also https://github.com/taiki-e/cargo-llvm-cov/pull/180#discussion_r887904341.
         if let Some(rustc) = cx.env("RUSTC")? {
             self.rustc = Some(rustc);
         } else if let Some(rustc) = cx.env("CARGO_BUILD_RUSTC")? {

@@ -135,6 +135,7 @@ impl ResolveContext {
             // TODO: Update comment based on https://github.com/rust-lang/cargo/pull/10896?
             // The following priorities are not documented, but at as of cargo
             // 1.63.0-nightly (2022-05-31), `RUSTC_WRAPPER` is preferred over `RUSTC_WORKSPACE_WRAPPER`.
+            // See also https://github.com/taiki-e/cargo-llvm-cov/pull/180#discussion_r887904341.
             let rustc =
                 build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
             match build_config
@@ -430,6 +431,8 @@ impl Hash for TargetTripleRef<'_> {
 }
 
 // This wrapper is needed to support pre-1.63 Rust.
+// In pre-1.63 Rust you can't use TargetTripleRef<'non_static> as an index of
+// HashMap<TargetTripleRef<'static>, _> without this trick.
 #[allow(single_use_lifetimes)] // false positive fixed in Rust 1.66.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
