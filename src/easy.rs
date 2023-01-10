@@ -2,7 +2,7 @@ use std::{
     borrow::Cow,
     cell::RefCell,
     collections::BTreeMap,
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     ops,
     path::{Path, PathBuf},
     process::Command,
@@ -275,10 +275,7 @@ impl Config {
         }
         let config_targets = self.build.target.as_deref().unwrap_or_default();
         if !config_targets.is_empty() {
-            return Ok(config_targets
-                .iter()
-                .map(|t| t.cli_target().to_string_lossy().into_owned())
-                .collect());
+            return Ok(config_targets.iter().map(|t| t.cli_target_string().into_owned()).collect());
         }
         Ok(vec![])
     }
@@ -334,14 +331,24 @@ impl Config {
         Ok(self.target.borrow()[target.cli_target()].rustflags.clone())
     }
 
-    /// Returns the path and args that calls rustc.
+    /// Returns the path and args that calls `rustc`.
     ///
     /// If [`RUSTC_WRAPPER`](BuildConfig::rustc_wrapper) or
     /// [`RUSTC_WORKSPACE_WRAPPER`](BuildConfig::rustc_workspace_wrapper) is set,
     /// the path is the wrapper path and the argument is the rustc path.
     /// Otherwise, the path is the rustc path.
+    ///
+    /// If you set `rustc` path by [`ResolveOptions::rustc`], this returns the path set by that method.
     pub fn rustc(&self) -> &PathAndArgs {
         self.cx.rustc(&self.build)
+    }
+    /// Returns the path to `cargo`.
+    ///
+    /// The returned path is the value of the `CARGO` environment variable if it is set. Otherwise, "cargo".
+    ///
+    /// If you set `cargo` path by [`ResolveOptions::cargo`], this returns the path set by that method.
+    pub fn cargo(&self) -> &OsStr {
+        &self.cx.cargo
     }
     /// Returns the host triple.
     pub fn host_triple(&self) -> Result<&str> {

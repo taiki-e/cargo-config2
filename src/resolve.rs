@@ -23,12 +23,12 @@ use crate::{
 #[derive(Debug, Clone, Default)]
 #[must_use]
 pub struct ResolveOptions {
-    pub(crate) env: Option<HashMap<String, OsString>>,
-    pub(crate) rustc: Option<PathAndArgs>,
-    pub(crate) cargo: Option<OsString>,
+    env: Option<HashMap<String, OsString>>,
+    rustc: Option<PathAndArgs>,
+    cargo: Option<OsString>,
     #[allow(clippy::option_option)]
-    pub(crate) cargo_home: Option<Option<PathBuf>>,
-    pub(crate) host_triple: Option<String>,
+    cargo_home: Option<Option<PathBuf>>,
+    host_triple: Option<String>,
 }
 
 impl ResolveOptions {
@@ -69,7 +69,11 @@ impl ResolveOptions {
         self.host_triple = Some(triple.into());
         self
     }
-    /// Sets the specified key-values as environment variables to be read during config resolution.
+    /// Sets the specified key-values as environment variables to be read during
+    /// config resolution.
+    ///
+    /// This is mainly intended for use in tests where it is necessary to adjust
+    /// the kinds of environment variables that are referenced.
     ///
     /// # Default value
     ///
@@ -81,7 +85,7 @@ impl ResolveOptions {
         let mut env = HashMap::default();
         for (k, v) in vars {
             if let Ok(k) = k.into().into_string() {
-                if k.starts_with("CARGO_") || k.starts_with("RUST") || k == "BROWSER" {
+                if k.starts_with("CARGO") || k.starts_with("RUST") || k == "BROWSER" {
                     env.insert(k, v.into());
                 }
             }
@@ -102,7 +106,7 @@ impl ResolveOptions {
         };
         let cargo = match self.cargo {
             Some(cargo) => cargo,
-            None => std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()),
+            None => env.get("CARGO").cloned().unwrap_or_else(|| "cargo".into()),
         };
         let cargo_home = match self.cargo_home {
             Some(cargo_home) => OnceCell::from(cargo_home),
@@ -234,8 +238,7 @@ struct Cfg {
 
 impl Cfg {
     fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
-        let cmd =
-            rustc.args(["--print", "cfg", "--target", &*target.cli_target().to_string_lossy()]);
+        let cmd = rustc.args(["--print", "cfg", "--target", &*target.cli_target_string()]);
         let list = cmd.read()?;
         Self::parse(&list)
             .with_context(|| format_err!("unexpected cfg output from `{cmd}`: {list}"))
@@ -267,7 +270,9 @@ impl Cfg {
                 }
                 Some((name, value)) => {
                     if !value.starts_with('"') || !value.ends_with('"') {
-                        // TODO: report error?
+                        #[cfg(test)]
+                        panic!("invalid value '{value}'");
+                        #[cfg(not(test))]
                         continue;
                     }
                     let value = &value[1..value.len() - 1];
@@ -443,7 +448,7 @@ impl std::borrow::Borrow<OsStr> for TargetTripleBorrow<'_> {
     }
 }
 
-pub(crate) fn is_spec_path(triple_or_spec_path: &str) -> bool {
+fn is_spec_path(triple_or_spec_path: &str) -> bool {
     Path::new(triple_or_spec_path).extension() == Some(OsStr::new("json"))
         || triple_or_spec_path.contains('/')
         || triple_or_spec_path.contains('\\')
@@ -504,6 +509,26 @@ impl<'a> TargetTripleRef<'a> {
     pub fn spec_path(&self) -> Option<&Path> {
         self.spec_path.as_deref()
     }
+    pub(crate) fn cli_target_string(&self) -> Cow<'_, str> {
+        // Cargo converts spec path containing non-UTF8 byte to string with
+        // to_string_lossy before passing it to rustc.
+        // This is not good behavior but we just follow the behavior of cargo for now.
+        //
+        // ```
+        // $ pwd
+        // /tmp/��/a
+        // $ cat .cargo/config.toml
+        // [build]
+        // target = "avr-unknown-gnu-atmega2560.json"
+        // ```
+        // $ cargo build
+        // error: target path "/tmp/��/a/avr-unknown-gnu-atmega2560.json" is not a valid file
+        //
+        // Caused by:
+        //   No such file or directory (os error 2)
+        // ```
+        self.cli_target().to_string_lossy()
+    }
     pub(crate) fn cli_target(&self) -> &OsStr {
         match self.spec_path() {
             Some(v) => v.as_os_str(),
@@ -541,7 +566,7 @@ impl Serialize for TargetTripleRef<'_> {
     where
         S: serde::Serializer,
     {
-        self.cli_target().to_string_lossy().serialize(serializer)
+        self.cli_target_string().serialize(serializer)
     }
 }
 impl<'de> Deserialize<'de> for TargetTripleRef<'static> {

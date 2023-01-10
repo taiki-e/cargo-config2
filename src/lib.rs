@@ -52,8 +52,8 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     // clippy::std_instead_of_core,
 )]
 #![allow(
+    clippy::manual_assert,
     clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
     clippy::module_name_repetitions,
     clippy::must_use_candidate,
     clippy::single_match_else,

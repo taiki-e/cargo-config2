@@ -178,9 +178,9 @@ fn custom_target() {
             root.join(".cargo/config.toml"),
             format!(
                 r#"
-            target.{target}.linker = "avr-gcc"
-            target.'cfg(target_arch = "avr")'.rustflags = "-C opt-level=s"
-            "#
+                target.{target}.linker = "avr-gcc"
+                target.'cfg(target_arch = "avr")'.rustflags = "-C opt-level=s"
+                "#
             ),
         )?;
         let spec_path = fixtures_path().join(format!("target-specs/{target}.json"));
@@ -200,6 +200,14 @@ fn custom_target() {
 
         assert_eq!(config.linker(cli_target)?.unwrap().as_os_str(), "avr-gcc");
         assert_eq!(config.rustflags(cli_target)?, Some(["-C", "opt-level=s"].into()));
+
+        // only resolve relative path from config or environment variables
+        let spec_file_name = spec_path.file_name().unwrap().to_str().unwrap();
+        assert_eq!(
+            config.build_target_for_config([spec_file_name])?[0].spec_path().unwrap().as_os_str(),
+            spec_file_name
+        );
+        assert_eq!(config.build_target_for_cli([spec_file_name])?, vec![spec_file_name.to_owned()]);
 
         let _config = toml_edit::easy::to_string(&config).unwrap();
 

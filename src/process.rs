@@ -81,7 +81,7 @@ impl ProcessBuilder {
         Ok(output)
     }
 
-    pub(crate) fn build(&self) -> Command {
+    fn build(&self) -> Command {
         let mut cmd = Command::new(&self.program);
         cmd.args(&self.args);
         cmd
