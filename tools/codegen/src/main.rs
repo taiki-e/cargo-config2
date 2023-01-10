@@ -202,7 +202,6 @@ fn gen_de() -> Result<()> {
 
 fn gen_is_none() -> Result<()> {
     const FILES: &[&str] = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
-    // TODO: check if this list is outdated
     const EXCLUDE: &[&str] = &[
         "de::Config",
         "de::Flags",
