@@ -292,6 +292,9 @@ fn gen_assert_impl() -> Result<()> {
     const NOT_SEND: &[&str] = &[];
     const NOT_SYNC: &[&str] = &["easy::Config", "resolve::ResolveContext"];
     const NOT_UNPIN: &[&str] = &[];
+    const NOT_UNWIND_SAFE: &[&str] = &["error::Error"];
+    const NOT_REF_UNWIND_SAFE: &[&str] =
+        &["error::Error", "easy::Config", "resolve::ResolveContext"];
 
     let workspace_root = &workspace_root();
     let out_dir = &workspace_root.join("src/gen");
@@ -365,6 +368,19 @@ fn gen_assert_impl() -> Result<()> {
                         .map(|_| quote! { PhantomPinned })
                         .collect::<Vec<_>>();
                     let not_unpin_generics = quote! { <#(#lt,)* #(#not_unpin),*> };
+                    // !UnwindSafe
+                    let not_unwind_safe = generics
+                        .type_params()
+                        .map(|_| quote! { NotUnwindSafe })
+                        .collect::<Vec<_>>();
+                    let not_unwind_safe_generics = quote! { <#(#lt,)* #(#not_unwind_safe),*> };
+                    // !RefUnwindSafe
+                    let not_ref_unwind_safe = generics
+                        .type_params()
+                        .map(|_| quote! { NotRefUnwindSafe })
+                        .collect::<Vec<_>>();
+                    let not_ref_unwind_safe_generics =
+                        quote! { <#(#lt,)* #(#not_ref_unwind_safe),*> };
                     if NOT_SEND.contains(&path_string.as_str()) {
                         tokens.extend(quote! {
                             assert_not_send!(crate:: #(#module::)* #ident #unit_generics);
@@ -395,6 +411,32 @@ fn gen_assert_impl() -> Result<()> {
                         tokens.extend(quote! {
                             assert_unpin::<crate:: #(#module::)* #ident #unit_generics>();
                             assert_not_unpin!(crate:: #(#module::)* #ident #not_unpin_generics);
+                        });
+                    }
+                    if NOT_UNWIND_SAFE.contains(&path_string.as_str()) {
+                        tokens.extend(quote! {
+                            assert_not_unwind_safe!(crate:: #(#module::)* #ident #unit_generics);
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_unwind_safe::<crate:: #(#module::)* #ident #unit_generics>();
+                            assert_not_unwind_safe!(
+                                crate:: #(#module::)* #ident #not_unwind_safe_generics
+                            );
+                        });
+                    }
+                    if NOT_REF_UNWIND_SAFE.contains(&path_string.as_str()) {
+                        tokens.extend(quote! {
+                            assert_not_ref_unwind_safe!(
+                                crate:: #(#module::)* #ident #unit_generics
+                            );
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_ref_unwind_safe::<crate:: #(#module::)* #ident #unit_generics>();
+                            assert_not_ref_unwind_safe!(
+                                crate:: #(#module::)* #ident #not_ref_unwind_safe_generics
+                            );
                         });
                     }
                 } else {
@@ -433,6 +475,26 @@ fn gen_assert_impl() -> Result<()> {
                             assert_unpin::<crate:: #(#module::)* #ident #lt>();
                         });
                     }
+                    if NOT_UNWIND_SAFE.contains(&path_string.as_str()) {
+                        use_macros = true;
+                        tokens.extend(quote! {
+                            assert_not_unwind_safe!(crate:: #(#module::)* #ident #lt);
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_unwind_safe::<crate:: #(#module::)* #ident #lt>();
+                        });
+                    }
+                    if NOT_REF_UNWIND_SAFE.contains(&path_string.as_str()) {
+                        use_macros = true;
+                        tokens.extend(quote! {
+                            assert_not_ref_unwind_safe!(crate:: #(#module::)* #ident #lt);
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_ref_unwind_safe::<crate:: #(#module::)* #ident #lt>();
+                        });
+                    }
                 };
             }
             _ => {}
@@ -449,23 +511,45 @@ fn gen_assert_impl() -> Result<()> {
     for &t in NOT_UNPIN {
         assert!(visited_types.contains(t), "unknown type `{t}` specified in NOT_UNPIN constant");
     }
+    for &t in NOT_UNWIND_SAFE {
+        assert!(
+            visited_types.contains(t),
+            "unknown type `{t}` specified in NOT_UNWIND_SAFE constant"
+        );
+    }
+    for &t in NOT_REF_UNWIND_SAFE {
+        assert!(
+            visited_types.contains(t),
+            "unknown type `{t}` specified in NOT_REF_UNWIND_SAFE constant"
+        );
+    }
 
     let mut out = quote! {
+        #![allow(clippy::std_instead_of_alloc, clippy::std_instead_of_core)]
         #[allow(unused_imports)]
         use core::marker::PhantomPinned;
-        /// Send & !Sync
+        /// `Send` & `!Sync`
         #[allow(dead_code)]
         struct NotSync(core::cell::Cell<()>);
-        /// !Send & !Sync
+        /// `!Send` & `!Sync`
         #[allow(dead_code)]
-        #[allow(clippy::std_instead_of_alloc)]
         struct NotSendSync(std::rc::Rc<()>);
+        /// `!UnwindSafe`
+        #[allow(dead_code)]
+        struct NotUnwindSafe(&'static mut ());
+        /// `!RefUnwindSafe`
+        #[allow(dead_code)]
+        struct NotRefUnwindSafe(core::cell::UnsafeCell<()>);
         #[allow(dead_code)]
         fn assert_send<T: ?Sized + Send>() {}
         #[allow(dead_code)]
         fn assert_sync<T: ?Sized + Sync>() {}
         #[allow(dead_code)]
         fn assert_unpin<T: ?Sized + Unpin>() {}
+        #[allow(dead_code)]
+        fn assert_unwind_safe<T: ?Sized + std::panic::UnwindSafe>() {}
+        #[allow(dead_code)]
+        fn assert_ref_unwind_safe<T: ?Sized + std::panic::RefUnwindSafe>() {}
     };
     if use_macros {
         out.extend(quote! {
@@ -485,6 +569,18 @@ fn gen_assert_impl() -> Result<()> {
             macro_rules! assert_not_unpin {
                 ($ty:ty) => {
                     static_assertions::assert_not_impl_all!($ty: Unpin);
+                };
+            }
+            #[allow(unused_macros)]
+            macro_rules! assert_not_unwind_safe {
+                ($ty:ty) => {
+                    static_assertions::assert_not_impl_all!($ty: std::panic::UnwindSafe);
+                };
+            }
+            #[allow(unused_macros)]
+            macro_rules! assert_not_ref_unwind_safe {
+                ($ty:ty) => {
+                    static_assertions::assert_not_impl_all!($ty: std::panic::RefUnwindSafe);
                 };
             }
         });
