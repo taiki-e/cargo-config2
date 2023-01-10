@@ -312,41 +312,9 @@ fn gen_assert_impl() -> Result<()> {
         })
         .collect();
 
-    let mut tokens = quote! {
-        #[allow(unused_imports)]
-        use core::marker::PhantomPinned;
-        /// Send & !Sync
-        #[allow(dead_code)]
-        struct NotSync(core::cell::Cell<()>);
-        /// !Send & !Sync
-        #[allow(dead_code)]
-        struct NotSendSync(std::rc::Rc<()>);
-        #[allow(dead_code)]
-        fn assert_send<T: ?Sized + Send>() {}
-        #[allow(dead_code)]
-        fn assert_sync<T: ?Sized + Sync>() {}
-        #[allow(dead_code)]
-        fn assert_unpin<T: ?Sized + Unpin>() {}
-        #[allow(unused_macros)]
-        macro_rules! assert_not_send {
-            ($ty:ty) => {
-                static_assertions::assert_not_impl_all!($ty: Send);
-            };
-        }
-        #[allow(unused_macros)]
-        macro_rules! assert_not_sync {
-            ($ty:ty) => {
-                static_assertions::assert_not_impl_all!($ty: Sync);
-            };
-        }
-        #[allow(unused_macros)]
-        macro_rules! assert_not_unpin {
-            ($ty:ty) => {
-                static_assertions::assert_not_impl_all!($ty: Unpin);
-            };
-        }
-    };
+    let mut tokens = quote! {};
     let mut visited_types = BTreeSet::new();
+    let mut use_macros = false;
     for f in &files {
         let s = fs::read_to_string(f)?;
         let mut ast = syn::parse_file(&s)?;
@@ -379,6 +347,7 @@ fn gen_assert_impl() -> Result<()> {
 
                 let lt = generics.lifetimes().map(|_| quote! { '_ }).collect::<Vec<_>>();
                 if has_generics {
+                    use_macros = true;
                     // Send & Sync & Unpin
                     let unit = generics.type_params().map(|_| quote! { () }).collect::<Vec<_>>();
                     let unit_generics = quote! { <#(#lt,)* #(#unit),*> };
@@ -396,16 +365,38 @@ fn gen_assert_impl() -> Result<()> {
                         .map(|_| quote! { PhantomPinned })
                         .collect::<Vec<_>>();
                     let not_unpin_generics = quote! { <#(#lt,)* #(#not_unpin),*> };
-                    tokens.extend(quote! {
-                        assert_send::<crate:: #(#module::)* #ident #unit_generics>();
-                        assert_send::<crate:: #(#module::)* #ident #not_sync_generics>();
-                        assert_not_send!(crate:: #(#module::)* #ident #not_send_sync_generics);
-                        assert_sync::<crate:: #(#module::)* #ident #unit_generics>();
-                        assert_not_sync!(crate:: #(#module::)* #ident #not_sync_generics);
-                        assert_not_sync!(crate:: #(#module::)* #ident #not_send_sync_generics);
-                        assert_unpin::<crate:: #(#module::)* #ident #unit_generics>();
-                        assert_not_unpin!(crate:: #(#module::)* #ident #not_unpin_generics);
-                    });
+                    if NOT_SEND.contains(&path_string.as_str()) {
+                        tokens.extend(quote! {
+                            assert_not_send!(crate:: #(#module::)* #ident #unit_generics);
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_send::<crate:: #(#module::)* #ident #unit_generics>();
+                            assert_send::<crate:: #(#module::)* #ident #not_sync_generics>();
+                            assert_not_send!(crate:: #(#module::)* #ident #not_send_sync_generics);
+                        });
+                    }
+                    if NOT_SYNC.contains(&path_string.as_str()) {
+                        tokens.extend(quote! {
+                            assert_not_sync!(crate:: #(#module::)* #ident #unit_generics);
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_sync::<crate:: #(#module::)* #ident #unit_generics>();
+                            assert_not_sync!(crate:: #(#module::)* #ident #not_sync_generics);
+                            assert_not_sync!(crate:: #(#module::)* #ident #not_send_sync_generics);
+                        });
+                    }
+                    if NOT_UNPIN.contains(&path_string.as_str()) {
+                        tokens.extend(quote! {
+                            assert_not_unpin!(crate:: #(#module::)* #ident #unit_generics);
+                        });
+                    } else {
+                        tokens.extend(quote! {
+                            assert_unpin::<crate:: #(#module::)* #ident #unit_generics>();
+                            assert_not_unpin!(crate:: #(#module::)* #ident #not_unpin_generics);
+                        });
+                    }
                 } else {
                     let lt = if !lt.is_empty() {
                         quote! { <#(#lt),*> }
@@ -413,6 +404,7 @@ fn gen_assert_impl() -> Result<()> {
                         quote! {}
                     };
                     if NOT_SEND.contains(&path_string.as_str()) {
+                        use_macros = true;
                         tokens.extend(quote! {
                             assert_not_send!(crate:: #(#module::)* #ident #lt);
                         });
@@ -422,6 +414,7 @@ fn gen_assert_impl() -> Result<()> {
                         });
                     }
                     if NOT_SYNC.contains(&path_string.as_str()) {
+                        use_macros = true;
                         tokens.extend(quote! {
                             assert_not_sync!(crate:: #(#module::)* #ident #lt);
                         });
@@ -431,6 +424,7 @@ fn gen_assert_impl() -> Result<()> {
                         });
                     }
                     if NOT_UNPIN.contains(&path_string.as_str()) {
+                        use_macros = true;
                         tokens.extend(quote! {
                             assert_not_unpin!(crate:: #(#module::)* #ident #lt);
                         });
@@ -456,12 +450,50 @@ fn gen_assert_impl() -> Result<()> {
         assert!(visited_types.contains(t), "unknown type `{t}` specified in NOT_UNPIN constant");
     }
 
-    let out = quote! {
+    let mut out = quote! {
+        #[allow(unused_imports)]
+        use core::marker::PhantomPinned;
+        /// Send & !Sync
+        #[allow(dead_code)]
+        struct NotSync(core::cell::Cell<()>);
+        /// !Send & !Sync
+        #[allow(dead_code)]
         #[allow(clippy::std_instead_of_alloc)]
+        struct NotSendSync(std::rc::Rc<()>);
+        #[allow(dead_code)]
+        fn assert_send<T: ?Sized + Send>() {}
+        #[allow(dead_code)]
+        fn assert_sync<T: ?Sized + Sync>() {}
+        #[allow(dead_code)]
+        fn assert_unpin<T: ?Sized + Unpin>() {}
+    };
+    if use_macros {
+        out.extend(quote! {
+            #[allow(unused_macros)]
+            macro_rules! assert_not_send {
+                ($ty:ty) => {
+                    static_assertions::assert_not_impl_all!($ty: Send);
+                };
+            }
+            #[allow(unused_macros)]
+            macro_rules! assert_not_sync {
+                ($ty:ty) => {
+                    static_assertions::assert_not_impl_all!($ty: Sync);
+                };
+            }
+            #[allow(unused_macros)]
+            macro_rules! assert_not_unpin {
+                ($ty:ty) => {
+                    static_assertions::assert_not_impl_all!($ty: Unpin);
+                };
+            }
+        });
+    }
+    out.extend(quote! {
         const _: fn() = || {
             #tokens
         };
-    };
+    });
     write(function_name!(), &out_dir.join("assert_impl.rs"), out)?;
 
     Ok(())
