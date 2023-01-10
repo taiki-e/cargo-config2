@@ -1,4 +1,4 @@
-use std::{fmt, io};
+use std::{ffi::OsString, fmt, io};
 
 macro_rules! format_err {
     ($($tt:tt)*) => {
@@ -14,7 +14,7 @@ macro_rules! bail {
 
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;
 
-/// An error that occurred during parsing the Dependabot configuration.
+/// An error that occurred during loading or resolving the Cargo configuration.
 #[derive(Debug)]
 pub struct Error(ErrorKind);
 
@@ -26,23 +26,25 @@ pub struct Error(ErrorKind);
 pub(crate) enum ErrorKind {
     Env(std::env::VarError),
     Io(io::Error),
-    Bool(std::str::ParseBoolError),
-    Int(std::num::ParseIntError),
-    String(std::string::FromUtf8Error),
 
     Process(crate::process::ProcessError),
 
-    Toml(toml_edit::de::Error),
     CfgExprParse(cfg_expr::error::ParseError),
-    CfgExprTargetHasAtomic(cfg_expr::error::HasAtomicParseError),
 
     Other(String),
-    WithContext(String, Option<Box<Error>>),
+    WithContext(String, Option<Box<dyn std::error::Error + Send + Sync + 'static>>),
 }
 
 impl Error {
     pub(crate) fn new(e: impl Into<ErrorKind>) -> Self {
         Self(e.into())
+    }
+
+    pub(crate) fn env_not_unicode(name: &str, var: OsString) -> Self {
+        Self(ErrorKind::WithContext(
+            format!("failed to parse environment variable `{name}`"),
+            Some(Box::new(std::env::VarError::NotUnicode(var))),
+        ))
     }
 }
 
@@ -51,13 +53,8 @@ impl fmt::Display for Error {
         match &self.0 {
             ErrorKind::Env(e) => fmt::Display::fmt(e, f),
             ErrorKind::Io(e) => fmt::Display::fmt(e, f),
-            ErrorKind::Bool(e) => fmt::Display::fmt(e, f),
-            ErrorKind::Int(e) => fmt::Display::fmt(e, f),
-            ErrorKind::String(e) => fmt::Display::fmt(e, f),
             ErrorKind::Process(e) => fmt::Display::fmt(e, f),
-            ErrorKind::Toml(e) => fmt::Display::fmt(e, f),
             ErrorKind::CfgExprParse(e) => fmt::Display::fmt(e, f),
-            ErrorKind::CfgExprTargetHasAtomic(e) => fmt::Display::fmt(e, f),
             ErrorKind::Other(e) | ErrorKind::WithContext(e, ..) => fmt::Display::fmt(e, f),
         }
     }
@@ -66,17 +63,12 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.0 {
-            ErrorKind::Env(e) => Some(e),
-            ErrorKind::Io(e) => Some(e),
-            ErrorKind::Bool(e) => Some(e),
-            ErrorKind::Int(e) => Some(e),
-            ErrorKind::String(e) => Some(e),
-            ErrorKind::Process(e) => Some(e),
-            ErrorKind::Toml(e) => Some(e),
-            ErrorKind::CfgExprParse(e) => Some(e),
-            ErrorKind::CfgExprTargetHasAtomic(e) => Some(e),
+            ErrorKind::Env(e) => e.source(),
+            ErrorKind::Io(e) => e.source(),
+            ErrorKind::Process(e) => e.source(),
+            ErrorKind::CfgExprParse(e) => e.source(),
             ErrorKind::Other(_) => None,
-            ErrorKind::WithContext(_, e) => Some(e.as_ref()?),
+            ErrorKind::WithContext(_, e) => Some(&**e.as_ref()?),
         }
     }
 }
@@ -86,58 +78,28 @@ impl From<Error> for io::Error {
         match e.0 {
             ErrorKind::Env(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Io(e) => e,
-            ErrorKind::Bool(e) => Self::new(io::ErrorKind::Other, e),
-            ErrorKind::Int(e) => Self::new(io::ErrorKind::Other, e),
-            ErrorKind::String(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Process(e) => Self::new(io::ErrorKind::Other, e),
-            ErrorKind::Toml(e) => Self::new(io::ErrorKind::InvalidData, e),
             ErrorKind::CfgExprParse(e) => Self::new(io::ErrorKind::Other, e),
-            ErrorKind::CfgExprTargetHasAtomic(e) => Self::new(io::ErrorKind::Other, e),
-            ErrorKind::Other(e) | ErrorKind::WithContext(e, ..) => {
+            ErrorKind::Other(e) | ErrorKind::WithContext(e, None) => {
                 Self::new(io::ErrorKind::Other, e)
+            }
+            ErrorKind::WithContext(msg, Some(source)) => {
+                let kind = if let Some(e) = source.downcast_ref::<io::Error>() {
+                    e.kind()
+                } else if source.downcast_ref::<toml_edit::de::Error>().is_some() {
+                    io::ErrorKind::InvalidData
+                } else {
+                    io::ErrorKind::Other
+                };
+                Self::new(kind, Error(ErrorKind::WithContext(msg, Some(source))))
             }
         }
     }
 }
 
-impl From<Error> for ErrorKind {
-    fn from(e: Error) -> Self {
-        e.0
-    }
-}
 impl From<String> for ErrorKind {
     fn from(s: String) -> Self {
         Self::Other(s)
-    }
-}
-impl From<&str> for ErrorKind {
-    fn from(s: &str) -> Self {
-        Self::Other(s.to_owned())
-    }
-}
-impl From<std::env::VarError> for ErrorKind {
-    fn from(e: std::env::VarError) -> Self {
-        Self::Env(e)
-    }
-}
-impl From<io::Error> for ErrorKind {
-    fn from(e: io::Error) -> Self {
-        Self::Io(e)
-    }
-}
-impl From<std::str::ParseBoolError> for ErrorKind {
-    fn from(e: std::str::ParseBoolError) -> Self {
-        Self::Bool(e)
-    }
-}
-impl From<std::num::ParseIntError> for ErrorKind {
-    fn from(e: std::num::ParseIntError) -> Self {
-        Self::Int(e)
-    }
-}
-impl From<std::string::FromUtf8Error> for ErrorKind {
-    fn from(e: std::string::FromUtf8Error) -> Self {
-        Self::String(e)
     }
 }
 impl From<crate::process::ProcessError> for ErrorKind {
@@ -145,83 +107,67 @@ impl From<crate::process::ProcessError> for ErrorKind {
         Self::Process(e)
     }
 }
-impl From<toml_edit::de::Error> for ErrorKind {
-    fn from(e: toml_edit::de::Error) -> Self {
-        Self::Toml(e)
-    }
-}
 impl From<cfg_expr::error::ParseError> for ErrorKind {
     fn from(e: cfg_expr::error::ParseError) -> Self {
         Self::CfgExprParse(e)
     }
 }
-impl From<cfg_expr::error::HasAtomicParseError> for ErrorKind {
-    fn from(e: cfg_expr::error::HasAtomicParseError) -> Self {
-        Self::CfgExprTargetHasAtomic(e)
-    }
-}
 
+// Note: Do not implement From<ThirdPartyErrorType> to prevent dependency
+// updates from becoming breaking changes.
+// Implementing `From<StdErrorType>` should also be avoided whenever possible,
+// as it would be a breaking change to remove the implementation if the
+// conversion is no longer needed due to changes in the internal implementation.
+// TODO: consider removing them in the next breaking release
 impl From<std::env::VarError> for Error {
     fn from(e: std::env::VarError) -> Self {
-        Self::new(e)
+        Self(ErrorKind::Env(e))
     }
 }
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
-        Self::new(e)
+        Self(ErrorKind::Io(e))
     }
 }
-
-// Note: These implementations are intentionally not-exist to prevent dependency
-// updates from becoming breaking changes.
-// impl From<toml_edit::de::Error> for Error
-// impl From<cfg_expr::error::ParseError> for Error
-// impl From<cfg_expr::error::HasAtomicParseError> for Error
 
 // Inspired by anyhow::Context.
 pub(crate) trait Context<T, E> {
     fn context<C>(self, context: C) -> Result<T, Error>
     where
-        C: fmt::Display + Send + Sync + 'static;
+        C: fmt::Display;
     fn with_context<C, F>(self, context: F) -> Result<T, Error>
     where
-        C: fmt::Display + Send + Sync + 'static,
+        C: fmt::Display,
         F: FnOnce() -> C;
 }
 impl<T, E> Context<T, E> for Result<T, E>
 where
-    E: Into<ErrorKind>,
+    E: std::error::Error + Send + Sync + 'static,
 {
     fn context<C>(self, context: C) -> Result<T, Error>
     where
-        C: fmt::Display + Send + Sync + 'static,
+        C: fmt::Display,
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(e) => Err(Error(ErrorKind::WithContext(
-                context.to_string(),
-                Some(Box::new(Error(e.into()))),
-            ))),
+            Err(e) => Err(Error(ErrorKind::WithContext(context.to_string(), Some(Box::new(e))))),
         }
     }
     fn with_context<C, F>(self, context: F) -> Result<T, Error>
     where
-        C: fmt::Display + Send + Sync + 'static,
+        C: fmt::Display,
         F: FnOnce() -> C,
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(e) => Err(Error(ErrorKind::WithContext(
-                context().to_string(),
-                Some(Box::new(Error(e.into()))),
-            ))),
+            Err(e) => Err(Error(ErrorKind::WithContext(context().to_string(), Some(Box::new(e))))),
         }
     }
 }
 impl<T> Context<T, std::convert::Infallible> for Option<T> {
     fn context<C>(self, context: C) -> Result<T, Error>
     where
-        C: fmt::Display + Send + Sync + 'static,
+        C: fmt::Display,
     {
         match self {
             Some(ok) => Ok(ok),
@@ -230,7 +176,7 @@ impl<T> Context<T, std::convert::Infallible> for Option<T> {
     }
     fn with_context<C, F>(self, context: F) -> Result<T, Error>
     where
-        C: fmt::Display + Send + Sync + 'static,
+        C: fmt::Display,
         F: FnOnce() -> C,
     {
         match self {

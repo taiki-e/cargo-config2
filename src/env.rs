@@ -32,7 +32,7 @@ impl Config {
                 self.alias.insert(
                     k.to_owned(),
                     StringList::from_string(
-                        v.to_str().ok_or_else(|| std::env::VarError::NotUnicode(v.clone()))?,
+                        v.to_str().ok_or_else(|| Error::env_not_unicode(k, v.clone()))?,
                         Some(&Definition::Environment(k.to_owned().into())),
                     ),
                 );
@@ -54,8 +54,8 @@ impl Config {
 impl ApplyEnv for BuildConfig {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs
-        if let Some(jobs) = cx.env("CARGO_BUILD_JOBS")? {
-            self.jobs = Some(jobs.parse().map_err(Error::new)?);
+        if let Some(jobs) = cx.env_parse("CARGO_BUILD_JOBS")? {
+            self.jobs = Some(jobs);
         }
 
         // The following priorities are not documented, but at as of cargo
@@ -156,8 +156,8 @@ impl ApplyEnv for BuildConfig {
             // As of cargo 1.68.0-nightly (2022-12-23), cargo handles invalid value like 0.
             self.incremental =
                 Some(Value { val: incremental.val == "1", definition: incremental.definition });
-        } else if let Some(incremental) = cx.env("CARGO_BUILD_INCREMENTAL")? {
-            self.incremental = Some(incremental.parse().map_err(Error::new)?);
+        } else if let Some(incremental) = cx.env_parse("CARGO_BUILD_INCREMENTAL")? {
+            self.incremental = Some(incremental);
         }
 
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir
@@ -188,8 +188,8 @@ impl ApplyEnv for DocConfig {
 impl ApplyEnv for FutureIncompatReportConfig {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency
-        if let Some(frequency) = cx.env("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY")? {
-            self.frequency = Some(frequency.parse()?);
+        if let Some(frequency) = cx.env_parse("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY")? {
+            self.frequency = Some(frequency);
         }
         Ok(())
     }
@@ -198,16 +198,16 @@ impl ApplyEnv for FutureIncompatReportConfig {
 impl ApplyEnv for NetConfig {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry
-        if let Some(retry) = cx.env("CARGO_NET_RETRY")? {
-            self.retry = Some(retry.parse().map_err(Error::new)?);
+        if let Some(retry) = cx.env_parse("CARGO_NET_RETRY")? {
+            self.retry = Some(retry);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netgit-fetch-with-cli
-        if let Some(git_fetch_with_cli) = cx.env("CARGO_NET_GIT_FETCH_WITH_CLI")? {
-            self.git_fetch_with_cli = Some(git_fetch_with_cli.parse().map_err(Error::new)?);
+        if let Some(git_fetch_with_cli) = cx.env_parse("CARGO_NET_GIT_FETCH_WITH_CLI")? {
+            self.git_fetch_with_cli = Some(git_fetch_with_cli);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline
-        if let Some(offline) = cx.env("CARGO_NET_OFFLINE")? {
-            self.offline = Some(offline.parse().map_err(Error::new)?);
+        if let Some(offline) = cx.env_parse("CARGO_NET_OFFLINE")? {
+            self.offline = Some(offline);
         }
         Ok(())
     }
@@ -216,16 +216,16 @@ impl ApplyEnv for NetConfig {
 impl ApplyEnv for TermConfig {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet
-        if let Some(quiet) = cx.env("CARGO_TERM_QUIET")? {
-            self.quiet = Some(quiet.parse().map_err(Error::new)?);
+        if let Some(quiet) = cx.env_parse("CARGO_TERM_QUIET")? {
+            self.quiet = Some(quiet);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termverbose
-        if let Some(verbose) = cx.env("CARGO_TERM_VERBOSE")? {
-            self.verbose = Some(verbose.parse().map_err(Error::new)?);
+        if let Some(verbose) = cx.env_parse("CARGO_TERM_VERBOSE")? {
+            self.verbose = Some(verbose);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termcolor
-        if let Some(color) = cx.env("CARGO_TERM_COLOR")? {
-            self.color = Some(color.parse()?);
+        if let Some(color) = cx.env_parse("CARGO_TERM_COLOR")? {
+            self.color = Some(color);
         }
         self.progress.apply_env(cx)?;
         Ok(())
@@ -235,12 +235,12 @@ impl ApplyEnv for TermConfig {
 impl ApplyEnv for TermProgress {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswhen
-        if let Some(when) = cx.env("CARGO_TERM_PROGRESS_WHEN")? {
-            self.when = Some(when.parse()?);
+        if let Some(when) = cx.env_parse("CARGO_TERM_PROGRESS_WHEN")? {
+            self.when = Some(when);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswidth
-        if let Some(width) = cx.env("CARGO_TERM_PROGRESS_WIDTH")? {
-            self.width = Some(width.parse().map_err(Error::new)?);
+        if let Some(width) = cx.env_parse("CARGO_TERM_PROGRESS_WIDTH")? {
+            self.width = Some(width);
         }
         Ok(())
     }

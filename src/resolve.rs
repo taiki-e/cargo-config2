@@ -5,6 +5,7 @@ use std::{
     ffi::{OsStr, OsString},
     hash::Hash,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use cfg_expr::{Expression, Predicate};
@@ -13,7 +14,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     easy,
-    error::{Error, Result},
+    error::{Context as _, Error, Result},
     process::ProcessBuilder,
     value::{Definition, Value},
     PathAndArgs,
@@ -162,16 +163,29 @@ impl ResolveContext {
         match self.env.get(name) {
             None => Ok(None),
             Some(v) => Ok(Some(Value {
-                val: v.clone().into_string().map_err(std::env::VarError::NotUnicode)?,
+                val: v.clone().into_string().map_err(|var| Error::env_not_unicode(name, var))?,
                 definition: Some(Definition::Environment(name.into())),
             })),
+        }
+    }
+    pub(crate) fn env_parse<T>(&self, name: &'static str) -> Result<Option<Value<T>>>
+    where
+        T: FromStr,
+        T::Err: std::error::Error + Send + Sync + 'static,
+    {
+        match self.env(name)? {
+            Some(v) => Ok(Some(
+                v.parse()
+                    .with_context(|| format!("failed to parse environment variable `{name}`"))?,
+            )),
+            None => Ok(None),
         }
     }
     pub(crate) fn env_dyn(&self, name: &str) -> Result<Option<Value<String>>> {
         match self.env.get(name) {
             None => Ok(None),
             Some(v) => Ok(Some(Value {
-                val: v.clone().into_string().map_err(std::env::VarError::NotUnicode)?,
+                val: v.clone().into_string().map_err(|var| Error::env_not_unicode(name, var))?,
                 definition: Some(Definition::Environment(name.to_owned().into())),
             })),
         }
@@ -219,10 +233,11 @@ struct Cfg {
 
 impl Cfg {
     fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
-        let list = rustc
-            .args(["--print", "cfg", "--target", &*target.cli_target().to_string_lossy()])
-            .read()?;
+        let cmd =
+            rustc.args(["--print", "cfg", "--target", &*target.cli_target().to_string_lossy()]);
+        let list = cmd.read()?;
         Self::parse(&list)
+            .with_context(|| format_err!("unexpected cfg output from `{cmd}`: {list}"))
     }
 
     fn parse(list: &str) -> Result<Self> {
@@ -282,12 +297,16 @@ impl Cfg {
                             has_atomics.push(
                                 value
                                     .parse::<cfg_expr::targets::HasAtomic>()
-                                    .map_err(Error::new)?,
+                                    .context("failed to parse `target_has_atomic=\"..\"`")?,
                             );
                         }
                         "target_os" => os = Some(cfg_expr::targets::Os::new(value.to_owned())),
                         "target_pointer_width" => {
-                            pointer_width = Some(value.parse::<u8>().map_err(Error::new)?);
+                            pointer_width = Some(
+                                value
+                                    .parse::<u8>()
+                                    .context("failed to parse `target_pointer_width=\"..\"`")?,
+                            );
                         }
                         "target_vendor" => {
                             vendor = Some(cfg_expr::targets::Vendor::new(value.to_owned()));
@@ -629,7 +648,7 @@ mod tests {
             ("CARGO_TERM_PROGRESS_WIDTH", "100"),
         ];
         let mut config = crate::de::Config::default();
-        let cx = &mut ResolveOptions::default()
+        let cx = &ResolveOptions::default()
             .env(env_list)
             .cargo_home(None)
             .rustc(PathAndArgs::new("rustc"))
@@ -638,6 +657,26 @@ mod tests {
             assert_eq!(cx.env[k], v, "key={k},value={v}");
         }
         config.apply_env(cx).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn env_no_utf8() {
+        use std::{ffi::OsStr, os::unix::prelude::OsStrExt};
+
+        let cx = &ResolveOptions::default()
+            .env([("CARGO_ALIAS_a", OsStr::from_bytes(&[b'f', b'o', 0x80, b'o']))])
+            .cargo_home(None)
+            .rustc(PathAndArgs::new("rustc"))
+            .into_context();
+        assert_eq!(
+            cx.env("CARGO_ALIAS_a").unwrap_err().to_string(),
+            "failed to parse environment variable `CARGO_ALIAS_a`"
+        );
+        assert_eq!(
+            format!("{:#}", anyhow::Error::from(cx.env("CARGO_ALIAS_a").unwrap_err())),
+            "failed to parse environment variable `CARGO_ALIAS_a`: environment variable was not valid unicode: \"fo\\x80o\""
+        );
     }
 
     // #[test]
