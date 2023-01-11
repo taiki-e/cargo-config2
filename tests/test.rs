@@ -1,8 +1,9 @@
 #![allow(clippy::bool_assert_comparison)]
 
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, str};
 
 use anyhow::{Context as _, Result};
+use build_info::TARGET;
 use cargo_config2::*;
 use toml_edit::easy as toml;
 
@@ -135,20 +136,22 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     Ok(())
 }
 
+fn easy_load(dir: &Path, options: ResolveOptions) -> Result<Config> {
+    Ok(Config::load_with_options(dir, options)?)
+}
 #[test]
 fn easy() {
-    fn de(dir: &Path, options: ResolveOptions) -> Result<Config> {
-        Ok(Config::load_with_options(dir, options)?)
-    }
+    use easy_load as de;
 
     assert_reference_example(de).unwrap();
 }
 
+fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
+    Ok(de::Config::load_with_options(dir, None)?)
+}
 #[test]
 fn de() {
-    fn de(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
-        Ok(de::Config::load_with_options(dir, None)?)
-    }
+    use de_load as de;
     #[track_caller]
     fn ser(config: &de::Config) -> String {
         toml::to_string(&config).unwrap()
@@ -166,10 +169,8 @@ fn de() {
 
 #[test]
 fn custom_target() {
+    use easy_load as de;
     struct IsBuiltin(bool);
-    fn de(dir: &Path, options: ResolveOptions) -> Result<Config> {
-        Ok(Config::load_with_options(dir, options)?)
-    }
     #[track_caller]
     fn t(target: &str, IsBuiltin(is_builtin): IsBuiltin) -> Result<()> {
         let (_tmp, root) = test_project("empty")?;
@@ -246,6 +247,41 @@ fn cargo_config_json() {
     }
 
     let _config = de(&fixtures_path().join("reference")).unwrap();
+}
+
+#[test]
+fn test_cargo_behavior() -> Result<()> {
+    let (_tmp, root) = test_project("empty").unwrap();
+    let dir = &root;
+
+    // [env] table doesn't affect config resolution
+    // https://github.com/taiki-e/cargo-config2/issues/2
+    fs::write(
+        root.join(".cargo/config.toml"),
+        format!(
+            r#"
+            [env]
+            RUSTFLAGS = "--cfg a"
+            [build]
+            rustflags = "--cfg b"
+            "#
+        ),
+    )?;
+    let output = duct::cmd!("cargo", "build", "-v")
+        .dir(dir)
+        .env("CARGO_HOME", root.join(".cargo"))
+        .env_remove("CARGO_ENCODED_RUSTFLAGS")
+        .env_remove("RUSTFLAGS")
+        .env_remove(format!("CARGO_TARGET_{}_RUSTFLAGS", TARGET.replace(['-', '.'], "_")))
+        .env_remove("CARGO_BUILD_RUSTFLAGS")
+        .stdout_capture()
+        .stderr_capture()
+        .run()?;
+    let stderr = str::from_utf8(&output.stderr)?;
+    assert!(!stderr.contains("--cfg a"), "actual:\n---\n{stderr}\n---\n");
+    assert!(stderr.contains("--cfg b"), "actual:\n---\n{stderr}\n---\n");
+
+    Ok(())
 }
 
 use helper::*;
