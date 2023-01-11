@@ -258,14 +258,12 @@ fn test_cargo_behavior() -> Result<()> {
     // https://github.com/taiki-e/cargo-config2/issues/2
     fs::write(
         root.join(".cargo/config.toml"),
-        format!(
-            r#"
+        r#"
             [env]
             RUSTFLAGS = "--cfg a"
             [build]
             rustflags = "--cfg b"
-            "#
-        ),
+            "#,
     )?;
     let output = duct::cmd!("cargo", "build", "-v")
         .dir(dir)
