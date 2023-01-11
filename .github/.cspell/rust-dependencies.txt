@@ -3,6 +3,7 @@
 
 anyhow
 assertions
+build
 cargo
 cell
 clap
@@ -14,6 +15,7 @@ escape
 expr
 home
 ignore
+info
 json
 lexopt
 macro
