@@ -12,7 +12,7 @@ use serde::Serialize;
 
 use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, When},
-    error::Result,
+    error::{Context as _, Result},
     process::ProcessBuilder,
     resolve::{ResolveContext, ResolveOptions, TargetTriple, TargetTripleBorrow, TargetTripleRef},
     value::Value,
@@ -99,7 +99,7 @@ fn ref_cell_bree_map_is_empty<K, V>(map: &RefCell<BTreeMap<K, V>>) -> bool {
 impl Config {
     /// Read config files hierarchically from the current directory and merges them.
     pub fn load() -> Result<Self> {
-        Self::load_with_cwd(std::env::current_dir()?)
+        Self::load_with_cwd(std::env::current_dir().context("failed to get current directory")?)
     }
 
     /// Read config files hierarchically from the given directory and merges them.
