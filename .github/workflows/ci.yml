@@ -54,6 +54,7 @@ jobs:
           - rust: nightly
             os: windows-latest
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
         with:
@@ -69,6 +70,7 @@ jobs:
 
   codegen:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
         with:
@@ -86,6 +88,7 @@ jobs:
     # prettier-ignore
     needs: [check-external-types, deny, docs, msrv, tidy, test, codegen] # tidy:needs
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Mark the job as a success
         run: exit 0
