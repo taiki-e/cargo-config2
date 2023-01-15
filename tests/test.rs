@@ -1,4 +1,4 @@
-#![allow(clippy::bool_assert_comparison)]
+#![allow(clippy::bool_assert_comparison, clippy::needless_pass_by_value)]
 
 use std::{collections::HashMap, path::Path, str};
 
@@ -30,7 +30,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
             "rr" => assert_eq!(*v, "run --release".into()),
             "recursive_example" => assert_eq!(*v, "rr --example recursions".into()),
             "space_example" => {
-                assert_eq!(*v, ["run", "--release", "--", "\"command list\""].into())
+                assert_eq!(*v, ["run", "--release", "--", "\"command list\""].into());
             }
             _ => panic!("unexpected alias: name={k}, value={v:?}"),
         }

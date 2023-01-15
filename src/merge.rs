@@ -1,5 +1,3 @@
-#![allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
-
 use std::collections::{btree_map, BTreeMap};
 
 use crate::{
