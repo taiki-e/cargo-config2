@@ -265,6 +265,7 @@ impl Config {
     /// above) is set.
     /// Also, Unlike [`build_target_for_config`](Self::build_target_for_config)
     /// the target name specified in path is preserved.
+    #[allow(clippy::unnecessary_wraps)]
     pub fn build_target_for_cli(
         &self,
         targets: impl IntoIterator<Item = impl AsRef<str>>,
