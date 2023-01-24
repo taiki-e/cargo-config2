@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Migrate to `toml` 0.6. ([#6](https://github.com/taiki-e/cargo-config2/pull/6))
+
 ## [0.1.2] - 2023-01-10
 
 - Improve error messages.
