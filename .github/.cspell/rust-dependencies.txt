@@ -10,7 +10,6 @@ clap
 config
 criterion
 duct
-edit
 escape
 expr
 home

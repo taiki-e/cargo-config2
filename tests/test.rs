@@ -5,7 +5,6 @@ use std::{collections::HashMap, path::Path, str};
 use anyhow::{Context as _, Result};
 use build_info::TARGET;
 use cargo_config2::*;
-use toml_edit::easy as toml;
 
 fn test_options() -> ResolveOptions {
     ResolveOptions::default()
@@ -131,7 +130,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     assert_eq!(config.term.progress.when, Some(When::Auto));
     assert_eq!(config.term.progress.width, Some(80));
 
-    let _config = toml_edit::easy::to_string(&config).unwrap();
+    let _config = toml::to_string(&config).unwrap();
 
     Ok(())
 }
@@ -162,7 +161,7 @@ fn de() {
     let base_config = &de(dir, test_options()).unwrap();
     let config = base_config.clone();
 
-    let _config = toml_edit::easy::to_string(&config).unwrap();
+    let _config = toml::to_string(&config).unwrap();
 
     assert_eq!("", ser(&de::Config::default()));
 }
@@ -210,7 +209,7 @@ fn custom_target() {
         );
         assert_eq!(config.build_target_for_cli([spec_file_name])?, vec![spec_file_name.to_owned()]);
 
-        let _config = toml_edit::easy::to_string(&config).unwrap();
+        let _config = toml::to_string(&config).unwrap();
 
         Ok(())
     }

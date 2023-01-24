@@ -83,41 +83,22 @@ fn print_config(writer: &mut dyn Write, format: Format, config: &Config) -> Resu
             // ```
             //
             // Neither toml nor toml_edit supports this output format, so format it manually.
-            fn print_item(
-                writer: &mut dyn Write,
-                path: &str,
-                item: &toml_edit::Item,
-            ) -> Result<()> {
-                match item {
-                    toml_edit::Item::None => {}
-                    toml_edit::Item::Value(value) => print_value(writer, path, value)?,
-                    toml_edit::Item::Table(table) => {
-                        for (key, item) in table.iter() {
-                            print_item(writer, &format!("{path}.{key}"), item)?;
-                        }
-                    }
-                    toml_edit::Item::ArrayOfTables(_) => todo!(),
-                }
-                Ok(())
-            }
-            fn print_value(
-                writer: &mut dyn Write,
-                path: &str,
-                value: &toml_edit::Value,
-            ) -> Result<()> {
+            fn print_value(writer: &mut dyn Write, path: &str, value: &toml::Value) -> Result<()> {
                 match value {
-                    toml_edit::Value::InlineTable(table) => {
-                        for (key, value) in table.iter() {
-                            print_value(writer, &format!("{path}.{key}"), value)?;
+                    toml::Value::Table(table) => {
+                        for (key, item) in table.iter() {
+                            print_value(writer, &format!("{path}.{key}"), item)?;
                         }
                     }
                     _ => writeln!(writer, "{path} = {value}")?,
                 }
                 Ok(())
             }
-            let doc = toml_edit::easy::to_document(&config)?;
-            for (key, item) in doc.iter() {
-                print_item(writer, key, item)?;
+            let doc = toml::from_str::<toml::Value>(&toml::to_string(&config)?)?;
+            if let Some(table) = doc.as_table() {
+                for (key, value) in table {
+                    print_value(writer, key, value)?;
+                }
             }
         }
     }
