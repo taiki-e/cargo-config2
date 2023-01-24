@@ -136,8 +136,9 @@ impl Config {
         Self::_load_file(path.as_ref())
     }
     fn _load_file(path: &Path) -> Result<Self> {
-        let buf = fs::read(path).with_context(|| format!("failed to read `{}`", path.display()))?;
-        let mut config: Config = toml_edit::easy::from_slice(&buf).with_context(|| {
+        let buf = fs::read_to_string(path)
+            .with_context(|| format!("failed to read `{}`", path.display()))?;
+        let mut config: Config = toml::from_str(&buf).with_context(|| {
             format!("failed to parse `{}` as cargo configuration", path.display())
         })?;
         config.set_path(path);
