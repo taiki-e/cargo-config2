@@ -357,7 +357,7 @@ impl Cfg {
 }
 
 // Based on cfg_expr::targets::TargetInfo, but compatible with old rustc's cfg output.
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone)]
 struct TargetCfg {
     os: Option<cfg_expr::targets::Os>,
     abi: Option<cfg_expr::targets::Abi>,

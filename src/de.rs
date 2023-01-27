@@ -809,7 +809,7 @@ pub struct StringList {
     pub(crate) deserialized_repr: StringListDeserializedRepr,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum StringListDeserializedRepr {
     String,
     Array,
