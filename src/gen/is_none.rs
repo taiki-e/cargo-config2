@@ -11,7 +11,6 @@ impl crate::easy::BuildConfig {
             && self.target.is_none() && self.target_dir.is_none()
             && self.rustflags.is_none() && self.rustdocflags.is_none()
             && self.incremental.is_none() && self.dep_info_basedir.is_none()
-            && self.de_rustflags.is_none()
     }
 }
 impl crate::easy::DocConfig {
