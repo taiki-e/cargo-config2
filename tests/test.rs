@@ -151,10 +151,6 @@ fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
 #[test]
 fn de() {
     use de_load as de;
-    #[track_caller]
-    fn ser(config: &de::Config) -> String {
-        toml::to_string(&config).unwrap()
-    }
 
     let (_tmp, root) = test_project("reference").unwrap();
     let dir = &root;
@@ -163,7 +159,7 @@ fn de() {
 
     let _config = toml::to_string(&config).unwrap();
 
-    assert_eq!("", ser(&de::Config::default()));
+    assert_eq!("", toml::to_string(&de::Config::default()).unwrap());
 }
 
 #[test]
