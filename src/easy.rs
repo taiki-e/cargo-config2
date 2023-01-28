@@ -456,6 +456,7 @@ pub struct BuildConfig {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     override_target_rustflags: bool,
+    #[serde(skip)]
     pub(crate) de_rustflags: Option<de::Flags>,
 }
 
