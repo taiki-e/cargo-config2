@@ -3,7 +3,6 @@
 // It is not intended for manual editing.
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
-
 impl crate::easy::BuildConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.jobs.is_none() && self.rustc.is_none() && self.rustc_wrapper.is_none()

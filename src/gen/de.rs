@@ -3,7 +3,6 @@
 // It is not intended for manual editing.
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
-
 use std::path::Path;
 use crate::{error::Result, merge::Merge, value::SetPath};
 impl Merge for crate::de::Config {
