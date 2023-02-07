@@ -196,7 +196,7 @@ fn gen_de() -> Result<()> {
         );
     }
 
-    write(function_name!(), &workspace_root.join("src/gen/de.rs"), tokens)?;
+    write(function_name!(), workspace_root.join("src/gen/de.rs"), tokens)?;
 
     Ok(())
 }
@@ -264,7 +264,7 @@ fn gen_is_none() -> Result<()> {
         assert!(visited_types.contains(t), "unknown type `{t}` specified in EXCLUDE constant");
     }
 
-    write(function_name!(), &workspace_root.join("src/gen/is_none.rs"), tokens)?;
+    write(function_name!(), workspace_root.join("src/gen/is_none.rs"), tokens)?;
 
     Ok(())
 }
@@ -596,7 +596,7 @@ fn gen_assert_impl() -> Result<()> {
             #tokens
         };
     });
-    write(function_name!(), &out_dir.join("assert_impl.rs"), out)?;
+    write(function_name!(), out_dir.join("assert_impl.rs"), out)?;
 
     Ok(())
 }
