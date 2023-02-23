@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.5] - 2023-02-23
+
 - Fix handling of empty string rustc wrapper envs. ([#7](https://github.com/taiki-e/cargo-config2/pull/7), thanks @tofay)
 
 ## [0.1.4] - 2023-01-28
@@ -38,7 +40,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/taiki-e/cargo-config2/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/taiki-e/cargo-config2/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/taiki-e/cargo-config2/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/taiki-e/cargo-config2/compare/v0.1.1...v0.1.2
