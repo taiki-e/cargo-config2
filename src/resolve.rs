@@ -678,6 +678,18 @@ mod tests {
         let mut config = crate::de::Config::default();
         let cx = &ResolveOptions::default().env(env_list).into_context();
         config.apply_env(cx).unwrap();
+
+        // ResolveOptions::env attempt to avoid pushing unrelated envs
+        let mut env_list = env_list.to_vec();
+        env_list.push(("A", "B"));
+        let cx = &ResolveOptions::default().env(env_list.iter().copied()).into_context();
+        for (k, v) in env_list {
+            if k == "A" {
+                assert!(!cx.env.contains_key(k));
+            } else {
+                assert_eq!(cx.env[k], v, "key={k},value={v}");
+            }
+        }
     }
 
     #[cfg(unix)]
