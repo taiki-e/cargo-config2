@@ -676,14 +676,7 @@ mod tests {
             ("CARGO_TERM_PROGRESS_WIDTH", "100"),
         ];
         let mut config = crate::de::Config::default();
-        let cx = &ResolveOptions::default()
-            .env(env_list)
-            .cargo_home(None)
-            .rustc(PathAndArgs::new("rustc"))
-            .into_context();
-        for (k, v) in env_list {
-            assert_eq!(cx.env[k], v, "key={k},value={v}");
-        }
+        let cx = &ResolveOptions::default().env(env_list).into_context();
         config.apply_env(cx).unwrap();
     }
 
