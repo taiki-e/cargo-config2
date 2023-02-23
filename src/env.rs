@@ -72,20 +72,40 @@ impl ApplyEnv for BuildConfig {
         // 1. RUSTC_WRAPPER
         // 2. build.rustc-wrapper (CARGO_BUILD_RUSTC_WRAPPER)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper
+        // Setting this to an empty string instructs cargo to not use a wrapper.
+        // https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-reads
         if let Some(rustc_wrapper) = cx.env("RUSTC_WRAPPER")? {
-            self.rustc_wrapper = Some(rustc_wrapper);
+            if rustc_wrapper.val.is_empty() {
+                self.rustc_wrapper = None;
+            } else {
+                self.rustc_wrapper = Some(rustc_wrapper);
+            }
         } else if let Some(rustc_wrapper) = cx.env("CARGO_BUILD_RUSTC_WRAPPER")? {
-            self.rustc_wrapper = Some(rustc_wrapper);
+            if rustc_wrapper.val.is_empty() {
+                self.rustc_wrapper = None;
+            } else {
+                self.rustc_wrapper = Some(rustc_wrapper);
+            }
         }
         // 1. RUSTC_WORKSPACE_WRAPPER
         // 2. build.rustc-workspace-wrapper (CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER)
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper
+        // Setting this to an empty string instructs cargo to not use a wrapper.
+        // https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-reads
         if let Some(rustc_workspace_wrapper) = cx.env("RUSTC_WORKSPACE_WRAPPER")? {
-            self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
+            if rustc_workspace_wrapper.val.is_empty() {
+                self.rustc_workspace_wrapper = None;
+            } else {
+                self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
+            }
         } else if let Some(rustc_workspace_wrapper) =
             cx.env("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER")?
         {
-            self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
+            if rustc_workspace_wrapper.val.is_empty() {
+                self.rustc_workspace_wrapper = None;
+            } else {
+                self.rustc_workspace_wrapper = Some(rustc_workspace_wrapper);
+            }
         }
         // 1. RUSTDOC
         // 2. build.rustdoc (CARGO_BUILD_RUSTDOC)
@@ -244,5 +264,25 @@ impl ApplyEnv for TermProgress {
             self.width = Some(width);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{value::Value, ResolveOptions};
+
+    use super::ApplyEnv;
+
+    #[test]
+    fn empty_string_wrapper_envs() {
+        let env_list = [("RUSTC_WRAPPER", ""), ("RUSTC_WORKSPACE_WRAPPER", "")];
+        let mut config = crate::de::BuildConfig::default();
+        let cx = &ResolveOptions::default().env(env_list).into_context();
+        config.rustc_wrapper = Some(Value { val: "rustc_wrapper".to_string(), definition: None });
+        config.rustc_workspace_wrapper =
+            Some(Value { val: "rustc_workspace_wrapper".to_string(), definition: None });
+        config.apply_env(cx).unwrap();
+        assert!(config.rustc_wrapper.is_none());
+        assert!(config.rustc_workspace_wrapper.is_none());
     }
 }
