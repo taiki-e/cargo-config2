@@ -78,7 +78,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub registries: BTreeMap<String, RegistriesConfigValue>,
-    // TODO: registry
+    /// The `[registry]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "RegistryConfig::is_none")]
+    pub registry: RegistryConfig,
     // TODO: source
     /// The `[target]` table.
     ///
@@ -462,6 +467,28 @@ pub struct RegistriesConfigValue {
     /// Specifies the authentication token for the given registry.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Value<String>>,
+}
+
+/// The `[registry]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistryConfig {
+    /// The name of the registry (from the
+    /// [`registries` table](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries))
+    /// to use by default for registry commands like
+    /// [`cargo publish`](https://doc.rust-lang.org/nightly/cargo/commands/cargo-publish.html).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<Value<String>>,
+    /// Specifies the authentication token for [crates.io](https://crates.io/).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<Value<String>>,
 }

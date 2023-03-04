@@ -72,7 +72,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub registries: BTreeMap<String, RegistriesConfigValue>,
-    // TODO: registry
+    /// The `[registry]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "RegistryConfig::is_none")]
+    pub registry: RegistryConfig,
     // TODO: source
     /// The resolved `[target]` table.
     #[serde(skip_deserializing)]
@@ -147,6 +152,7 @@ impl Config {
         for (k, v) in de.registries {
             registries.insert(k, RegistriesConfigValue::from_unresolved(v));
         }
+        let registry = RegistryConfig::from_unresolved(de.registry);
         let term = TermConfig::from_unresolved(de.term);
 
         Ok(Self {
@@ -157,6 +163,7 @@ impl Config {
             future_incompat_report,
             net,
             registries,
+            registry,
             target: RefCell::new(BTreeMap::new()),
             de_target: de.target,
             term,
@@ -736,6 +743,36 @@ impl RegistriesConfigValue {
         let index = de.index.map(|v| v.val);
         let token = de.token.map(|v| v.val);
         Self { index, token }
+    }
+}
+
+/// The `[registry]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistryConfig {
+    /// The name of the registry (from the
+    /// [`registries` table](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries))
+    /// to use by default for registry commands like
+    /// [`cargo publish`](https://doc.rust-lang.org/nightly/cargo/commands/cargo-publish.html).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<String>,
+    /// Specifies the authentication token for [crates.io](https://crates.io/).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+impl RegistryConfig {
+    pub(crate) fn from_unresolved(de: de::RegistryConfig) -> Self {
+        let default = de.default.map(|v| v.val);
+        let token = de.token.map(|v| v.val);
+        Self { default, token }
     }
 }
 

@@ -4,7 +4,7 @@
 use crate::{
     de::{
         BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, NetConfig, PathAndArgs,
-        RegistriesConfigValue, StringList, StringOrArray, TermConfig, TermProgress,
+        RegistriesConfigValue, RegistryConfig, StringList, StringOrArray, TermConfig, TermProgress,
     },
     error::{Context as _, Error, Result},
     resolve::ResolveContext,
@@ -83,6 +83,7 @@ impl Config {
         self.doc.apply_env(cx)?;
         self.future_incompat_report.apply_env(cx)?;
         self.net.apply_env(cx)?;
+        self.registry.apply_env(cx)?;
         self.term.apply_env(cx)?;
         Ok(())
     }
@@ -266,6 +267,20 @@ impl ApplyEnv for NetConfig {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline
         if let Some(offline) = cx.env_parse("CARGO_NET_OFFLINE")? {
             self.offline = Some(offline);
+        }
+        Ok(())
+    }
+}
+
+impl ApplyEnv for RegistryConfig {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault
+        if let Some(default) = cx.env_parse("CARGO_REGISTRY_DEFAULT")? {
+            self.default = Some(default);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken
+        if let Some(token) = cx.env_parse("CARGO_REGISTRY_TOKEN")? {
+            self.token = Some(token);
         }
         Ok(())
     }

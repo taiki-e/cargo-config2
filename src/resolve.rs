@@ -671,6 +671,8 @@ mod tests {
             ("CARGO_NET_OFFLINE", "false"),
             ("CARGO_REGISTRIES_crates.io_INDEX", "https://github.com/rust-lang/crates.io-index"),
             ("CARGO_REGISTRIES_crates.io_TOKEN", "00000000000000000000000000000000000"),
+            ("CARGO_REGISTRY_DEFAULT", "crates.io"),
+            ("CARGO_REGISTRY_TOKEN", "00000000000000000000000000000000000"),
             ("CARGO_TERM_QUIET", "false"),
             ("CARGO_TERM_VERBOSE", "false"),
             ("CARGO_TERM_COLOR", "auto"),
