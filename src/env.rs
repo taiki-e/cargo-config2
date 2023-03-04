@@ -53,10 +53,11 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.index = index;
                     } else {
-                        self.registries.insert(
-                            k.to_owned(),
-                            RegistriesConfigValue { index, token: None, protocol: None },
-                        );
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index,
+                            token: None,
+                            protocol: None,
+                        });
                     }
                     continue;
                 } else if let Some(k) = k.strip_suffix("_TOKEN") {
@@ -68,10 +69,11 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.token = token;
                     } else {
-                        self.registries.insert(
-                            k.to_owned(),
-                            RegistriesConfigValue { index: None, token, protocol: None },
-                        );
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index: None,
+                            token,
+                            protocol: None,
+                        });
                     }
                     continue;
                 } else if k == "CRATES_IO_PROTOCOL" {
@@ -91,10 +93,11 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.protocol = protocol;
                     } else {
-                        self.registries.insert(
-                            k.to_owned(),
-                            RegistriesConfigValue { index: None, token: None, protocol },
-                        );
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index: None,
+                            token: None,
+                            protocol,
+                        });
                     }
                     continue;
                 }
