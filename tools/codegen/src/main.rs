@@ -209,12 +209,14 @@ fn gen_is_none() -> Result<()> {
         "de::PathAndArgs",
         "de::StringList",
         "de::TargetConfig",
+        "de::RegistriesConfigValue",
         "easy::Config",
         "easy::EnvConfigValue",
         "easy::Flags",
         "easy::PathAndArgs",
         "easy::StringList",
         "easy::TargetConfig",
+        "easy::RegistriesConfigValue",
     ];
 
     let workspace_root = &workspace_root();
