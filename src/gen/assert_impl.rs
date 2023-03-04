@@ -94,6 +94,11 @@ const _: fn() = || {
     assert_unpin::<crate::de::NetConfig>();
     assert_unwind_safe::<crate::de::NetConfig>();
     assert_ref_unwind_safe::<crate::de::NetConfig>();
+    assert_send::<crate::de::RegistriesConfigValue>();
+    assert_sync::<crate::de::RegistriesConfigValue>();
+    assert_unpin::<crate::de::RegistriesConfigValue>();
+    assert_unwind_safe::<crate::de::RegistriesConfigValue>();
+    assert_ref_unwind_safe::<crate::de::RegistriesConfigValue>();
     assert_send::<crate::de::TermConfig>();
     assert_sync::<crate::de::TermConfig>();
     assert_unpin::<crate::de::TermConfig>();
@@ -179,6 +184,11 @@ const _: fn() = || {
     assert_unpin::<crate::easy::NetConfig>();
     assert_unwind_safe::<crate::easy::NetConfig>();
     assert_ref_unwind_safe::<crate::easy::NetConfig>();
+    assert_send::<crate::easy::RegistriesConfigValue>();
+    assert_sync::<crate::easy::RegistriesConfigValue>();
+    assert_unpin::<crate::easy::RegistriesConfigValue>();
+    assert_unwind_safe::<crate::easy::RegistriesConfigValue>();
+    assert_ref_unwind_safe::<crate::easy::RegistriesConfigValue>();
     assert_send::<crate::easy::TermConfig>();
     assert_sync::<crate::easy::TermConfig>();
     assert_unpin::<crate::easy::TermConfig>();

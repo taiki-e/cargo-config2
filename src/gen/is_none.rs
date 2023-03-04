@@ -28,6 +28,11 @@ impl crate::easy::NetConfig {
             && self.offline.is_none()
     }
 }
+impl crate::easy::RegistriesConfigValue {
+    pub(crate) fn is_none(&self) -> bool {
+        self.index.is_none() && self.token.is_none()
+    }
+}
 impl crate::easy::TermConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.quiet.is_none() && self.verbose.is_none() && self.color.is_none()
@@ -62,6 +67,11 @@ impl crate::de::NetConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.retry.is_none() && self.git_fetch_with_cli.is_none()
             && self.offline.is_none()
+    }
+}
+impl crate::de::RegistriesConfigValue {
+    pub(crate) fn is_none(&self) -> bool {
+        self.index.is_none() && self.token.is_none()
     }
 }
 impl crate::de::TermConfig {
