@@ -82,13 +82,14 @@ offline = true              # do not access the network
 # [profile.<name>.package.<name>]  # Override profile for a package.
 # # Same keys for a normal profile (minus `panic`, `lto`, and `rpath`).
 
-# [registries.<name>]  # registries other than crates.io
-# index = "…"          # URL of the registry index
-# token = "…"          # authentication token for the registry
+[registries.crates-io]                                  # registries other than crates.io
+index = "https://github.com/rust-lang/crates.io-index"  # URL of the registry index
+token = "00000000000000000000000000000000000"           # authentication token for the registry
+protocol = "git"
 
-# [registry]
-# default = "…"        # name of the default registry
-# token = "…"          # authentication token for crates.io
+[registry]
+default = "crates-io"                          # name of the default registry
+token = "00000000000000000000000000000000000"  # authentication token for crates.io
 
 # [source.<name>]      # source definition and replacement
 # replace-with = "…"   # replace this source with the given named source
