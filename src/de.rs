@@ -15,6 +15,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 pub use crate::value::{Definition, Value};
 use crate::{
@@ -71,7 +72,12 @@ pub struct Config {
     pub net: NetConfig,
     // TODO: patch
     // TODO: profile
-    // TODO: registries
+    /// The `[registries]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub registries: BTreeMap<String, RegistriesConfigValue>,
     // TODO: registry
     // TODO: source
     /// The `[target]` table.
@@ -439,6 +445,25 @@ pub struct NetConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offline: Option<Value<bool>>,
+}
+
+/// A value of the `[registries]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistriesConfigValue {
+    /// Specifies the URL of the git index for the registry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index: Option<Value<Url>>,
+    /// Specifies the authentication token for the given registry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Value<String>>,
 }
 
 /// The `[term]` table.

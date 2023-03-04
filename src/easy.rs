@@ -9,6 +9,7 @@ use std::{
 };
 
 use serde::Serialize;
+use url::Url;
 
 use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, When},
@@ -65,7 +66,12 @@ pub struct Config {
     pub net: NetConfig,
     // TODO: patch
     // TODO: profile
-    // TODO: registries
+    /// The `[registries]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub registries: BTreeMap<String, RegistriesConfigValue>,
     // TODO: registry
     // TODO: source
     /// The resolved `[target]` table.
@@ -137,6 +143,10 @@ impl Config {
         let future_incompat_report =
             FutureIncompatReportConfig::from_unresolved(de.future_incompat_report);
         let net = NetConfig::from_unresolved(de.net);
+        let mut registries = BTreeMap::new();
+        for (k, v) in de.registries {
+            registries.insert(k, RegistriesConfigValue::from_unresolved(v));
+        }
         let term = TermConfig::from_unresolved(de.term);
 
         Ok(Self {
@@ -146,6 +156,7 @@ impl Config {
             env,
             future_incompat_report,
             net,
+            registries,
             target: RefCell::new(BTreeMap::new()),
             de_target: de.target,
             term,
@@ -698,6 +709,33 @@ impl NetConfig {
         let git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
         let offline = de.offline.map(|v| v.val);
         Self { retry, git_fetch_with_cli, offline }
+    }
+}
+
+/// A value of the `[registries]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistriesConfigValue {
+    /// Specifies the URL of the git index for the registry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index: Option<Url>,
+    /// Specifies the authentication token for the given registry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+impl RegistriesConfigValue {
+    pub(crate) fn from_unresolved(de: de::RegistriesConfigValue) -> Self {
+        let index = de.index.map(|v| v.val);
+        let token = de.token.map(|v| v.val);
+        Self { index, token }
     }
 }
 

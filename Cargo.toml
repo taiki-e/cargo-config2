@@ -23,6 +23,7 @@ members = ["bench", "tests/helper/build-info", "tools/codegen"]
 doc-scrape-examples = false
 
 # Note: serde is public dependencies.
+# Note: url is public dependencies.
 [dependencies]
 cfg-expr = "0.14"
 home = "0.5"
@@ -30,6 +31,7 @@ once_cell = { version = "1", default-features = false }
 serde = { version = "1.0.103", features = ["derive"] }
 shell-escape = "0.1.5"
 toml = { version = "0.7", default-features = false, features = ["parse"] }
+url = { version = "2", features = ["serde"] }
 
 [dev-dependencies]
 anyhow = "1"

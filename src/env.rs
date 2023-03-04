@@ -4,7 +4,7 @@
 use crate::{
     de::{
         BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, NetConfig, PathAndArgs,
-        StringList, StringOrArray, TermConfig, TermProgress,
+        RegistriesConfigValue, StringList, StringOrArray, TermConfig, TermProgress,
     },
     error::{Context as _, Error, Result},
     resolve::ResolveContext,
@@ -26,8 +26,8 @@ impl Config {
     /// (e.g., In environment variables, `-` and `.` in the target triple are replaced by `_`)
     #[doc(hidden)] // Not public API.
     pub fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
-        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
         for (k, v) in &cx.env {
+            // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
             if let Some(k) = k.strip_prefix("CARGO_ALIAS_") {
                 self.alias.insert(
                     k.to_owned(),
@@ -37,6 +37,43 @@ impl Config {
                     ),
                 );
                 continue;
+            }
+
+            // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries
+            if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
+                if let Some(k) = k.strip_suffix("_INDEX") {
+                    let v = v.to_str().ok_or_else(|| Error::env_not_unicode(k, v.clone()))?;
+                    let index = Some(
+                        Value {
+                            val: v.to_owned(),
+                            definition: Some(Definition::Environment(k.to_owned().into())),
+                        }
+                        .parse()
+                        .with_context(|| format!("failed to parse URL `{v}`"))?,
+                    );
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.index = index;
+                    } else {
+                        self.registries
+                            .insert(k.to_owned(), RegistriesConfigValue { index, token: None });
+                    }
+                    continue;
+                }
+
+                if let Some(k) = k.strip_suffix("_TOKEN") {
+                    let v = v.to_str().ok_or_else(|| Error::env_not_unicode(k, v.clone()))?;
+                    let token = Some(Value {
+                        val: v.to_owned(),
+                        definition: Some(Definition::Environment(k.to_owned().into())),
+                    });
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.token = token;
+                    } else {
+                        self.registries
+                            .insert(k.to_owned(), RegistriesConfigValue { index: None, token });
+                    }
+                    continue;
+                }
             }
         }
 

@@ -669,6 +669,8 @@ mod tests {
             ("CARGO_NET_RETRY", "1"),
             ("CARGO_NET_GIT_FETCH_WITH_CLI", "false"),
             ("CARGO_NET_OFFLINE", "false"),
+            ("CARGO_REGISTRIES_crates.io_INDEX", "https://github.com/rust-lang/crates.io-index"),
+            ("CARGO_REGISTRIES_crates.io_TOKEN", "00000000000000000000000000000000000"),
             ("CARGO_TERM_QUIET", "false"),
             ("CARGO_TERM_VERBOSE", "false"),
             ("CARGO_TERM_COLOR", "auto"),
