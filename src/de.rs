@@ -469,6 +469,39 @@ pub struct RegistriesConfigValue {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<Value<String>>,
+    /// Specifies the protocol used to access crates.io.
+    /// Not allowed for any registries besides crates.io.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<Value<RegistriesProtocol>>,
+}
+
+/// Specifies the protocol used to access crates.io.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum RegistriesProtocol {
+    /// Causes Cargo to clone the entire index of all packages ever published to
+    /// [crates.io](https://crates.io/) from <https://github.com/rust-lang/crates.io-index/>.
+    Git,
+    /// A newer protocol which uses HTTPS to download only what is necessary from
+    /// <https://index.crates.io/>.
+    Sparse,
+}
+
+impl FromStr for RegistriesProtocol {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "git" => Ok(RegistriesProtocol::Git),
+            "sparse" => Ok(RegistriesProtocol::Sparse),
+            _ => bail!("CARGO_REGISTRIES_CRATES_IO_PROTOCOL environment variable must be `git` or `sparse`"),
+        }
+    }
 }
 
 /// The `[registry]` table.

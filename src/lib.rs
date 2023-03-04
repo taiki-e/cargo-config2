@@ -89,8 +89,8 @@ pub use crate::de::{Color, Frequency, When};
 pub use crate::{
     easy::{
         BuildConfig, Config, DocConfig, EnvConfigValue, Flags, FutureIncompatReportConfig,
-        NetConfig, PathAndArgs, RegistriesConfigValue, RegistryConfig, StringList, TargetConfig,
-        TermConfig, TermProgressConfig,
+        NetConfig, PathAndArgs, RegistriesConfigValue, RegistriesProtocol, RegistryConfig,
+        StringList, TargetConfig, TermConfig, TermProgressConfig,
     },
     error::Error,
     resolve::{ResolveOptions, TargetTriple, TargetTripleRef},

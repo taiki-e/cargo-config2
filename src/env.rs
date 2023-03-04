@@ -38,9 +38,8 @@ impl Config {
                 );
                 continue;
             }
-
             // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries
-            if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
+            else if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
                 if let Some(k) = k.strip_suffix("_INDEX") {
                     let v = v.to_str().ok_or_else(|| Error::env_not_unicode(k, v.clone()))?;
                     let index = Some(
@@ -54,13 +53,13 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.index = index;
                     } else {
-                        self.registries
-                            .insert(k.to_owned(), RegistriesConfigValue { index, token: None });
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue { index, token: None, protocol: None },
+                        );
                     }
                     continue;
-                }
-
-                if let Some(k) = k.strip_suffix("_TOKEN") {
+                } else if let Some(k) = k.strip_suffix("_TOKEN") {
                     let v = v.to_str().ok_or_else(|| Error::env_not_unicode(k, v.clone()))?;
                     let token = Some(Value {
                         val: v.to_owned(),
@@ -69,8 +68,33 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.token = token;
                     } else {
-                        self.registries
-                            .insert(k.to_owned(), RegistriesConfigValue { index: None, token });
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue { index: None, token, protocol: None },
+                        );
+                    }
+                    continue;
+                } else if k == "CRATES_IO_PROTOCOL" {
+                    let k = "crates-io";
+                    let v = v.to_str().ok_or_else(|| {
+                        Error::env_not_unicode("CARGO_REGISTRIES_CRATES_IO_PROTOCOL", v.clone())
+                    })?;
+                    let protocol = Some(
+                        Value {
+                            val: v.to_owned(),
+                            definition: Some(Definition::Environment(
+                                "CARGO_REGISTRIES_CRATES_IO_PROTOCOL".into(),
+                            )),
+                        }
+                        .parse()?,
+                    );
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.protocol = protocol;
+                    } else {
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue { index: None, token: None, protocol },
+                        );
                     }
                     continue;
                 }

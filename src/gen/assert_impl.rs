@@ -99,6 +99,11 @@ const _: fn() = || {
     assert_unpin::<crate::de::RegistriesConfigValue>();
     assert_unwind_safe::<crate::de::RegistriesConfigValue>();
     assert_ref_unwind_safe::<crate::de::RegistriesConfigValue>();
+    assert_send::<crate::de::RegistriesProtocol>();
+    assert_sync::<crate::de::RegistriesProtocol>();
+    assert_unpin::<crate::de::RegistriesProtocol>();
+    assert_unwind_safe::<crate::de::RegistriesProtocol>();
+    assert_ref_unwind_safe::<crate::de::RegistriesProtocol>();
     assert_send::<crate::de::RegistryConfig>();
     assert_sync::<crate::de::RegistryConfig>();
     assert_unpin::<crate::de::RegistryConfig>();
@@ -194,6 +199,11 @@ const _: fn() = || {
     assert_unpin::<crate::easy::RegistriesConfigValue>();
     assert_unwind_safe::<crate::easy::RegistriesConfigValue>();
     assert_ref_unwind_safe::<crate::easy::RegistriesConfigValue>();
+    assert_send::<crate::easy::RegistriesProtocol>();
+    assert_sync::<crate::easy::RegistriesProtocol>();
+    assert_unpin::<crate::easy::RegistriesProtocol>();
+    assert_unwind_safe::<crate::easy::RegistriesProtocol>();
+    assert_ref_unwind_safe::<crate::easy::RegistriesProtocol>();
     assert_send::<crate::easy::RegistryConfig>();
     assert_sync::<crate::easy::RegistryConfig>();
     assert_unpin::<crate::easy::RegistryConfig>();

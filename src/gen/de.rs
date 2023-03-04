@@ -135,6 +135,7 @@ impl Merge for crate::de::RegistriesConfigValue {
     fn merge(&mut self, from: Self, force: bool) -> Result<()> {
         self.index.merge(from.index, force)?;
         self.token.merge(from.token, force)?;
+        self.protocol.merge(from.protocol, force)?;
         Ok(())
     }
 }
@@ -142,6 +143,7 @@ impl SetPath for crate::de::RegistriesConfigValue {
     fn set_path(&mut self, path: &Path) {
         self.index.set_path(path);
         self.token.set_path(path);
+        self.protocol.set_path(path);
     }
 }
 impl Merge for crate::de::RegistryConfig {
