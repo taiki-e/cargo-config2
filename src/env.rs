@@ -27,7 +27,7 @@ impl Config {
     #[doc(hidden)] // Not public API.
     pub fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         for (k, v) in &cx.env {
-            let definition = Definition::Environment(k.to_owned().into());
+            let definition = Definition::Environment(k.clone().into());
             let error_env_not_unicode = || Error::env_not_unicode(k, v.clone());
 
             // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
