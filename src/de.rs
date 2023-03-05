@@ -466,6 +466,10 @@ pub struct RegistriesConfigValue {
     pub index: Option<Value<Url>>,
     /// Specifies the authentication token for the given registry.
     ///
+    /// Note: This library does not read any values in the
+    /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
+    /// file.
+    ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<Value<String>>,
@@ -520,6 +524,10 @@ pub struct RegistryConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Value<String>>,
     /// Specifies the authentication token for [crates.io](https://crates.io/).
+    ///
+    /// Note: This library does not read any values in the
+    /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
+    /// file.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
     #[serde(skip_serializing_if = "Option::is_none")]
