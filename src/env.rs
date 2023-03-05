@@ -27,7 +27,7 @@ impl Config {
     #[doc(hidden)] // Not public API.
     pub fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         for (k, v) in &cx.env {
-            let definition = Definition::Environment(k.clone().into());
+            let definition = || Some(Definition::Environment(k.clone().into()));
             let error_env_not_unicode = || Error::env_not_unicode(k, v.clone());
 
             // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
@@ -36,7 +36,7 @@ impl Config {
                     k.to_owned(),
                     StringList::from_string(
                         v.to_str().ok_or_else(error_env_not_unicode)?,
-                        Some(&definition),
+                        definition().as_ref(),
                     ),
                 );
                 continue;
@@ -46,7 +46,7 @@ impl Config {
                 if let Some(k) = k.strip_suffix("_INDEX") {
                     let v = v.to_str().ok_or_else(error_env_not_unicode)?;
                     let index = Some(
-                        Value { val: v.to_owned(), definition: Some(definition) }
+                        Value { val: v.to_owned(), definition: definition() }
                             .parse()
                             .with_context(|| format!("failed to parse URL `{v}`"))?,
                     );
@@ -62,7 +62,7 @@ impl Config {
                     continue;
                 } else if let Some(k) = k.strip_suffix("_TOKEN") {
                     let v = v.to_str().ok_or_else(error_env_not_unicode)?;
-                    let token = Some(Value { val: v.to_owned(), definition: Some(definition) });
+                    let token = Some(Value { val: v.to_owned(), definition: definition() });
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.token = token;
                     } else {
@@ -77,7 +77,7 @@ impl Config {
                     let k = "crates-io";
                     let v = v.to_str().ok_or_else(error_env_not_unicode)?;
                     let protocol =
-                        Some(Value { val: v.to_owned(), definition: Some(definition) }.parse()?);
+                        Some(Value { val: v.to_owned(), definition: definition() }.parse()?);
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.protocol = protocol;
                     } else {
