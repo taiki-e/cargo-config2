@@ -498,11 +498,11 @@ pub enum RegistriesProtocol {
 impl FromStr for RegistriesProtocol {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "git" => Ok(RegistriesProtocol::Git),
-            "sparse" => Ok(RegistriesProtocol::Sparse),
-            _ => bail!("CARGO_REGISTRIES_CRATES_IO_PROTOCOL environment variable must be `git` or `sparse`"),
+    fn from_str(protocol: &str) -> Result<Self, Self::Err> {
+        match protocol {
+            "git" => Ok(Self::Git),
+            "sparse" => Ok(Self::Sparse),
+            other => bail!("must be git or sparse, but found `{other}`"),
         }
     }
 }
