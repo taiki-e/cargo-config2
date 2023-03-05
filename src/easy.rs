@@ -3,6 +3,7 @@ use std::{
     cell::RefCell,
     collections::BTreeMap,
     ffi::{OsStr, OsString},
+    fmt::{self, Formatter},
     ops,
     path::{Path, PathBuf},
     process::Command,
@@ -721,7 +722,7 @@ impl NetConfig {
 /// A value of the `[registries]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct RegistriesConfigValue {
@@ -759,6 +760,18 @@ impl RegistriesConfigValue {
     }
 }
 
+impl fmt::Debug for RegistriesConfigValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { index, token, protocol } = self;
+        let redacted_token = if token.is_some() { Some("[REDACTED]") } else { None };
+        f.debug_struct("RegistriesConfigValue")
+            .field("index", &index)
+            .field("token", &redacted_token)
+            .field("protocol", &protocol)
+            .finish_non_exhaustive()
+    }
+}
+
 /// Specifies the protocol used to access crates.io.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
@@ -777,7 +790,7 @@ pub enum RegistriesProtocol {
 /// The `[registry]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct RegistryConfig {
@@ -805,6 +818,17 @@ impl RegistryConfig {
         let default = de.default.map(|v| v.val);
         let token = de.token.map(|v| v.val);
         Self { default, token }
+    }
+}
+
+impl fmt::Debug for RegistryConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { default, token } = self;
+        let redacted_token = if token.is_some() { Some("[REDACTED]") } else { None };
+        f.debug_struct("RegistryConfig")
+            .field("default", &default)
+            .field("token", &redacted_token)
+            .finish()
     }
 }
 

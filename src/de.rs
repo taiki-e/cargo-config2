@@ -8,6 +8,7 @@ use std::{
     borrow::Cow,
     collections::BTreeMap,
     ffi::OsStr,
+    fmt::{self, Formatter},
     fs,
     path::{Path, PathBuf},
     slice,
@@ -454,7 +455,7 @@ pub struct NetConfig {
 /// A value of the `[registries]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct RegistriesConfigValue {
@@ -478,6 +479,22 @@ pub struct RegistriesConfigValue {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub protocol: Option<Value<RegistriesProtocol>>,
+}
+
+impl fmt::Debug for RegistriesConfigValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { index, token, protocol } = self;
+        let redacted_token = if let Some(token) = token {
+            Some(Value { val: "[REDACTED]", definition: token.definition.to_owned() })
+        } else {
+            None
+        };
+        f.debug_struct("RegistriesConfigValue")
+            .field("index", &index)
+            .field("token", &redacted_token)
+            .field("protocol", &protocol)
+            .finish()
+    }
 }
 
 /// Specifies the protocol used to access crates.io.
@@ -510,7 +527,7 @@ impl FromStr for RegistriesProtocol {
 /// The `[registry]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct RegistryConfig {
@@ -531,6 +548,21 @@ pub struct RegistryConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<Value<String>>,
+}
+
+impl fmt::Debug for RegistryConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { default, token } = self;
+        let redacted_token = if let Some(token) = token {
+            Some(Value { val: "[REDACTED]", definition: token.definition.to_owned() })
+        } else {
+            None
+        };
+        f.debug_struct("RegistryConfig")
+            .field("default", &default)
+            .field("token", &redacted_token)
+            .finish()
+    }
 }
 
 /// The `[term]` table.
