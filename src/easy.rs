@@ -9,7 +9,6 @@ use std::{
 };
 
 use serde::Serialize;
-use url::Url;
 
 use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, When},
@@ -730,7 +729,7 @@ pub struct RegistriesConfigValue {
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub index: Option<Url>,
+    pub index: Option<String>,
     /// Specifies the authentication token for the given registry.
     ///
     /// Note: This library does not read any values in the

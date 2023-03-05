@@ -1,7 +1,5 @@
 use std::collections::{btree_map, BTreeMap};
 
-use url::Url;
-
 use crate::{
     de::{self, RegistriesProtocol},
     error::{Context as _, Result},
@@ -49,7 +47,6 @@ merge_non_container!(String);
 merge_non_container!(Color);
 merge_non_container!(Frequency);
 merge_non_container!(When);
-merge_non_container!(Url);
 merge_non_container!(RegistriesProtocol);
 
 impl<T: Merge> Merge for Option<T> {

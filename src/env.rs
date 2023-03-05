@@ -45,11 +45,7 @@ impl Config {
             else if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
                 if let Some(k) = k.strip_suffix("_INDEX") {
                     let v = v.to_str().ok_or_else(error_env_not_unicode)?;
-                    let index = Some(
-                        Value { val: v.to_owned(), definition: definition() }
-                            .parse()
-                            .with_context(|| format!("failed to parse URL `{v}`"))?,
-                    );
+                    let index = Some(Value { val: v.to_owned(), definition: definition() });
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.index = index;
                     } else {
