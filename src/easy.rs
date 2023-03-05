@@ -763,7 +763,7 @@ impl RegistriesConfigValue {
 impl fmt::Debug for RegistriesConfigValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self { index, token, protocol } = self;
-        let redacted_token = if token.is_some() { Some("[REDACTED]") } else { None };
+        let redacted_token = token.as_ref().map(|_| "[REDACTED]");
         f.debug_struct("RegistriesConfigValue")
             .field("index", &index)
             .field("token", &redacted_token)
@@ -824,7 +824,7 @@ impl RegistryConfig {
 impl fmt::Debug for RegistryConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self { default, token } = self;
-        let redacted_token = if token.is_some() { Some("[REDACTED]") } else { None };
+        let redacted_token = token.as_ref().map(|_| "[REDACTED]");
         f.debug_struct("RegistryConfig")
             .field("default", &default)
             .field("token", &redacted_token)
