@@ -684,7 +684,7 @@ mod tests {
         let cx = &ResolveOptions::default().env(env_list).into_context();
         config.apply_env(cx).unwrap();
 
-        // ResolveOptions::env attempt to avoid pushing unrelated envs
+        // ResolveOptions::env attempts to avoid pushing unrelated envs.
         let mut env_list = env_list.to_vec();
         env_list.push(("A", "B"));
         let cx = &ResolveOptions::default().env(env_list.iter().copied()).into_context();
