@@ -199,11 +199,6 @@ const _: fn() = || {
     assert_unpin::<crate::easy::RegistriesConfigValue>();
     assert_unwind_safe::<crate::easy::RegistriesConfigValue>();
     assert_ref_unwind_safe::<crate::easy::RegistriesConfigValue>();
-    assert_send::<crate::easy::RegistriesProtocol>();
-    assert_sync::<crate::easy::RegistriesProtocol>();
-    assert_unpin::<crate::easy::RegistriesProtocol>();
-    assert_unwind_safe::<crate::easy::RegistriesProtocol>();
-    assert_ref_unwind_safe::<crate::easy::RegistriesProtocol>();
     assert_send::<crate::easy::RegistryConfig>();
     assert_sync::<crate::easy::RegistryConfig>();
     assert_unpin::<crate::easy::RegistryConfig>();

@@ -498,7 +498,7 @@ impl fmt::Debug for RegistriesConfigValue {
 /// Specifies the protocol used to access crates.io.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub enum RegistriesProtocol {

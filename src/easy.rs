@@ -12,7 +12,7 @@ use std::{
 use serde::Serialize;
 
 use crate::{
-    de::{self, split_encoded, split_space_separated, Color, Frequency, When},
+    de::{self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol, When},
     error::{Context as _, Result},
     process::ProcessBuilder,
     resolve::{ResolveContext, ResolveOptions, TargetTriple, TargetTripleBorrow, TargetTripleRef},
@@ -770,21 +770,6 @@ impl fmt::Debug for RegistriesConfigValue {
             .field("protocol", &protocol)
             .finish_non_exhaustive()
     }
-}
-
-/// Specifies the protocol used to access crates.io.
-///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "kebab-case")]
-#[non_exhaustive]
-pub enum RegistriesProtocol {
-    /// Causes Cargo to clone the entire index of all packages ever published to
-    /// [crates.io](https://crates.io/) from <https://github.com/rust-lang/crates.io-index/>.
-    Git,
-    /// A newer protocol which uses HTTPS to download only what is necessary from
-    /// <https://index.crates.io/>.
-    Sparse,
 }
 
 /// The `[registry]` table.
