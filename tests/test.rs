@@ -83,8 +83,23 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     // TODO
     // [patch.<registry>]
     // [profile.<name>]
+
     // [registries.<name>]
+    assert_eq!(config.registries.len(), 1);
+    assert_eq!(
+        config.registries["crates-io"].index.as_deref(),
+        Some("https://github.com/rust-lang/crates.io-index")
+    );
+    assert_eq!(
+        config.registries["crates-io"].token.as_deref(),
+        Some("00000000000000000000000000000000000")
+    );
+    assert_eq!(config.registries["crates-io"].protocol, Some(RegistriesProtocol::Git));
     // [registry]
+    assert_eq!(config.registry.default.as_deref(), Some("crates-io"));
+    assert_eq!(config.registry.token.as_deref(), Some("00000000000000000000000000000000000"));
+
+    // TODO
     // [source.<name>]
 
     // [target.<triple>] and [target.<cfg>]
