@@ -4,7 +4,7 @@
 use crate::{
     de::{
         BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, NetConfig, PathAndArgs,
-        StringList, StringOrArray, TermConfig, TermProgress,
+        RegistriesConfigValue, RegistryConfig, StringList, StringOrArray, TermConfig, TermProgress,
     },
     error::{Context as _, Error, Result},
     resolve::ResolveContext,
@@ -26,17 +26,65 @@ impl Config {
     /// (e.g., In environment variables, `-` and `.` in the target triple are replaced by `_`)
     #[doc(hidden)] // Not public API.
     pub fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
-        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
         for (k, v) in &cx.env {
+            let definition = || Some(Definition::Environment(k.clone().into()));
+            let error_env_not_unicode = || Error::env_not_unicode(k, v.clone());
+
+            // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
             if let Some(k) = k.strip_prefix("CARGO_ALIAS_") {
                 self.alias.insert(
                     k.to_owned(),
                     StringList::from_string(
-                        v.to_str().ok_or_else(|| Error::env_not_unicode(k, v.clone()))?,
-                        Some(&Definition::Environment(k.to_owned().into())),
+                        v.to_str().ok_or_else(error_env_not_unicode)?,
+                        definition().as_ref(),
                     ),
                 );
                 continue;
+            }
+            // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries
+            else if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
+                if let Some(k) = k.strip_suffix("_INDEX") {
+                    let v = v.to_str().ok_or_else(error_env_not_unicode)?;
+                    let index = Some(Value { val: v.to_owned(), definition: definition() });
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.index = index;
+                    } else {
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index,
+                            token: None,
+                            protocol: None,
+                        });
+                    }
+                    continue;
+                } else if let Some(k) = k.strip_suffix("_TOKEN") {
+                    let v = v.to_str().ok_or_else(error_env_not_unicode)?;
+                    let token = Some(Value { val: v.to_owned(), definition: definition() });
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.token = token;
+                    } else {
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index: None,
+                            token,
+                            protocol: None,
+                        });
+                    }
+                    continue;
+                } else if k == "CRATES_IO_PROTOCOL" {
+                    let k = "crates-io";
+                    let v = v.to_str().ok_or_else(error_env_not_unicode)?;
+                    let protocol =
+                        Some(Value { val: v.to_owned(), definition: definition() }.parse()?);
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.protocol = protocol;
+                    } else {
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index: None,
+                            token: None,
+                            protocol,
+                        });
+                    }
+                    continue;
+                }
             }
         }
 
@@ -46,6 +94,7 @@ impl Config {
         self.doc.apply_env(cx)?;
         self.future_incompat_report.apply_env(cx)?;
         self.net.apply_env(cx)?;
+        self.registry.apply_env(cx)?;
         self.term.apply_env(cx)?;
         Ok(())
     }
@@ -229,6 +278,20 @@ impl ApplyEnv for NetConfig {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline
         if let Some(offline) = cx.env_parse("CARGO_NET_OFFLINE")? {
             self.offline = Some(offline);
+        }
+        Ok(())
+    }
+}
+
+impl ApplyEnv for RegistryConfig {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault
+        if let Some(default) = cx.env_parse("CARGO_REGISTRY_DEFAULT")? {
+            self.default = Some(default);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken
+        if let Some(token) = cx.env_parse("CARGO_REGISTRY_TOKEN")? {
+            self.token = Some(token);
         }
         Ok(())
     }

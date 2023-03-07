@@ -8,6 +8,7 @@ use std::{
     borrow::Cow,
     collections::BTreeMap,
     ffi::OsStr,
+    fmt::{self, Formatter},
     fs,
     path::{Path, PathBuf},
     slice,
@@ -71,8 +72,18 @@ pub struct Config {
     pub net: NetConfig,
     // TODO: patch
     // TODO: profile
-    // TODO: registries
-    // TODO: registry
+    /// The `[registries]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub registries: BTreeMap<String, RegistriesConfigValue>,
+    /// The `[registry]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "RegistryConfig::is_none")]
+    pub registry: RegistryConfig,
     // TODO: source
     /// The `[target]` table.
     ///
@@ -439,6 +450,115 @@ pub struct NetConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offline: Option<Value<bool>>,
+}
+
+/// A value of the `[registries]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+#[derive(Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistriesConfigValue {
+    /// Specifies the URL of the git index for the registry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index: Option<Value<String>>,
+    /// Specifies the authentication token for the given registry.
+    ///
+    /// Note: This library does not read any values in the
+    /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
+    /// file.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Value<String>>,
+    /// Specifies the protocol used to access crates.io.
+    /// Not allowed for any registries besides crates.io.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<Value<RegistriesProtocol>>,
+}
+
+impl fmt::Debug for RegistriesConfigValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { index, token, protocol } = self;
+        let redacted_token = token
+            .as_ref()
+            .map(|token| Value { val: "[REDACTED]", definition: token.definition.clone() });
+        f.debug_struct("RegistriesConfigValue")
+            .field("index", &index)
+            .field("token", &redacted_token)
+            .field("protocol", &protocol)
+            .finish()
+    }
+}
+
+/// Specifies the protocol used to access crates.io.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum RegistriesProtocol {
+    /// Causes Cargo to clone the entire index of all packages ever published to
+    /// [crates.io](https://crates.io/) from <https://github.com/rust-lang/crates.io-index/>.
+    Git,
+    /// A newer protocol which uses HTTPS to download only what is necessary from
+    /// <https://index.crates.io/>.
+    Sparse,
+}
+
+impl FromStr for RegistriesProtocol {
+    type Err = Error;
+
+    fn from_str(protocol: &str) -> Result<Self, Self::Err> {
+        match protocol {
+            "git" => Ok(Self::Git),
+            "sparse" => Ok(Self::Sparse),
+            other => bail!("must be git or sparse, but found `{other}`"),
+        }
+    }
+}
+
+/// The `[registry]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+#[derive(Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistryConfig {
+    /// The name of the registry (from the
+    /// [`registries` table](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries))
+    /// to use by default for registry commands like
+    /// [`cargo publish`](https://doc.rust-lang.org/nightly/cargo/commands/cargo-publish.html).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<Value<String>>,
+    /// Specifies the authentication token for [crates.io](https://crates.io/).
+    ///
+    /// Note: This library does not read any values in the
+    /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
+    /// file.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Value<String>>,
+}
+
+impl fmt::Debug for RegistryConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { default, token } = self;
+        let redacted_token = token
+            .as_ref()
+            .map(|token| Value { val: "[REDACTED]", definition: token.definition.clone() });
+        f.debug_struct("RegistryConfig")
+            .field("default", &default)
+            .field("token", &redacted_token)
+            .finish()
+    }
 }
 
 /// The `[term]` table.

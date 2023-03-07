@@ -13,6 +13,8 @@ impl Merge for crate::de::Config {
         self.env.merge(from.env, force)?;
         self.future_incompat_report.merge(from.future_incompat_report, force)?;
         self.net.merge(from.net, force)?;
+        self.registries.merge(from.registries, force)?;
+        self.registry.merge(from.registry, force)?;
         self.target.merge(from.target, force)?;
         self.term.merge(from.term, force)?;
         Ok(())
@@ -26,6 +28,8 @@ impl SetPath for crate::de::Config {
         self.env.set_path(path);
         self.future_incompat_report.set_path(path);
         self.net.set_path(path);
+        self.registries.set_path(path);
+        self.registry.set_path(path);
         self.target.set_path(path);
         self.term.set_path(path);
     }
@@ -125,6 +129,34 @@ impl SetPath for crate::de::NetConfig {
         self.retry.set_path(path);
         self.git_fetch_with_cli.set_path(path);
         self.offline.set_path(path);
+    }
+}
+impl Merge for crate::de::RegistriesConfigValue {
+    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+        self.index.merge(from.index, force)?;
+        self.token.merge(from.token, force)?;
+        self.protocol.merge(from.protocol, force)?;
+        Ok(())
+    }
+}
+impl SetPath for crate::de::RegistriesConfigValue {
+    fn set_path(&mut self, path: &Path) {
+        self.index.set_path(path);
+        self.token.set_path(path);
+        self.protocol.set_path(path);
+    }
+}
+impl Merge for crate::de::RegistryConfig {
+    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+        self.default.merge(from.default, force)?;
+        self.token.merge(from.token, force)?;
+        Ok(())
+    }
+}
+impl SetPath for crate::de::RegistryConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.default.set_path(path);
+        self.token.set_path(path);
     }
 }
 impl Merge for crate::de::TermConfig {

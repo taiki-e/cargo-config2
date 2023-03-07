@@ -3,6 +3,7 @@ use std::{
     cell::RefCell,
     collections::BTreeMap,
     ffi::{OsStr, OsString},
+    fmt::{self, Formatter},
     ops,
     path::{Path, PathBuf},
     process::Command,
@@ -65,8 +66,18 @@ pub struct Config {
     pub net: NetConfig,
     // TODO: patch
     // TODO: profile
-    // TODO: registries
-    // TODO: registry
+    /// The `[registries]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub registries: BTreeMap<String, RegistriesConfigValue>,
+    /// The `[registry]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "RegistryConfig::is_none")]
+    pub registry: RegistryConfig,
     // TODO: source
     /// The resolved `[target]` table.
     #[serde(skip_deserializing)]
@@ -137,6 +148,11 @@ impl Config {
         let future_incompat_report =
             FutureIncompatReportConfig::from_unresolved(de.future_incompat_report);
         let net = NetConfig::from_unresolved(de.net);
+        let mut registries = BTreeMap::new();
+        for (k, v) in de.registries {
+            registries.insert(k, RegistriesConfigValue::from_unresolved(v));
+        }
+        let registry = RegistryConfig::from_unresolved(de.registry);
         let term = TermConfig::from_unresolved(de.term);
 
         Ok(Self {
@@ -146,6 +162,8 @@ impl Config {
             env,
             future_incompat_report,
             net,
+            registries,
+            registry,
             target: RefCell::new(BTreeMap::new()),
             de_target: de.target,
             term,
@@ -698,6 +716,119 @@ impl NetConfig {
         let git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
         let offline = de.offline.map(|v| v.val);
         Self { retry, git_fetch_with_cli, offline }
+    }
+}
+
+/// A value of the `[registries]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+#[derive(Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistriesConfigValue {
+    /// Specifies the URL of the git index for the registry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index: Option<String>,
+    /// Specifies the authentication token for the given registry.
+    ///
+    /// Note: This library does not read any values in the
+    /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
+    /// file.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+    /// Specifies the protocol used to access crates.io.
+    /// Not allowed for any registries besides crates.io.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<RegistriesProtocol>,
+}
+
+impl RegistriesConfigValue {
+    pub(crate) fn from_unresolved(de: de::RegistriesConfigValue) -> Self {
+        let index = de.index.map(|v| v.val);
+        let token = de.token.map(|v| v.val);
+        let protocol = de.protocol.map(|v| match v.val {
+            de::RegistriesProtocol::Git => RegistriesProtocol::Git,
+            de::RegistriesProtocol::Sparse => RegistriesProtocol::Sparse,
+        });
+        Self { index, token, protocol }
+    }
+}
+
+impl fmt::Debug for RegistriesConfigValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { index, token, protocol } = self;
+        let redacted_token = token.as_ref().map(|_| "[REDACTED]");
+        f.debug_struct("RegistriesConfigValue")
+            .field("index", &index)
+            .field("token", &redacted_token)
+            .field("protocol", &protocol)
+            .finish_non_exhaustive()
+    }
+}
+
+/// Specifies the protocol used to access crates.io.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub enum RegistriesProtocol {
+    /// Causes Cargo to clone the entire index of all packages ever published to
+    /// [crates.io](https://crates.io/) from <https://github.com/rust-lang/crates.io-index/>.
+    Git,
+    /// A newer protocol which uses HTTPS to download only what is necessary from
+    /// <https://index.crates.io/>.
+    Sparse,
+}
+
+/// The `[registry]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+#[derive(Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct RegistryConfig {
+    /// The name of the registry (from the
+    /// [`registries` table](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries))
+    /// to use by default for registry commands like
+    /// [`cargo publish`](https://doc.rust-lang.org/nightly/cargo/commands/cargo-publish.html).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<String>,
+    /// Specifies the authentication token for [crates.io](https://crates.io/).
+    ///
+    /// Note: This library does not read any values in the
+    /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
+    /// file.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+impl RegistryConfig {
+    pub(crate) fn from_unresolved(de: de::RegistryConfig) -> Self {
+        let default = de.default.map(|v| v.val);
+        let token = de.token.map(|v| v.val);
+        Self { default, token }
+    }
+}
+
+impl fmt::Debug for RegistryConfig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self { default, token } = self;
+        let redacted_token = token.as_ref().map(|_| "[REDACTED]");
+        f.debug_struct("RegistryConfig")
+            .field("default", &default)
+            .field("token", &redacted_token)
+            .finish()
     }
 }
 
