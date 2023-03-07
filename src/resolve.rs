@@ -173,6 +173,18 @@ impl ResolveContext {
             })),
         }
     }
+    pub(crate) fn env_redacted(&self, name: &'static str) -> Result<Option<Value<String>>> {
+        match self.env.get(name) {
+            None => Ok(None),
+            Some(v) => Ok(Some(Value {
+                val: v
+                    .clone()
+                    .into_string()
+                    .map_err(|_var| Error::env_not_unicode_redacted(name))?,
+                definition: Some(Definition::Environment(name.into())),
+            })),
+        }
+    }
     pub(crate) fn env_parse<T>(&self, name: &'static str) -> Result<Option<Value<T>>>
     where
         T: FromStr,

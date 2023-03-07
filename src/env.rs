@@ -29,6 +29,7 @@ impl Config {
         for (k, v) in &cx.env {
             let definition = || Some(Definition::Environment(k.clone().into()));
             let error_env_not_unicode = || Error::env_not_unicode(k, v.clone());
+            let error_env_not_unicode_redacted = || Error::env_not_unicode_redacted(k);
 
             // https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias
             if let Some(k) = k.strip_prefix("CARGO_ALIAS_") {
@@ -57,7 +58,7 @@ impl Config {
                     }
                     continue;
                 } else if let Some(k) = k.strip_suffix("_TOKEN") {
-                    let v = v.to_str().ok_or_else(error_env_not_unicode)?;
+                    let v = v.to_str().ok_or_else(error_env_not_unicode_redacted)?;
                     let token = Some(Value { val: v.to_owned(), definition: definition() });
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.token = token;
@@ -286,11 +287,11 @@ impl ApplyEnv for NetConfig {
 impl ApplyEnv for RegistryConfig {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault
-        if let Some(default) = cx.env_parse("CARGO_REGISTRY_DEFAULT")? {
+        if let Some(default) = cx.env("CARGO_REGISTRY_DEFAULT")? {
             self.default = Some(default);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken
-        if let Some(token) = cx.env_parse("CARGO_REGISTRY_TOKEN")? {
+        if let Some(token) = cx.env_redacted("CARGO_REGISTRY_TOKEN")? {
             self.token = Some(token);
         }
         Ok(())

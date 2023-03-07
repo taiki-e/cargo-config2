@@ -46,6 +46,12 @@ impl Error {
             Some(Box::new(std::env::VarError::NotUnicode(var))),
         ))
     }
+    pub(crate) fn env_not_unicode_redacted(name: &str) -> Self {
+        Self(ErrorKind::WithContext(
+            format!("failed to parse environment variable `{name}`"),
+            Some("environment variable was not valid unicode: [REDACTED]".into()),
+        ))
+    }
 }
 
 impl fmt::Display for Error {
