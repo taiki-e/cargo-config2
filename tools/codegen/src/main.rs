@@ -10,6 +10,7 @@ use anyhow::Result;
 use fs_err as fs;
 use quote::{format_ident, quote};
 use syn::{
+    punctuated::Punctuated,
     visit_mut::{self, VisitMut},
     *,
 };
@@ -274,16 +275,15 @@ fn gen_is_none() -> Result<()> {
 fn serde_skip(attrs: &[syn::Attribute]) -> bool {
     for meta in attrs
         .iter()
-        .filter(|attr| attr.path.is_ident("serde"))
-        .filter_map(|attr| attr.parse_meta().ok())
+        .filter(|attr| attr.path().is_ident("serde"))
+        .filter_map(|attr| {
+            attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated).ok()
+        })
+        .flatten()
     {
-        if let syn::Meta::List(list) = meta {
-            for repr in list.nested {
-                if let syn::NestedMeta::Meta(syn::Meta::Path(p)) = repr {
-                    if p.is_ident("skip") {
-                        return true;
-                    }
-                }
+        if let syn::Meta::Path(p) = meta {
+            if p.is_ident("skip") {
+                return true;
             }
         }
     }
