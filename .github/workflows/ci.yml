@@ -68,7 +68,7 @@ jobs:
       - run: rustup toolchain add nightly --no-self-update
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
-      - run: cargo test --workspace --all-features
+      - run: cargo test --workspace --all-features --exclude cargo-config2-internal-codegen
       - run: cargo hack build --workspace --ignore-private --feature-powerset --no-dev-deps
       - run: cargo minimal-versions build --workspace --all-features --ignore-private
 
