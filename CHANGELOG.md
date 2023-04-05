@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Update `cfg-expr` to 0.15.
+
 ## [0.1.6] - 2023-03-07
 
 - Implement the `[registries]` and `[registry]` tables. ([#8](https://github.com/taiki-e/cargo-config2/pull/8), thanks @yottalogical)
