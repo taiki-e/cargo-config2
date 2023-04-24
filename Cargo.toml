@@ -34,7 +34,7 @@ toml = { version = "0.7", default-features = false, features = ["parse"] }
 [dev-dependencies]
 anyhow = "1"
 build-info = { path = "tests/helper/build-info" }
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", default-features = false, features = ["std", "derive"] }
 duct = "0.13"
 fs-err = "2"
 lexopt = "0.3"
