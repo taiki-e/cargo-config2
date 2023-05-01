@@ -3,7 +3,7 @@
 use std::{collections::HashMap, path::Path, str};
 
 use anyhow::{Context as _, Result};
-use build_info::TARGET;
+use build_context::TARGET;
 use cargo_config2::*;
 
 fn test_options() -> ResolveOptions {

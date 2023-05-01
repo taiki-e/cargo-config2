@@ -45,7 +45,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 #![warn(
     clippy::pedantic,
     // lints for public library
-    // clippy::alloc_instead_of_core,
+    clippy::alloc_instead_of_core,
     clippy::exhaustive_enums,
     clippy::exhaustive_structs,
     // clippy::std_instead_of_alloc,
