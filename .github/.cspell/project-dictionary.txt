@@ -1,4 +1,3 @@
-cfgs
 incompat
 tempdir
 tmpdir
