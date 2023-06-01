@@ -636,6 +636,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
     fn parse_cfg_list() {
         // builtin targets
         for target in duct::cmd!("rustc", "--print", "target-list").read().unwrap().lines() {

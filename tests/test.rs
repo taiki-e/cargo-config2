@@ -154,6 +154,7 @@ fn easy_load(dir: &Path, options: ResolveOptions) -> Result<Config> {
     Ok(Config::load_with_options(dir, options)?)
 }
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
 fn easy() {
     use easy_load as de;
 
@@ -164,6 +165,7 @@ fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
     Ok(de::Config::load_with_options(dir, None)?)
 }
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
 fn de() {
     use de_load as de;
 
@@ -178,6 +180,7 @@ fn de() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
 fn custom_target() {
     use easy_load as de;
     struct IsBuiltin(bool);
@@ -230,6 +233,7 @@ fn custom_target() {
 }
 
 #[rustversion::attr(not(nightly), ignore)]
+#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
 #[test]
 fn cargo_config_toml() {
     fn de(dir: &Path) -> Result<de::Config> {
@@ -246,6 +250,7 @@ fn cargo_config_toml() {
 }
 
 #[rustversion::attr(not(nightly), ignore)]
+#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
 #[test]
 fn cargo_config_json() {
     fn de(dir: &Path) -> Result<de::Config> {
@@ -260,6 +265,7 @@ fn cargo_config_json() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
 fn test_cargo_behavior() -> Result<()> {
     let (_tmp, root) = test_project("empty").unwrap();
     let dir = &root;
