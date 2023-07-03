@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix build error from dependency when built with `-Z minimal-versions`.
+
 ## [0.1.7] - 2023-04-05
 
 - Update `cfg-expr` to 0.15.
