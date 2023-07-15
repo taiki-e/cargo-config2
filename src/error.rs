@@ -79,6 +79,7 @@ impl std::error::Error for Error {
     }
 }
 
+// TODO: consider removing this in the next breaking release
 impl From<Error> for io::Error {
     fn from(e: Error) -> Self {
         match e.0 {
