@@ -1,5 +1,5 @@
 use std::{
-    ffi::OsString,
+    ffi::OsStr,
     fmt,
     process::{Command, ExitStatus, Output},
     str,
@@ -24,39 +24,33 @@ macro_rules! cmd {
 
 // A builder for an external process, inspired by https://github.com/rust-lang/cargo/blob/0.47.0/src/cargo/util/process_builder.rs
 #[must_use]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct ProcessBuilder {
-    /// The program to execute.
-    program: OsString,
-    /// A list of arguments to pass to the program.
-    args: Vec<OsString>,
+    cmd: Command,
 }
 
 impl ProcessBuilder {
     /// Creates a new `ProcessBuilder`.
-    pub(crate) fn new(program: impl Into<OsString>) -> Self {
-        Self { program: program.into(), args: Vec::new() }
+    pub(crate) fn new(program: impl AsRef<OsStr>) -> Self {
+        Self { cmd: Command::new(program.as_ref()) }
     }
 
     /// Adds an argument to pass to the program.
-    pub(crate) fn arg(&mut self, arg: impl Into<OsString>) -> &mut Self {
-        self.args.push(arg.into());
+    pub(crate) fn arg(&mut self, arg: impl AsRef<OsStr>) -> &mut Self {
+        self.cmd.arg(arg.as_ref());
         self
     }
 
     /// Adds multiple arguments to pass to the program.
-    pub(crate) fn args(
-        &mut self,
-        args: impl IntoIterator<Item = impl Into<OsString>>,
-    ) -> &mut Self {
-        self.args.extend(args.into_iter().map(Into::into));
+    pub(crate) fn args(&mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> &mut Self {
+        self.cmd.args(args);
         self
     }
 
     /// Executes a process, captures its stdio output, returning the captured
     /// output, or an error if non-zero exit status.
     pub(crate) fn run_with_output(&mut self) -> Result<Output> {
-        let output = self.build().output().with_context(|| {
+        let output = self.cmd.output().with_context(|| {
             ProcessError::new(&format!("could not execute process {self}"), None, None)
         })?;
         if output.status.success() {
@@ -80,12 +74,6 @@ impl ProcessBuilder {
         }
         Ok(output)
     }
-
-    fn build(&self) -> Command {
-        let mut cmd = Command::new(&self.program);
-        cmd.args(&self.args);
-        cmd
-    }
 }
 
 // Based on https://github.com/rust-lang/cargo/blob/0.47.0/src/cargo/util/process_builder.rs
@@ -95,9 +83,9 @@ impl fmt::Display for ProcessBuilder {
             write!(f, "`")?;
         }
 
-        write!(f, "{}", self.program.to_string_lossy())?;
+        write!(f, "{}", self.cmd.get_program().to_string_lossy())?;
 
-        for arg in &self.args {
+        for arg in self.cmd.get_args() {
             write!(f, " {}", escape(arg.to_string_lossy()))?;
         }
 
