@@ -433,7 +433,7 @@ impl PartialEq for TargetTripleRef<'_> {
 impl Eq for TargetTripleRef<'_> {}
 impl PartialOrd for TargetTripleRef<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.cli_target().partial_cmp(other.cli_target())
+        Some(self.cmp(other))
     }
 }
 impl Ord for TargetTripleRef<'_> {
