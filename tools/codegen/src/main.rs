@@ -1,5 +1,5 @@
 #![warn(rust_2018_idioms, single_use_lifetimes)]
-#![allow(clippy::match_on_vec_items, clippy::needless_pass_by_value)]
+#![allow(clippy::match_on_vec_items, clippy::needless_pass_by_value, clippy::redundant_guards)]
 
 #[macro_use]
 mod file;
