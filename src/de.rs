@@ -9,7 +9,7 @@ use std::{
     collections::BTreeMap,
     ffi::OsStr,
     fmt::{self, Formatter},
-    fs,
+    fs, ops,
     path::{Path, PathBuf},
     slice,
     str::FromStr,
@@ -372,7 +372,7 @@ pub struct DocConfig {
 /// A value of the `[env]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 #[non_exhaustive]
 pub enum EnvConfigValue {
@@ -405,6 +405,34 @@ impl EnvConfigValue {
                 }
                 OsStr::new(&value.val).into()
             }
+        }
+    }
+}
+
+impl Serialize for EnvConfigValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Always serialize as a table to workaround ValueAfterTable error with basic-toml or old toml.
+        #[derive(Serialize)]
+        struct Repr<'a> {
+            value: &'a str,
+            #[serde(skip_serializing_if = "ops::Not::not")]
+            force: bool,
+            #[serde(skip_serializing_if = "ops::Not::not")]
+            relative: bool,
+        }
+        match self {
+            Self::Value(value) => {
+                Repr { value: &value.val, force: false, relative: false }.serialize(serializer)
+            }
+            Self::Table { value, force, relative, .. } => Repr {
+                value: &value.val,
+                force: force.as_ref().map_or(false, |v| v.val),
+                relative: relative.as_ref().map_or(false, |v| v.val),
+            }
+            .serialize(serializer),
         }
     }
 }

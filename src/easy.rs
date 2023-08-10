@@ -634,29 +634,17 @@ impl Serialize for EnvConfigValue {
     where
         S: serde::Serializer,
     {
+        // Always serialize as a table to workaround ValueAfterTable error with basic-toml or old toml.
         #[derive(Serialize)]
-        #[serde(untagged)]
-        enum EnvRepr<'a> {
-            Value(Cow<'a, str>),
-            Table {
-                value: Cow<'a, str>,
-                #[serde(skip_serializing_if = "ops::Not::not")]
-                force: bool,
-                #[serde(skip_serializing_if = "ops::Not::not")]
-                relative: bool,
-            },
+        struct Repr<'a> {
+            value: Cow<'a, str>,
+            #[serde(skip_serializing_if = "ops::Not::not")]
+            force: bool,
+            #[serde(skip_serializing_if = "ops::Not::not")]
+            relative: bool,
         }
-        match self {
-            Self { value, force: false, relative: false } => {
-                EnvRepr::Value(value.to_string_lossy()).serialize(serializer)
-            }
-            Self { value, force, relative, .. } => EnvRepr::Table {
-                value: value.to_string_lossy(),
-                force: *force,
-                relative: *relative,
-            }
-            .serialize(serializer),
-        }
+        Repr { value: self.value.to_string_lossy(), force: self.force, relative: self.relative }
+            .serialize(serializer)
     }
 }
 

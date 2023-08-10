@@ -33,6 +33,7 @@ toml = { version = "0.7", default-features = false, features = ["parse"] }
 
 [dev-dependencies]
 anyhow = "1"
+basic-toml = "0.1"
 build-context = "0.1"
 clap = { version = "4", default-features = false, features = ["std", "derive"] }
 duct = "0.13"

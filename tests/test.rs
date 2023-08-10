@@ -146,6 +146,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     assert_eq!(config.term.progress.width, Some(80));
 
     let _config = toml::to_string(&config).unwrap();
+    let _config = basic_toml::to_string(&config).unwrap();
 
     Ok(())
 }
@@ -175,8 +176,10 @@ fn de() {
     let config = base_config.clone();
 
     let _config = toml::to_string(&config).unwrap();
+    let _config = basic_toml::to_string(&config).unwrap();
 
     assert_eq!("", toml::to_string(&de::Config::default()).unwrap());
+    assert_eq!("", basic_toml::to_string(&de::Config::default()).unwrap());
 }
 
 #[test]
@@ -224,6 +227,7 @@ fn custom_target() {
         assert_eq!(config.build_target_for_cli([spec_file_name])?, vec![spec_file_name.to_owned()]);
 
         let _config = toml::to_string(&config).unwrap();
+        let _config = basic_toml::to_string(&config).unwrap();
 
         Ok(())
     }

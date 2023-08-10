@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Work around `ValueAfterTable` error when serializing with `basic-toml` or old version of `toml`.
+
 ## [0.1.8] - 2023-07-03
 
 - Fix build error from dependency when built with `-Z minimal-versions`.
