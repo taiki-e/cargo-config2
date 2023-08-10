@@ -54,10 +54,10 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
 
     // [env]
     assert_eq!(config.env["ENV_VAR_NAME"].value, "value");
-    assert_eq!(config.env["ENV_VAR_NAME"].force, false);
+    assert_eq!(config.env["ENV_VAR_NAME"].force, true);
     assert_eq!(config.env["ENV_VAR_NAME"].relative, false);
     assert_eq!(config.env["ENV_VAR_NAME_2"].value, "value");
-    assert_eq!(config.env["ENV_VAR_NAME_2"].force, true);
+    assert_eq!(config.env["ENV_VAR_NAME_2"].force, false);
     assert_eq!(config.env["ENV_VAR_NAME_2"].relative, false);
     assert_eq!(config.env["ENV_VAR_NAME_3"].value, dir.join("relative/path"));
     assert_eq!(config.env["ENV_VAR_NAME_3"].force, false);

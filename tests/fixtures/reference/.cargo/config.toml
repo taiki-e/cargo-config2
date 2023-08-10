@@ -30,9 +30,9 @@ browser = "chromium"          # browser to use with `cargo doc --open`,
 
 [env]
 # Set ENV_VAR_NAME=value for any process run by Cargo
-ENV_VAR_NAME = "value"
+ENV_VAR_NAME = { value = "value", force = true }
 # Set even if already present in environment
-ENV_VAR_NAME_2 = { value = "value", force = true }
+ENV_VAR_NAME_2 = "value"
 # Value is relative to .cargo directory containing `config.toml`, make absolute
 ENV_VAR_NAME_3 = { value = "relative/path", relative = true }
 
