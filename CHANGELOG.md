@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Replace `toml` with [`basic-toml`](https://github.com/dtolnay/basic-toml).
+
 - Work around `ValueAfterTable` error when serializing with `basic-toml` or old version of `toml`.
 
 ## [0.1.8] - 2023-07-03

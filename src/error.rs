@@ -93,7 +93,7 @@ impl From<Error> for io::Error {
             ErrorKind::WithContext(msg, Some(source)) => {
                 let kind = if let Some(e) = source.downcast_ref::<io::Error>() {
                     e.kind()
-                } else if source.downcast_ref::<toml::de::Error>().is_some() {
+                } else if source.downcast_ref::<basic_toml::Error>().is_some() {
                     io::ErrorKind::InvalidData
                 } else {
                     io::ErrorKind::Other
