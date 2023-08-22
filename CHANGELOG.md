@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Recognize unstable `target.cfg(relocation_model = "...")` on nightly.
+
 ## [0.1.8] - 2023-07-03
 
 - Fix build error from dependency when built with `-Z minimal-versions`.

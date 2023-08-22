@@ -330,7 +330,9 @@ impl Cfg {
                             vendor = Some(cfg_expr::targets::Vendor::new(value.to_owned()));
                         }
                         // Unstable cfgs recognized by Cargo
-                        "target_has_atomic_equal_alignment" | "target_has_atomic_load_store" => {
+                        "target_has_atomic_equal_alignment"
+                        | "target_has_atomic_load_store"
+                        | "relocation_model" => {
                             if let Some(values) = key_values.get_mut(name) {
                                 values.insert(value.to_owned());
                             } else {
