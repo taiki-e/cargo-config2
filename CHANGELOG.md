@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Remove dependency on `cfg-expr`.
+
 ## [0.1.9] - 2023-08-22
 
 - Recognize unstable `target.cfg(relocation_model = "...")` on nightly.
