@@ -24,7 +24,6 @@ doc-scrape-examples = false
 
 # Note: serde is public dependencies.
 [dependencies]
-cfg-expr = "0.15"
 home = "0.5"
 once_cell = { version = "1", default-features = false }
 serde = { version = "1.0.165", features = ["derive"] }
@@ -40,6 +39,7 @@ fs-err = "2"
 lexopt = "0.3"
 rustversion = "1"
 serde_json = "1"
+similar-asserts = "1"
 static_assertions = "1"
 tempfile = "3"
 toml = "0.7"

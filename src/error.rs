@@ -29,7 +29,7 @@ pub(crate) enum ErrorKind {
 
     Process(crate::process::ProcessError),
 
-    CfgExprParse(cfg_expr::error::ParseError),
+    CfgExprParse(crate::cfg_expr::error::ParseError),
 
     Other(String),
     WithContext(String, Option<Box<dyn std::error::Error + Send + Sync + 'static>>),
@@ -114,8 +114,8 @@ impl From<crate::process::ProcessError> for ErrorKind {
         Self::Process(e)
     }
 }
-impl From<cfg_expr::error::ParseError> for ErrorKind {
-    fn from(e: cfg_expr::error::ParseError) -> Self {
+impl From<crate::cfg_expr::error::ParseError> for ErrorKind {
+    fn from(e: crate::cfg_expr::error::ParseError) -> Self {
         Self::CfgExprParse(e)
     }
 }

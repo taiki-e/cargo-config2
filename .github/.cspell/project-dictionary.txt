@@ -1,3 +1,4 @@
+fxsr
 incompat
 tempdir
 tmpdir

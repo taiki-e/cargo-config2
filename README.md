@@ -52,3 +52,11 @@ Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall
 be dual licensed as above, without any additional terms or conditions.
+
+### Third party software
+
+This product includes copies and modifications of software developed by third parties:
+
+- [`src/cfg_expr`](https://github.com/taiki-e/cargo-config2/tree/HEAD/src/cfg_expr) includes copies and modifications of [`cfg-expr` crate](https://github.com/EmbarkStudios/cfg-expr) by Embark Studios, licensed under "MIT OR Apache-2.0".
+
+See the license files included in these directories for more details.

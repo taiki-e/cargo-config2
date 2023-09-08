@@ -8,11 +8,11 @@ use std::{
     str::FromStr,
 };
 
-use cfg_expr::{Expression, Predicate};
 use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    cfg_expr::{Expression, Predicate},
     easy,
     error::{Context as _, Error, Result},
     process::ProcessBuilder,
@@ -130,7 +130,7 @@ pub struct ResolveContext {
     pub(crate) cargo: OsString,
     cargo_home: OnceCell<Option<PathBuf>>,
     host_triple: OnceCell<String>,
-    cfg: RefCell<HashMap<TargetTripleBorrow<'static>, Cfg>>,
+    cfg: RefCell<CfgMap>,
 }
 
 impl ResolveContext {
@@ -214,60 +214,65 @@ impl ResolveContext {
         target: &TargetTripleRef<'_>,
         build_config: &easy::BuildConfig,
     ) -> Result<bool> {
-        let mut cfg_map = self.cfg.borrow_mut();
         let expr = Expression::parse(expr).map_err(Error::new)?;
-        let cfg = match cfg_map.get(target.cli_target()) {
+        let mut cfg_map = self.cfg.borrow_mut();
+        cfg_map.eval_cfg(&expr, target, || self.rustc(build_config).clone().into())
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct CfgMap {
+    map: HashMap<TargetTripleBorrow<'static>, Cfg>,
+}
+
+impl CfgMap {
+    pub(crate) fn eval_cfg(
+        &mut self,
+        expr: &Expression,
+        target: &TargetTripleRef<'_>,
+        rustc: impl FnOnce() -> ProcessBuilder,
+    ) -> Result<bool> {
+        let cfg = match self.map.get(target.cli_target()) {
             Some(cfg) => cfg,
             None => {
-                let cfg = Cfg::from_rustc(self.rustc(build_config).clone().into(), target)?;
-                cfg_map.insert(TargetTripleBorrow(target.clone().into_owned()), cfg);
-                &cfg_map[target.cli_target()]
+                let cfg = Cfg::from_rustc(rustc(), target)?;
+                self.map.insert(TargetTripleBorrow(target.clone().into_owned()), cfg);
+                &self.map[target.cli_target()]
             }
         };
         Ok(expr.eval(|pred| match pred {
-            Predicate::Target(pred) => cfg.target_info.matches(pred),
-            Predicate::TargetFeature(feature) => cfg.target_features.contains(*feature),
-            Predicate::Flag(flag) => cfg.flags.contains(*flag),
-            Predicate::KeyValue { key, val } => {
-                cfg.key_values.get(*key).map_or(false, |values| values.contains(*val))
+            Predicate::Flag(flag) => {
+                match *flag {
+                    // https://github.com/rust-lang/cargo/pull/7660
+                    "test" | "debug_assertions" | "proc_macro" => false,
+                    flag => cfg.flags.contains(flag),
+                }
             }
-            // https://github.com/rust-lang/cargo/pull/7660
-            Predicate::Test
-            | Predicate::DebugAssertions
-            | Predicate::ProcMacro
-            | Predicate::Feature(_) => false,
+            Predicate::KeyValue { key, val } => {
+                match *key {
+                    // https://github.com/rust-lang/cargo/pull/7660
+                    "feature" => false,
+                    key => cfg.key_values.get(key).map_or(false, |values| values.contains(*val)),
+                }
+            }
         }))
     }
 }
 
 #[derive(Debug, Clone)]
 struct Cfg {
-    target_info: TargetCfg,
-    target_features: HashSet<String>,
     flags: HashSet<String>,
     key_values: HashMap<String, HashSet<String>>,
 }
 
 impl Cfg {
     fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
-        let cmd = rustc.args(["--print", "cfg", "--target", &*target.cli_target_string()]);
-        let list = cmd.read()?;
-        Self::parse(&list)
-            .with_context(|| format_err!("unexpected cfg output from `{cmd}`: {list}"))
+        let list =
+            rustc.args(["--print", "cfg", "--target", &*target.cli_target_string()]).read()?;
+        Ok(Self::parse(&list))
     }
 
-    fn parse(list: &str) -> Result<Self> {
-        let mut os = None;
-        let mut abi = None;
-        let mut arch = None;
-        let mut env = None;
-        let mut vendor = None;
-        let mut families = vec![];
-        let mut endian = None;
-        let mut has_atomics = vec![];
-        let mut panic = None;
-        let mut pointer_width = None;
-        let mut target_features = HashSet::default();
+    fn parse(list: &str) -> Self {
         let mut flags = HashSet::default();
         let mut key_values = HashMap::<String, HashSet<String>>::default();
 
@@ -281,7 +286,7 @@ impl Cfg {
                     flags.insert(line.to_owned());
                 }
                 Some((name, value)) => {
-                    if !value.starts_with('"') || !value.ends_with('"') {
+                    if value.len() < 2 || !value.starts_with('"') || !value.ends_with('"') {
                         #[cfg(test)]
                         panic!("invalid value '{value}'");
                         #[cfg(not(test))]
@@ -292,45 +297,20 @@ impl Cfg {
                         continue;
                     }
                     match name {
-                        "panic" => panic = Some(cfg_expr::targets::Panic::new(value.to_owned())),
-                        "target_abi" => abi = Some(cfg_expr::targets::Abi::new(value.to_owned())),
-                        "target_arch" => {
-                            arch = Some(cfg_expr::targets::Arch::new(value.to_owned()));
-                        }
-                        "target_endian" => {
-                            endian = Some(if value == "little" {
-                                cfg_expr::targets::Endian::little
-                            } else {
-                                cfg_expr::targets::Endian::big
-                            });
-                        }
-                        "target_env" => env = Some(cfg_expr::targets::Env::new(value.to_owned())),
-                        "target_family" => {
-                            families.push(cfg_expr::targets::Family::new(value.to_owned()));
-                        }
-                        "target_feature" => {
-                            target_features.insert(value.to_owned());
-                        }
-                        "target_has_atomic" => {
-                            has_atomics.push(
-                                value
-                                    .parse::<cfg_expr::targets::HasAtomic>()
-                                    .context("failed to parse `target_has_atomic=\"..\"`")?,
-                            );
-                        }
-                        "target_os" => os = Some(cfg_expr::targets::Os::new(value.to_owned())),
-                        "target_pointer_width" => {
-                            pointer_width = Some(
-                                value
-                                    .parse::<u8>()
-                                    .context("failed to parse `target_pointer_width=\"..\"`")?,
-                            );
-                        }
-                        "target_vendor" => {
-                            vendor = Some(cfg_expr::targets::Vendor::new(value.to_owned()));
-                        }
+                        // Stable cfgs recognized by Cargo
+                        "panic"
+                        | "target_abi"
+                        | "target_arch"
+                        | "target_endian"
+                        | "target_env"
+                        | "target_family"
+                        | "target_feature"
+                        | "target_has_atomic"
+                        | "target_os"
+                        | "target_pointer_width"
+                        | "target_vendor"
                         // Unstable cfgs recognized by Cargo
-                        "target_has_atomic_equal_alignment"
+                        | "target_has_atomic_equal_alignment"
                         | "target_has_atomic_load_store"
                         | "relocation_model" => {
                             if let Some(values) = key_values.get_mut(name) {
@@ -350,72 +330,7 @@ impl Cfg {
             }
         }
 
-        Ok(Cfg {
-            target_info: TargetCfg {
-                os,
-                abi,
-                arch: arch.unwrap(),
-                env,
-                vendor,
-                families: cfg_expr::targets::Families::new(families),
-                pointer_width: pointer_width.unwrap(),
-                endian: endian.unwrap(),
-                has_atomics: cfg_expr::targets::HasAtomics::new(has_atomics),
-                panic,
-            },
-            target_features,
-            flags,
-            key_values,
-        })
-    }
-}
-
-// Based on cfg_expr::targets::TargetInfo, but compatible with old rustc's cfg output.
-#[derive(Debug, Clone)]
-struct TargetCfg {
-    os: Option<cfg_expr::targets::Os>,
-    abi: Option<cfg_expr::targets::Abi>,
-    arch: cfg_expr::targets::Arch,
-    env: Option<cfg_expr::targets::Env>,
-    vendor: Option<cfg_expr::targets::Vendor>,
-    families: cfg_expr::targets::Families,
-    pointer_width: u8,
-    endian: cfg_expr::targets::Endian,
-    // available on stable 1.60+ or nightly
-    has_atomics: cfg_expr::targets::HasAtomics,
-    // available on stable 1.60+ or nightly
-    panic: Option<cfg_expr::targets::Panic>,
-}
-
-impl TargetCfg {
-    fn matches(&self, tp: &cfg_expr::TargetPredicate) -> bool {
-        use cfg_expr::TargetPredicate::{
-            Abi, Arch, Endian, Env, Family, HasAtomic, Os, Panic, PointerWidth, Vendor,
-        };
-
-        match tp {
-            // The ABI is allowed to be an empty string
-            Abi(abi) => match &self.abi {
-                Some(a) => abi == a,
-                None => abi.0.is_empty(),
-            },
-            Arch(a) => a == &self.arch,
-            Endian(end) => *end == self.endian,
-            // The environment is allowed to be an empty string
-            Env(env) => match &self.env {
-                Some(e) => env == e,
-                None => env.0.is_empty(),
-            },
-            Family(fam) => self.families.contains(fam),
-            HasAtomic(has_atomic) => self.has_atomics.contains(*has_atomic),
-            Os(os) => Some(os) == self.os.as_ref(),
-            PointerWidth(w) => *w == self.pointer_width,
-            Vendor(ven) => match &self.vendor {
-                Some(v) => ven == v,
-                None => ven == &cfg_expr::targets::Vendor::unknown,
-            },
-            Panic(panic) => Some(panic) == self.panic.as_ref(),
-        }
+        Cfg { flags, key_values }
     }
 }
 
@@ -638,10 +553,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
+    #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
     fn parse_cfg_list() {
         // builtin targets
-        for target in duct::cmd!("rustc", "--print", "target-list").read().unwrap().lines() {
+        for target in cmd!("rustc", "--print", "target-list").read().unwrap().lines() {
             let _cfg = Cfg::from_rustc(cmd!("rustc"), &target.into()).unwrap();
         }
         // custom targets

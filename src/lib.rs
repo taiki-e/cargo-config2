@@ -76,6 +76,7 @@ mod error;
 #[macro_use]
 mod process;
 
+mod cfg_expr;
 pub mod de;
 mod easy;
 mod env;
