@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Remove dependency on `shell-escape`.
+
 ## [0.1.10] - 2023-09-08
 
 - Remove dependency on `cfg-expr`.

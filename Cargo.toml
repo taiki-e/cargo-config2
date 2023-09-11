@@ -27,7 +27,6 @@ doc-scrape-examples = false
 home = "0.5"
 once_cell = { version = "1", default-features = false }
 serde = { version = "1.0.165", features = ["derive"] }
-shell-escape = "0.1.5"
 toml = { version = "0.7", default-features = false, features = ["parse"] }
 
 [dev-dependencies]
@@ -40,6 +39,7 @@ ignore = "0.4"
 lexopt = "0.3"
 rustversion = "1"
 serde_json = "1"
+shell-escape = "0.1.5"
 similar-asserts = "1"
 static_assertions = "1"
 tempfile = "3"

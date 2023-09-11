@@ -5,8 +5,6 @@ use std::{
     str,
 };
 
-use shell_escape::escape;
-
 use crate::{
     error::{Context as _, Result},
     Error,
@@ -85,7 +83,7 @@ impl fmt::Display for ProcessBuilder {
         write!(f, "{}", self.cmd.get_program().to_string_lossy())?;
 
         for arg in self.cmd.get_args() {
-            write!(f, " {}", escape(arg.to_string_lossy()))?;
+            write!(f, " {}", arg.to_string_lossy())?;
         }
 
         if !f.alternate() {
