@@ -6,4 +6,3 @@ lexopt
 prettyplease
 rustversion
 tempfile
-walkdir

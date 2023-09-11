@@ -325,7 +325,9 @@ mod helper {
             workspace_root = tmpdir_path.to_path_buf();
         }
 
-        for entry in walkdir::WalkDir::new(&model_path).into_iter().filter_map(Result::ok) {
+        for entry in
+            ignore::WalkBuilder::new(&model_path).hidden(false).build().filter_map(Result::ok)
+        {
             let path = entry.path();
             let tmp_path = &tmpdir_path.join(path.strip_prefix(&model_path)?);
             if !tmp_path.exists() {
