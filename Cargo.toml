@@ -27,7 +27,7 @@ doc-scrape-examples = false
 home = "0.5"
 once_cell = { version = "1", default-features = false }
 serde = { version = "1.0.165", features = ["derive"] }
-toml = { version = "0.7", default-features = false, features = ["parse"] }
+toml = { version = "0.8", default-features = false, features = ["parse"] }
 
 [dev-dependencies]
 anyhow = "1"
@@ -43,4 +43,4 @@ shell-escape = "0.1"
 similar-asserts = "1"
 static_assertions = "1"
 tempfile = "3"
-toml = "0.7"
+toml = "0.8"
