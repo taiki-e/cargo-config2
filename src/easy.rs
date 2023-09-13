@@ -1073,9 +1073,7 @@ impl From<PathAndArgs> for Command {
 }
 impl From<PathAndArgs> for ProcessBuilder {
     fn from(value: PathAndArgs) -> Self {
-        let mut cmd = ProcessBuilder::new(value.path);
-        cmd.args(value.args);
-        cmd
+        ProcessBuilder::from_std(Command::from(value))
     }
 }
 

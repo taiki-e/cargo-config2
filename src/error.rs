@@ -27,8 +27,6 @@ pub(crate) enum ErrorKind {
     Env(std::env::VarError),
     Io(io::Error),
 
-    Process(crate::process::ProcessError),
-
     CfgExprParse(crate::cfg_expr::error::ParseError),
 
     Other(String),
@@ -59,7 +57,6 @@ impl fmt::Display for Error {
         match &self.0 {
             ErrorKind::Env(e) => fmt::Display::fmt(e, f),
             ErrorKind::Io(e) => fmt::Display::fmt(e, f),
-            ErrorKind::Process(e) => fmt::Display::fmt(e, f),
             ErrorKind::CfgExprParse(e) => fmt::Display::fmt(e, f),
             ErrorKind::Other(e) | ErrorKind::WithContext(e, ..) => fmt::Display::fmt(e, f),
         }
@@ -71,7 +68,6 @@ impl std::error::Error for Error {
         match &self.0 {
             ErrorKind::Env(e) => e.source(),
             ErrorKind::Io(e) => e.source(),
-            ErrorKind::Process(e) => e.source(),
             ErrorKind::CfgExprParse(e) => e.source(),
             ErrorKind::Other(_) => None,
             ErrorKind::WithContext(_, e) => Some(&**e.as_ref()?),
@@ -85,7 +81,6 @@ impl From<Error> for io::Error {
         match e.0 {
             ErrorKind::Env(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Io(e) => e,
-            ErrorKind::Process(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::CfgExprParse(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Other(e) | ErrorKind::WithContext(e, None) => {
                 Self::new(io::ErrorKind::Other, e)
@@ -107,11 +102,6 @@ impl From<Error> for io::Error {
 impl From<String> for ErrorKind {
     fn from(s: String) -> Self {
         Self::Other(s)
-    }
-}
-impl From<crate::process::ProcessError> for ErrorKind {
-    fn from(e: crate::process::ProcessError) -> Self {
-        Self::Process(e)
     }
 }
 impl From<crate::cfg_expr::error::ParseError> for ErrorKind {
