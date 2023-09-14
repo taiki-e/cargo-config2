@@ -24,7 +24,6 @@ pub struct Error(ErrorKind);
 // don't expose dependencies' types directly in the public API.
 #[derive(Debug)]
 pub(crate) enum ErrorKind {
-    Env(std::env::VarError),
     Io(io::Error),
 
     CfgExprParse(crate::cfg_expr::error::ParseError),
@@ -55,7 +54,6 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.0 {
-            ErrorKind::Env(e) => fmt::Display::fmt(e, f),
             ErrorKind::Io(e) => fmt::Display::fmt(e, f),
             ErrorKind::CfgExprParse(e) => fmt::Display::fmt(e, f),
             ErrorKind::Other(e) | ErrorKind::WithContext(e, ..) => fmt::Display::fmt(e, f),
@@ -66,7 +64,6 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.0 {
-            ErrorKind::Env(e) => e.source(),
             ErrorKind::Io(e) => e.source(),
             ErrorKind::CfgExprParse(e) => e.source(),
             ErrorKind::Other(_) => None,
@@ -79,7 +76,6 @@ impl std::error::Error for Error {
 impl From<Error> for io::Error {
     fn from(e: Error) -> Self {
         match e.0 {
-            ErrorKind::Env(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Io(e) => e,
             ErrorKind::CfgExprParse(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Other(e) | ErrorKind::WithContext(e, None) => {
@@ -116,14 +112,15 @@ impl From<crate::cfg_expr::error::ParseError> for ErrorKind {
 // as it would be a breaking change to remove the implementation if the
 // conversion is no longer needed due to changes in the internal implementation.
 // TODO: consider removing them in the next breaking release
-impl From<std::env::VarError> for Error {
-    fn from(e: std::env::VarError) -> Self {
-        Self(ErrorKind::Env(e))
-    }
-}
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
         Self(ErrorKind::Io(e))
+    }
+}
+// TODO: this is no longer used in our code; remove in the next breaking release
+impl From<std::env::VarError> for Error {
+    fn from(e: std::env::VarError) -> Self {
+        Self(ErrorKind::Other(e.to_string()))
     }
 }
 
