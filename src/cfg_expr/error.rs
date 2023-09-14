@@ -109,17 +109,3 @@ impl Error for ParseError {
         }
     }
 }
-
-/// Error parsing a `target_has_atomic` predicate.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct HasAtomicParseError {
-    pub(crate) input: String,
-}
-
-impl fmt::Display for HasAtomicParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "expected integer or \"ptr\", found {}", self.input)
-    }
-}
-
-impl Error for HasAtomicParseError {}
