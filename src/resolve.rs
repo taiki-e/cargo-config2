@@ -163,7 +163,7 @@ impl ResolveContext {
         Ok(self.host_triple.get_or_try_init(|| host_triple(&self.cargo))?)
     }
 
-    //  micro-optimization for static name -- avoiding name allocation can speed up
+    // micro-optimization for static name -- avoiding name allocation can speed up
     // de::Config::apply_env by up to 40% because most env var names we fetch are static.
     pub(crate) fn env(&self, name: &'static str) -> Result<Option<Value<String>>> {
         match self.env.get(name) {
@@ -297,41 +297,18 @@ impl Cfg {
                     if value.is_empty() {
                         continue;
                     }
-                    match name {
-                        // Stable cfgs recognized by Cargo
-                        "panic"
-                        | "target_abi"
-                        | "target_arch"
-                        | "target_endian"
-                        | "target_env"
-                        | "target_family"
-                        | "target_feature"
-                        | "target_has_atomic"
-                        | "target_os"
-                        | "target_pointer_width"
-                        | "target_vendor"
-                        // Unstable cfgs recognized by Cargo
-                        | "target_has_atomic_equal_alignment"
-                        | "target_has_atomic_load_store"
-                        | "relocation_model" => {
-                            if let Some(values) = key_values.get_mut(name) {
-                                values.insert(value.to_owned());
-                            } else {
-                                let mut values = HashSet::default();
-                                values.insert(value.to_owned());
-                                key_values.insert(name.to_owned(), values);
-                            }
-                        }
-                        #[cfg(test)]
-                        _ => panic!("unrecognized cfg '{name}'"),
-                        #[cfg(not(test))]
-                        _ => {}
+                    if let Some(values) = key_values.get_mut(name) {
+                        values.insert(value.to_owned());
+                    } else {
+                        let mut values = HashSet::default();
+                        values.insert(value.to_owned());
+                        key_values.insert(name.to_owned(), values);
                     }
                 }
             }
         }
 
-        Cfg { flags, key_values }
+        Self { flags, key_values }
     }
 }
 
