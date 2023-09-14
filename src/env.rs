@@ -340,7 +340,8 @@ mod tests {
     fn empty_string_wrapper_envs() {
         let env_list = [("RUSTC_WRAPPER", ""), ("RUSTC_WORKSPACE_WRAPPER", "")];
         let mut config = crate::de::BuildConfig::default();
-        let cx = &ResolveOptions::default().env(env_list).into_context();
+        let cx =
+            &ResolveOptions::default().env(env_list).into_context(std::env::current_dir().unwrap());
         config.rustc_wrapper = Some(Value { val: "rustc_wrapper".to_string(), definition: None });
         config.rustc_workspace_wrapper =
             Some(Value { val: "rustc_workspace_wrapper".to_string(), definition: None });

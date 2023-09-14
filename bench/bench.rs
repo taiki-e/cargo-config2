@@ -27,7 +27,7 @@ fn reference(c: &mut Criterion) {
     });
     g.bench_function("apply_env_no_env", |b| {
         let config = &black_box(cargo_config2::de::Config::default());
-        let cx = &mut black_box(test_options().into_context());
+        let cx = &mut black_box(test_options().into_context(std::env::current_dir().unwrap()));
         b.iter(|| {
             let mut config = black_box(config.clone());
             config.apply_env(cx).unwrap();
@@ -80,7 +80,7 @@ fn reference(c: &mut Criterion) {
                 .env(env_list)
                 .cargo_home(None)
                 .rustc(PathAndArgs::new("rustc"))
-                .into_context(),
+                .into_context(std::env::current_dir().unwrap()),
         );
         b.iter(|| {
             let mut config = black_box(config.clone());

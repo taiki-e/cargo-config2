@@ -96,7 +96,7 @@ impl ResolveOptions {
 
     #[allow(clippy::missing_panics_doc)] // false positive: this function is #[doc(hidden)]
     #[doc(hidden)] // Not public API.
-    pub fn into_context(mut self) -> ResolveContext {
+    pub fn into_context(mut self, current_dir: PathBuf) -> ResolveContext {
         if self.env.is_none() {
             self = self.env(std::env::vars_os());
         }
@@ -118,7 +118,15 @@ impl ResolveOptions {
             None => OnceCell::new(),
         };
 
-        ResolveContext { env, rustc, cargo, cargo_home, host_triple, cfg: RefCell::default() }
+        ResolveContext {
+            env,
+            rustc,
+            cargo,
+            cargo_home,
+            host_triple,
+            cfg: RefCell::default(),
+            current_dir,
+        }
     }
 }
 
@@ -132,6 +140,7 @@ pub struct ResolveContext {
     cargo_home: OnceCell<Option<PathBuf>>,
     host_triple: OnceCell<String>,
     cfg: RefCell<CfgMap>,
+    pub(crate) current_dir: PathBuf,
 }
 
 impl ResolveContext {
@@ -589,13 +598,16 @@ mod tests {
             ("CARGO_TERM_PROGRESS_WIDTH", "100"),
         ];
         let mut config = crate::de::Config::default();
-        let cx = &ResolveOptions::default().env(env_list).into_context();
+        let cx =
+            &ResolveOptions::default().env(env_list).into_context(std::env::current_dir().unwrap());
         config.apply_env(cx).unwrap();
 
         // ResolveOptions::env attempts to avoid pushing unrelated envs.
         let mut env_list = env_list.to_vec();
         env_list.push(("A", "B"));
-        let cx = &ResolveOptions::default().env(env_list.iter().copied()).into_context();
+        let cx = &ResolveOptions::default()
+            .env(env_list.iter().copied())
+            .into_context(std::env::current_dir().unwrap());
         for (k, v) in env_list {
             if k == "A" {
                 assert!(!cx.env.contains_key(k));
@@ -614,7 +626,7 @@ mod tests {
             .env([("CARGO_ALIAS_a", OsStr::from_bytes(&[b'f', b'o', 0x80, b'o']))])
             .cargo_home(None)
             .rustc(PathAndArgs::new("rustc"))
-            .into_context();
+            .into_context(std::env::current_dir().unwrap());
         assert_eq!(
             cx.env("CARGO_ALIAS_a").unwrap_err().to_string(),
             "failed to parse environment variable `CARGO_ALIAS_a`"

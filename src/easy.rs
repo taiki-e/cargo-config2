@@ -99,8 +99,6 @@ pub struct Config {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     cx: ResolveContext,
-    #[serde(skip)]
-    current_dir: PathBuf,
 }
 
 fn ref_cell_bree_map_is_empty<K, V>(map: &RefCell<BTreeMap<K, V>>) -> bool {
@@ -122,28 +120,24 @@ impl Config {
     /// Read config files hierarchically from the given directory and merges them.
     pub fn load_with_options(cwd: impl AsRef<Path>, options: ResolveOptions) -> Result<Self> {
         let cwd = cwd.as_ref();
-        let cx = options.into_context();
+        let cx = options.into_context(cwd.to_owned());
 
-        let de = de::Config::_load_with_options(cwd, cx.cargo_home(cwd).clone())?;
-        Self::from_unresolved(de, cx, cwd.to_owned())
+        let de = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home(cwd).clone())?;
+        Self::from_unresolved(de, cx)
     }
 
-    pub(crate) fn from_unresolved(
-        mut de: de::Config,
-        cx: ResolveContext,
-        current_dir: PathBuf,
-    ) -> Result<Self> {
+    pub(crate) fn from_unresolved(mut de: de::Config, cx: ResolveContext) -> Result<Self> {
         de.apply_env(&cx)?;
 
         let mut alias = BTreeMap::new();
         for (k, v) in de.alias {
             alias.insert(k, StringList::from_unresolved(v));
         }
-        let build = BuildConfig::from_unresolved(de.build, &current_dir);
-        let doc = DocConfig::from_unresolved(de.doc, &current_dir);
+        let build = BuildConfig::from_unresolved(de.build, &cx.current_dir);
+        let doc = DocConfig::from_unresolved(de.doc, &cx.current_dir);
         let mut env = BTreeMap::new();
         for (k, v) in de.env {
-            env.insert(k, EnvConfigValue::from_unresolved(v, &current_dir));
+            env.insert(k, EnvConfigValue::from_unresolved(v, &cx.current_dir));
         }
         let future_incompat_report =
             FutureIncompatReportConfig::from_unresolved(de.future_incompat_report);
@@ -168,7 +162,6 @@ impl Config {
             de_target: de.target,
             term,
             cx,
-            current_dir,
         })
     }
 
@@ -312,7 +305,7 @@ impl Config {
                     &self.build,
                 )?
                 .unwrap_or_default(),
-                &self.current_dir,
+                &self.cx.current_dir,
             );
             target_configs.insert(TargetTripleBorrow(target.clone().into_owned()), target_config);
         }
