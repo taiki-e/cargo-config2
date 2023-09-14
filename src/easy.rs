@@ -15,7 +15,7 @@ use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol, When},
     error::{Context as _, Result},
     process::ProcessBuilder,
-    resolve::{ResolveContext, ResolveOptions, TargetTriple, TargetTripleBorrow, TargetTripleRef},
+    resolve::{ResolveContext, ResolveOptions, TargetTriple, TargetTripleRef},
     value::Value,
 };
 
@@ -82,7 +82,7 @@ pub struct Config {
     /// The resolved `[target]` table.
     #[serde(skip_deserializing)]
     #[serde(skip_serializing_if = "ref_cell_bree_map_is_empty")]
-    target: RefCell<BTreeMap<TargetTripleBorrow<'static>, TargetConfig>>,
+    target: RefCell<BTreeMap<TargetTripleRef<'static>, TargetConfig>>,
     /// The unresolved `[target]` table.
     #[serde(default)]
     #[serde(skip_serializing)]
@@ -307,7 +307,7 @@ impl Config {
                 .unwrap_or_default(),
                 &self.cx.current_dir,
             );
-            target_configs.insert(TargetTripleBorrow(target.clone().into_owned()), target_config);
+            target_configs.insert(target.clone().into_owned(), target_config);
         }
         Ok(())
     }

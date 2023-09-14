@@ -232,7 +232,7 @@ impl ResolveContext {
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CfgMap {
-    map: HashMap<TargetTripleBorrow<'static>, Cfg>,
+    map: HashMap<TargetTripleRef<'static>, Cfg>,
 }
 
 impl CfgMap {
@@ -246,7 +246,7 @@ impl CfgMap {
             Some(cfg) => cfg,
             None => {
                 let cfg = Cfg::from_rustc(rustc(), target)?;
-                self.map.insert(TargetTripleBorrow(target.clone().into_owned()), cfg);
+                self.map.insert(target.clone().into_owned(), cfg);
                 &self.map[target.cli_target()]
             }
         };
@@ -351,16 +351,10 @@ impl Hash for TargetTripleRef<'_> {
     }
 }
 
-// This wrapper is needed to support pre-1.63 Rust.
-// In pre-1.63 Rust you can't use TargetTripleRef<'non_static> as an index of
-// HashMap<TargetTripleRef<'static>, _> without this trick.
-#[allow(single_use_lifetimes)] // false positive fixed in Rust 1.66.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub(crate) struct TargetTripleBorrow<'a>(pub(crate) TargetTripleRef<'a>);
-impl std::borrow::Borrow<OsStr> for TargetTripleBorrow<'_> {
+// TODO: should not implement?
+impl std::borrow::Borrow<OsStr> for TargetTripleRef<'_> {
     fn borrow(&self) -> &OsStr {
-        self.0.cli_target()
+        self.cli_target()
     }
 }
 
