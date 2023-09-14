@@ -10,6 +10,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Improve robustness when new cfgs are added in the future.
+
+- Update `toml` to 0.8.
+
 ## [0.1.11] - 2023-09-11
 
 - Remove dependency on `shell-escape`.
