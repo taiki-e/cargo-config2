@@ -1,4 +1,6 @@
-// This module is a fork of cfg-expr, licensed under "MIT OR Apache-2.0".
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+// This module is a fork of cfg-expr, licensed under "Apache-2.0 OR MIT".
 //
 // The code has been simplified and adjusted to match our use cases.
 //

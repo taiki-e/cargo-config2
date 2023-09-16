@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 // Partial re-implementation of `cargo config get` using cargo-config2.
 
 use std::{

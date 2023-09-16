@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 use crate::cfg_expr::{
     error::{ParseError, Reason},
     expr::Predicate as P,

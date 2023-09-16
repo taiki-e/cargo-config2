@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 #![allow(clippy::drop_non_drop)]
 
 use std::{collections::HashMap, hint::black_box, path::Path};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 //! Cargo configuration that environment variables, config overrides, and
 //! target-specific configurations have not been resolved.
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 // Environment variables are prefer over config values.
 // https://doc.rust-lang.org/nightly/cargo/reference/config.html#environment-variables
 

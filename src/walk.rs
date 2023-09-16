@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
 //
 // > Cargo allows local configuration for a particular package as well as global

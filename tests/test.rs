@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 #![allow(clippy::bool_assert_comparison, clippy::needless_pass_by_value)]
 
 use std::{collections::HashMap, path::Path, str};

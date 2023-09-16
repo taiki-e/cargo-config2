@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 use std::{error::Error, fmt};
 
 /// An error related to parsing of a cfg expression

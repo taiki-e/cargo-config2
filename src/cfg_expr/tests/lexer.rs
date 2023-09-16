@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 use crate::cfg_expr::expr::lexer::{Lexer, Token};
 
 macro_rules! test_lex {

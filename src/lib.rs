@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 /*!
 Load and resolve [Cargo configuration](https://doc.rust-lang.org/nightly/cargo/reference/config.html).
 

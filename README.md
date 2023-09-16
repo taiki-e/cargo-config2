@@ -57,6 +57,6 @@ be dual licensed as above, without any additional terms or conditions.
 
 This product includes copies and modifications of software developed by third parties:
 
-- [`src/cfg_expr`](https://github.com/taiki-e/cargo-config2/tree/HEAD/src/cfg_expr) includes copies and modifications of [`cfg-expr` crate](https://github.com/EmbarkStudios/cfg-expr) by Embark Studios, licensed under "MIT OR Apache-2.0".
+- [`src/cfg_expr`](https://github.com/taiki-e/cargo-config2/tree/HEAD/src/cfg_expr) includes copies and modifications of [`cfg-expr` crate](https://github.com/EmbarkStudios/cfg-expr) by Embark Studios, licensed under "Apache-2.0 OR MIT".
 
 See the license files included in these directories for more details.
