@@ -94,7 +94,6 @@ impl ResolveOptions {
         self
     }
 
-    #[allow(clippy::missing_panics_doc)] // false positive: this function is #[doc(hidden)]
     #[doc(hidden)] // Not public API.
     pub fn into_context(mut self, current_dir: PathBuf) -> ResolveContext {
         if self.env.is_none() {
