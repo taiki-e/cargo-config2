@@ -88,7 +88,7 @@ fn print_config(writer: &mut dyn Write, format: Format, config: &Config) -> Resu
             fn print_value(writer: &mut dyn Write, path: &str, value: &toml::Value) -> Result<()> {
                 match value {
                     toml::Value::Table(table) => {
-                        for (key, item) in table.iter() {
+                        for (key, item) in table {
                             print_value(writer, &format!("{path}.{key}"), item)?;
                         }
                     }
