@@ -93,21 +93,4 @@ impl fmt::Display for Reason {
     }
 }
 
-impl Error for ParseError {
-    fn description(&self) -> &str {
-        use Reason::{
-            Empty, InvalidNot, MultipleRootPredicates, UnclosedParens, UnclosedQuotes, Unexpected,
-            UnopenedParens,
-        };
-
-        match self.reason {
-            UnclosedParens => "unclosed parens",
-            UnopenedParens => "unopened parens",
-            UnclosedQuotes => "unclosed quotes",
-            Empty => "empty expression",
-            Unexpected(_) => "unexpected term",
-            InvalidNot(_) => "not() takes 1 predicate",
-            MultipleRootPredicates => "multiple root predicates",
-        }
-    }
-}
+impl Error for ParseError {}

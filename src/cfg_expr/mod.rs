@@ -9,7 +9,7 @@
 // See the license files included in this directory for copyright & license.
 
 pub(crate) mod error;
-pub(crate) mod expr;
+mod expr;
 
 #[cfg(test)]
 mod tests {

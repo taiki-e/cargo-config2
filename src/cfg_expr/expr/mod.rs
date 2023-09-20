@@ -8,7 +8,7 @@ use std::ops::Range;
 /// A predicate function, used to combine 1 or more predicates
 /// into a single value
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
-pub(crate) enum Func {
+enum Func {
     /// `not()` with a configuration predicate. It is true if its predicate
     /// is false and false if its predicate is true.
     Not,
@@ -36,7 +36,7 @@ pub(crate) enum Predicate<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct InnerPredicate {
+struct InnerPredicate {
     identifier: Range<usize>,
     value: Option<Range<usize>>,
 }
@@ -53,7 +53,7 @@ impl InnerPredicate {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum ExprNode {
+enum ExprNode {
     Fn(Func),
     Predicate(InnerPredicate),
 }
@@ -61,10 +61,10 @@ pub(crate) enum ExprNode {
 /// A parsed `cfg()` expression that can evaluated
 #[derive(Clone, Debug)]
 pub(crate) struct Expression {
-    pub(crate) expr: Vec<ExprNode>,
+    expr: Vec<ExprNode>,
     // We keep the original string around for providing the arbitrary
     // strings that can make up an expression
-    pub(crate) original: String,
+    original: String,
 }
 
 impl Expression {
