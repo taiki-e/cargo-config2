@@ -16,7 +16,7 @@ impl Expression {
         struct FuncAndSpan {
             func: Func,
             parens_index: usize,
-            span: std::ops::Range<usize>,
+            span: core::ops::Range<usize>,
             predicates: Vec<InnerPredicate>,
             nest_level: u8,
         }
@@ -33,8 +33,8 @@ impl Expression {
         // Keep track of the last token to simplify validation of the token stream
         let mut last_token: Option<Token<'_>> = None;
 
-        let parse_predicate = |key: (&str, std::ops::Range<usize>),
-                               val: Option<(&str, std::ops::Range<usize>)>|
+        let parse_predicate = |key: (&str, core::ops::Range<usize>),
+                               val: Option<(&str, core::ops::Range<usize>)>|
          -> Result<InnerPredicate, ParseError> {
             let span = key.1;
             Ok(InnerPredicate { identifier: span, value: val.map(|(_, span)| span) })

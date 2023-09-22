@@ -3,7 +3,7 @@
 pub(crate) mod lexer;
 mod parser;
 
-use std::ops::Range;
+use core::ops::Range;
 
 /// A predicate function, used to combine 1 or more predicates
 /// into a single value
@@ -89,7 +89,7 @@ impl Expression {
     pub(crate) fn eval<EP, T>(&self, mut eval_predicate: EP) -> T
     where
         EP: FnMut(&Predicate<'_>) -> T,
-        T: Logic + std::fmt::Debug,
+        T: Logic + core::fmt::Debug,
     {
         let mut result_stack = Vec::with_capacity(8);
 

@@ -2,12 +2,11 @@
 
 // Based on https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/value.rs.
 
+use core::{fmt, mem, str::FromStr};
 use std::{
     borrow::Cow,
     collections::BTreeMap,
-    fmt, mem,
     path::{Path, PathBuf},
-    str::FromStr,
 };
 
 use serde::{Deserialize, Serialize};

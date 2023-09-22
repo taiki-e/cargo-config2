@@ -14,7 +14,7 @@ macro_rules! bail {
     };
 }
 
-pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;
+pub(crate) type Result<T, E = Error> = core::result::Result<T, E>;
 
 /// An error that occurred during loading or resolving the Cargo configuration.
 #[derive(Debug)]
@@ -160,7 +160,7 @@ where
         }
     }
 }
-impl<T> Context<T, std::convert::Infallible> for Option<T> {
+impl<T> Context<T, core::convert::Infallible> for Option<T> {
     fn context<C>(self, context: C) -> Result<T, Error>
     where
         C: fmt::Display,

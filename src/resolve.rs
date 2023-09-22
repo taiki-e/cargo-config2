@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use core::{cell::RefCell, hash::Hash, str::FromStr};
 use std::{
     borrow::Cow,
-    cell::RefCell,
     collections::{HashMap, HashSet},
     ffi::{OsStr, OsString},
-    hash::Hash,
     path::{Path, PathBuf},
-    str::FromStr,
 };
 
 use once_cell::unsync::OnceCell;
@@ -337,17 +335,17 @@ impl PartialEq for TargetTripleRef<'_> {
 }
 impl Eq for TargetTripleRef<'_> {}
 impl PartialOrd for TargetTripleRef<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 impl Ord for TargetTripleRef<'_> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         self.cli_target().cmp(other.cli_target())
     }
 }
 impl Hash for TargetTripleRef<'_> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.cli_target().hash(state);
     }
 }
@@ -359,7 +357,7 @@ impl Hash for TargetTripleRef<'_> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub(crate) struct TargetTripleBorrow<'a>(pub(crate) TargetTripleRef<'a>);
-impl std::borrow::Borrow<OsStr> for TargetTripleBorrow<'_> {
+impl core::borrow::Borrow<OsStr> for TargetTripleBorrow<'_> {
     fn borrow(&self) -> &OsStr {
         self.0.cli_target()
     }

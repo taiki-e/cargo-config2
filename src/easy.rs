@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use core::{cell::RefCell, fmt, ops};
 use std::{
     borrow::Cow,
-    cell::RefCell,
     collections::BTreeMap,
     ffi::{OsStr, OsString},
-    fmt::{self, Formatter},
-    ops,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -114,13 +112,13 @@ impl Config {
     }
 
     /// Read config files hierarchically from the given directory and merges them.
-    pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
+    pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
         Self::load_with_options(cwd, ResolveOptions::default())
     }
 
     /// Read config files hierarchically from the given directory and merges them.
-    pub fn load_with_options(cwd: impl AsRef<Path>, options: ResolveOptions) -> Result<Self> {
+    pub fn load_with_options<P: AsRef<Path>>(cwd: P, options: ResolveOptions) -> Result<Self> {
         let cwd = cwd.as_ref();
         let cx = options.into_context(cwd.to_owned());
 
@@ -756,7 +754,7 @@ impl RegistriesConfigValue {
 }
 
 impl fmt::Debug for RegistriesConfigValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self { index, token, protocol } = self;
         let redacted_token = token.as_ref().map(|_| "[REDACTED]");
         f.debug_struct("RegistriesConfigValue")
@@ -802,7 +800,7 @@ impl RegistryConfig {
 }
 
 impl fmt::Debug for RegistryConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self { default, token } = self;
         let redacted_token = token.as_ref().map(|_| "[REDACTED]");
         f.debug_struct("RegistryConfig")

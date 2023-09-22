@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::{error::Error, fmt};
+use core::fmt;
 
 /// An error related to parsing of a cfg expression
 #[derive(Debug, PartialEq, Eq)]
@@ -9,7 +9,7 @@ pub(crate) struct ParseError {
     pub(crate) original: String,
     /// The range of characters in the original string that result
     /// in this error
-    pub(crate) span: std::ops::Range<usize>,
+    pub(crate) span: core::ops::Range<usize>,
     /// The specific reason for the error
     pub(crate) reason: Reason,
 }
@@ -93,4 +93,4 @@ impl fmt::Display for Reason {
     }
 }
 
-impl Error for ParseError {}
+impl std::error::Error for ParseError {}

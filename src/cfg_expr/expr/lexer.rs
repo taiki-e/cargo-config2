@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use core::fmt;
+
 use crate::cfg_expr::error::{ParseError, Reason};
 
 /// A single token in a cfg expression
@@ -26,9 +28,9 @@ pub(crate) enum Token<'a> {
     Comma,
 }
 
-impl std::fmt::Display for Token<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self, f)
+impl fmt::Display for Token<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 
@@ -75,7 +77,7 @@ pub(crate) struct LexerToken<'a> {
     /// The token that was lexed
     pub(crate) token: Token<'a>,
     /// The range of the token characters in the original license expression
-    pub(crate) span: std::ops::Range<usize>,
+    pub(crate) span: core::ops::Range<usize>,
 }
 
 impl<'a> Iterator for Lexer<'a> {

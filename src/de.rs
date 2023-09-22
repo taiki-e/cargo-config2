@@ -6,15 +6,13 @@
 #[path = "gen/de.rs"]
 mod gen;
 
+use core::{fmt, slice, str::FromStr};
 use std::{
     borrow::Cow,
     collections::BTreeMap,
     ffi::OsStr,
-    fmt::{self, Formatter},
     fs,
     path::{Path, PathBuf},
-    slice,
-    str::FromStr,
 };
 
 use serde::{Deserialize, Serialize};
@@ -108,15 +106,15 @@ impl Config {
     }
 
     /// Read config files hierarchically from the given directory and merges them.
-    pub fn load_with_cwd(cwd: impl AsRef<Path>) -> Result<Self> {
+    pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
         Self::_load_with_options(cwd, home::cargo_home_with_cwd(cwd).ok())
     }
 
     /// Read config files hierarchically from the given directory and merges them.
-    pub fn load_with_options(
-        cwd: impl AsRef<Path>,
-        cargo_home: impl Into<Option<PathBuf>>,
+    pub fn load_with_options<P: AsRef<Path>, Q: Into<Option<PathBuf>>>(
+        cwd: P,
+        cargo_home: Q,
     ) -> Result<Self> {
         Self::_load_with_options(cwd.as_ref(), cargo_home.into())
     }
@@ -145,7 +143,7 @@ impl Config {
     ///
     /// **Note:** Note: This just reads a file at the given path and does not
     /// respect the hierarchical structure of the cargo config.
-    pub fn load_file(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         Self::_load_file(path.as_ref())
     }
     fn _load_file(path: &Path) -> Result<Self> {
@@ -484,7 +482,7 @@ pub struct RegistriesConfigValue {
 }
 
 impl fmt::Debug for RegistriesConfigValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self { index, token, protocol } = self;
         let redacted_token = token
             .as_ref()
@@ -551,7 +549,7 @@ pub struct RegistryConfig {
 }
 
 impl fmt::Debug for RegistryConfig {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self { default, token } = self;
         let redacted_token = token
             .as_ref()
