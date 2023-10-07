@@ -12,7 +12,7 @@ use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cfg_expr::{Expression, Predicate},
+    cfg_expr::expr::{Expression, Predicate},
     easy,
     error::{Context as _, Error, Result},
     process::ProcessBuilder,

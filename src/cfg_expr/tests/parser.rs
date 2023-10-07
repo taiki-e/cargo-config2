@@ -2,8 +2,7 @@
 
 use crate::cfg_expr::{
     error::{ParseError, Reason},
-    expr::Predicate as P,
-    Expression,
+    expr::{Expression, Predicate as P},
 };
 
 macro_rules! test_validate {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use crate::{cfg_expr::Expression, resolve::CfgMap};
+use crate::{cfg_expr::expr::Expression, resolve::CfgMap};
 
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)

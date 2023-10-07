@@ -9,7 +9,7 @@
 // See the license files included in this directory for copyright & license.
 
 pub(crate) mod error;
-mod expr;
+pub(crate) mod expr;
 
 #[cfg(test)]
 mod tests {
@@ -17,5 +17,3 @@ mod tests {
     mod lexer;
     mod parser;
 }
-
-pub(crate) use expr::{Expression, Predicate};
