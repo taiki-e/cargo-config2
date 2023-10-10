@@ -2,11 +2,14 @@
 
 #![allow(clippy::bool_assert_comparison, clippy::needless_pass_by_value)]
 
+mod helper;
+
 use std::{collections::HashMap, path::Path, str};
 
 use anyhow::{Context as _, Result};
 use build_context::TARGET;
 use cargo_config2::*;
+use helper::*;
 
 fn test_options() -> ResolveOptions {
     ResolveOptions::default()
@@ -298,49 +301,4 @@ fn test_cargo_behavior() -> Result<()> {
     assert!(stderr.contains("--cfg b"), "actual:\n---\n{stderr}\n---\n");
 
     Ok(())
-}
-
-use helper::*;
-mod helper {
-    use std::path::{Path, PathBuf};
-
-    use anyhow::Result;
-    pub use fs_err as fs;
-
-    pub fn fixtures_path() -> &'static Path {
-        Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
-    }
-
-    pub fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
-        let tmpdir = tempfile::tempdir()?;
-        let tmpdir_path = tmpdir.path();
-
-        let model_path;
-        let workspace_root;
-        if model.contains('/') {
-            let mut model = model.splitn(2, '/');
-            model_path = fixtures_path().join(model.next().unwrap());
-            workspace_root = tmpdir_path.join(model.next().unwrap());
-            assert!(model.next().is_none());
-        } else {
-            model_path = fixtures_path().join(model);
-            workspace_root = tmpdir_path.to_path_buf();
-        }
-
-        for entry in
-            ignore::WalkBuilder::new(&model_path).hidden(false).build().filter_map(Result::ok)
-        {
-            let path = entry.path();
-            let tmp_path = &tmpdir_path.join(path.strip_prefix(&model_path)?);
-            if !tmp_path.exists() {
-                if path.is_dir() {
-                    fs::create_dir_all(tmp_path)?;
-                } else {
-                    fs::copy(path, tmp_path)?;
-                }
-            }
-        }
-
-        Ok((tmpdir, workspace_root))
-    }
 }
