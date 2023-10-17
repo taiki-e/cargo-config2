@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Improve compatibility with old Cargo.
+
 ## [0.1.12] - 2023-09-14
 
 - Improve robustness when new cfgs are added in the future.

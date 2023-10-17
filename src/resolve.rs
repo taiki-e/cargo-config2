@@ -167,8 +167,21 @@ impl ResolveContext {
     pub(crate) fn cargo_home(&self, cwd: &Path) -> &Option<PathBuf> {
         self.cargo_home.get_or_init(|| home::cargo_home_with_cwd(cwd).ok())
     }
-    pub(crate) fn host_triple(&self) -> Result<&str> {
-        Ok(self.host_triple.get_or_try_init(|| host_triple(&self.cargo))?)
+    pub(crate) fn host_triple(&self, build_config: &easy::BuildConfig) -> Result<&str> {
+        if let Some(host) = self.host_triple.get() {
+            return Ok(host);
+        }
+        let host = match host_triple(&self.cargo) {
+            Ok(host) => host,
+            Err(_) => {
+                let rustc = build_config
+                    .rustc
+                    .as_ref()
+                    .map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
+                host_triple(rustc.as_os_str())?
+            }
+        };
+        Ok(self.host_triple.get_or_init(|| host))
     }
 
     // micro-optimization for static name -- avoiding name allocation can speed up

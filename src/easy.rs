@@ -258,7 +258,7 @@ impl Config {
         if !config_targets.is_empty() {
             return Ok(config_targets);
         }
-        Ok(vec![TargetTripleRef::from(self.cx.host_triple()?).into_owned()])
+        Ok(vec![TargetTripleRef::from(self.cx.host_triple(&self.build)?).into_owned()])
     }
 
     /// Selects target triples to pass to CLI.
@@ -364,7 +364,7 @@ impl Config {
     }
     /// Returns the host triple.
     pub fn host_triple(&self) -> Result<&str> {
-        self.cx.host_triple()
+        self.cx.host_triple(&self.build)
     }
 
     // TODO: add override instead?
