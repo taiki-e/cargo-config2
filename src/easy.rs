@@ -9,7 +9,8 @@ use std::{
     process::Command,
 };
 
-use serde::Serialize;
+use serde::ser::{Serialize, Serializer};
+use serde_derive::Serialize;
 
 use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol, When},
@@ -625,7 +626,7 @@ impl EnvConfigValue {
 impl Serialize for EnvConfigValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         #[derive(Serialize)]
         #[serde(untagged)]
@@ -1046,7 +1047,7 @@ impl PathAndArgs {
 impl Serialize for PathAndArgs {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         let mut v = Vec::with_capacity(1 + self.args.len());
         v.push(self.path.to_string_lossy().into_owned());

@@ -9,7 +9,11 @@ use std::{
 };
 
 use once_cell::unsync::OnceCell;
-use serde::{Deserialize, Serialize};
+use serde::{
+    de::{Deserialize, Deserializer},
+    ser::{Serialize, Serializer},
+};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     cfg_expr::expr::{Expression, Predicate},
@@ -492,7 +496,7 @@ impl<'a> From<&'a str> for TargetTripleRef<'a> {
 impl Serialize for TargetTripleRef<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         self.cli_target_string().serialize(serializer)
     }
@@ -500,7 +504,7 @@ impl Serialize for TargetTripleRef<'_> {
 impl<'de> Deserialize<'de> for TargetTripleRef<'static> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         Ok(Self::new(String::deserialize(deserializer)?.into(), None, None))
     }

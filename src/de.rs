@@ -15,7 +15,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    de::{self, Deserialize, Deserializer},
+    ser::{Serialize, Serializer},
+};
+use serde_derive::{Deserialize, Serialize};
 
 pub use crate::value::{Definition, Value};
 use crate::{
@@ -788,7 +792,7 @@ impl Flags {
 impl<'de> Deserialize<'de> for Flags {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
@@ -874,7 +878,7 @@ impl PathAndArgs {
 impl Serialize for PathAndArgs {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         match self.deserialized_repr {
             StringListDeserializedRepr::String => {
@@ -899,9 +903,8 @@ impl Serialize for PathAndArgs {
 impl<'de> Deserialize<'de> for PathAndArgs {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        use serde::de::Error;
         #[derive(Deserialize)]
         #[serde(untagged)]
         enum StringOrArray {
@@ -915,7 +918,7 @@ impl<'de> Deserialize<'de> for PathAndArgs {
         };
         match res {
             Some(path) => Ok(path),
-            None => Err(D::Error::invalid_length(0, &"at least one element")),
+            None => Err(de::Error::invalid_length(0, &"at least one element")),
         }
     }
 }
@@ -960,7 +963,7 @@ impl StringList {
 impl Serialize for StringList {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         match self.deserialized_repr {
             StringListDeserializedRepr::String => {
@@ -983,7 +986,7 @@ impl Serialize for StringList {
 impl<'de> Deserialize<'de> for StringList {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {

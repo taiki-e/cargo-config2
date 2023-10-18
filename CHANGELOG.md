@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Improve compile time.
+
 ## [0.1.13] - 2023-10-17
 
 - Improve compatibility with old Cargo.
