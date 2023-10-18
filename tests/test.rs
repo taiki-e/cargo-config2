@@ -166,6 +166,16 @@ fn easy() {
     assert_reference_example(de).unwrap();
 }
 
+#[test]
+fn no_manifest_dir() {
+    let tmpdir = tempfile::tempdir().unwrap();
+    assert_eq!(
+        "",
+        toml::to_string(&Config::load_with_options(tmpdir.path(), test_options()).unwrap())
+            .unwrap()
+    );
+}
+
 fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
     Ok(de::Config::load_with_options(dir, None)?)
 }

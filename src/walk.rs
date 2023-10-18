@@ -77,29 +77,27 @@ impl Iterator for Walk<'_> {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
     use fs_err as fs;
 
     use super::*;
 
     #[test]
-    fn walk() -> Result<()> {
-        let tmp = tempfile::tempdir()?;
+    fn walk() {
+        let tmp = tempfile::tempdir().unwrap();
         let p = tmp.path();
         let home = &p.join("a/.cargo");
         let cwd = &p.join("a/b/c");
-        fs::create_dir_all(home)?;
-        fs::write(p.join("a/.cargo/config"), "")?;
-        fs::create_dir_all(p.join("a/b/.cargo"))?;
-        fs::write(p.join("a/b/.cargo/config"), "")?;
-        fs::write(p.join("a/b/.cargo/config.toml"), "")?;
-        fs::create_dir_all(p.join("a/b/c/.cargo"))?;
-        fs::write(p.join("a/b/c/.cargo/config.toml"), "")?;
+        fs::create_dir_all(home).unwrap();
+        fs::write(p.join("a/.cargo/config"), "").unwrap();
+        fs::create_dir_all(p.join("a/b/.cargo")).unwrap();
+        fs::write(p.join("a/b/.cargo/config"), "").unwrap();
+        fs::write(p.join("a/b/.cargo/config.toml"), "").unwrap();
+        fs::create_dir_all(p.join("a/b/c/.cargo")).unwrap();
+        fs::write(p.join("a/b/c/.cargo/config.toml"), "").unwrap();
         let mut w = Walk::with_cargo_home(cwd, Some(home.clone()));
         assert_eq!(w.next(), Some(p.join("a/b/c/.cargo/config.toml")));
         assert_eq!(w.next(), Some(p.join("a/b/.cargo/config")));
         assert_eq!(w.next(), Some(p.join("a/.cargo/config")));
         assert_eq!(w.next(), None);
-        Ok(())
     }
 }
