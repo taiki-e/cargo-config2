@@ -1,7 +1,5 @@
 fxsr
 incompat
-tempdir
-tmpdir
 unparse
 unsync
 USERPROFILE
