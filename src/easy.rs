@@ -247,9 +247,9 @@ impl Config {
     /// # Ok(()) }
     /// ```
     #[allow(single_use_lifetimes)]
-    pub fn build_target_for_config<'a>(
+    pub fn build_target_for_config<'a, I: IntoIterator<Item = T>, T: Into<TargetTripleRef<'a>>>(
         &self,
-        targets: impl IntoIterator<Item = impl Into<TargetTripleRef<'a>>>,
+        targets: I,
     ) -> Result<Vec<TargetTriple>> {
         let targets: Vec<_> = targets.into_iter().map(|v| v.into().into_owned()).collect();
         if !targets.is_empty() {
@@ -278,9 +278,9 @@ impl Config {
     /// Also, Unlike [`build_target_for_config`](Self::build_target_for_config)
     /// the target name specified in path is preserved.
     #[allow(clippy::unnecessary_wraps)]
-    pub fn build_target_for_cli(
+    pub fn build_target_for_cli<I: IntoIterator<Item = S>, S: AsRef<str>>(
         &self,
-        targets: impl IntoIterator<Item = impl AsRef<str>>,
+        targets: I,
     ) -> Result<Vec<String>> {
         let targets: Vec<_> = targets.into_iter().map(|t| t.as_ref().to_owned()).collect();
         if !targets.is_empty() {
@@ -314,23 +314,23 @@ impl Config {
     }
     /// Returns the resolved `[target]` table for the given target.
     #[allow(single_use_lifetimes)]
-    pub fn target<'a>(&self, target: impl Into<TargetTripleRef<'a>>) -> Result<TargetConfig> {
+    pub fn target<'a, T: Into<TargetTripleRef<'a>>>(&self, target: T) -> Result<TargetConfig> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].clone())
     }
     /// Returns the resolved linker path for the given target.
     #[allow(single_use_lifetimes)]
-    pub fn linker<'a>(&self, target: impl Into<TargetTripleRef<'a>>) -> Result<Option<PathBuf>> {
+    pub fn linker<'a, T: Into<TargetTripleRef<'a>>>(&self, target: T) -> Result<Option<PathBuf>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].linker.clone())
     }
     /// Returns the resolved runner path and args for the given target.
     #[allow(single_use_lifetimes)]
-    pub fn runner<'a>(
+    pub fn runner<'a, T: Into<TargetTripleRef<'a>>>(
         &self,
-        target: impl Into<TargetTripleRef<'a>>,
+        target: T,
     ) -> Result<Option<PathAndArgs>> {
         let target = target.into();
         self.init_target_config(&target)?;
@@ -338,7 +338,7 @@ impl Config {
     }
     /// Returns the resolved rustflags for the given target.
     #[allow(single_use_lifetimes)]
-    pub fn rustflags<'a>(&self, target: impl Into<TargetTripleRef<'a>>) -> Result<Option<Flags>> {
+    pub fn rustflags<'a, T: Into<TargetTripleRef<'a>>>(&self, target: T) -> Result<Option<Flags>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].rustflags.clone())
@@ -986,7 +986,7 @@ impl Flags {
     }
 
     /// Appends a flag to the back of this rustflags.
-    pub fn push(&mut self, flag: impl Into<String>) {
+    pub fn push<S: Into<String>>(&mut self, flag: S) {
         self.flags.push(flag.into());
     }
 }
@@ -1029,16 +1029,16 @@ pub struct PathAndArgs {
 
 impl PathAndArgs {
     /// Creates a new program.
-    pub fn new(path: impl Into<PathBuf>) -> Self {
+    pub fn new<P: Into<PathBuf>>(path: P) -> Self {
         Self { path: path.into(), args: vec![] }
     }
     /// Adds an argument to pass to the program.
-    pub fn arg(&mut self, arg: impl Into<OsString>) -> &mut Self {
+    pub fn arg<S: Into<OsString>>(&mut self, arg: S) -> &mut Self {
         self.args.push(arg.into());
         self
     }
     /// Adds multiple arguments to pass to the program.
-    pub fn args(&mut self, args: impl IntoIterator<Item = impl Into<OsString>>) -> &mut Self {
+    pub fn args<I: IntoIterator<Item = S>, S: Into<OsString>>(&mut self, args: I) -> &mut Self {
         self.args.extend(args.into_iter().map(Into::into));
         self
     }

@@ -41,7 +41,7 @@ impl ResolveOptions {
     /// # Default value
     ///
     /// [`Config::rustc`](crate::Config::rustc)
-    pub fn rustc(mut self, rustc: impl Into<PathAndArgs>) -> Self {
+    pub fn rustc<P: Into<PathAndArgs>>(mut self, rustc: P) -> Self {
         self.rustc = Some(rustc.into());
         self
     }
@@ -50,7 +50,7 @@ impl ResolveOptions {
     /// # Default value
     ///
     /// The value of the `CARGO` environment variable if it is set. Otherwise, "cargo".
-    pub fn cargo(mut self, cargo: impl Into<OsString>) -> Self {
+    pub fn cargo<S: Into<OsString>>(mut self, cargo: S) -> Self {
         self.cargo = Some(cargo.into());
         self
     }
@@ -60,7 +60,7 @@ impl ResolveOptions {
     ///
     /// [`home::cargo_home_with_cwd`] if the current directory was specified when
     /// loading config. Otherwise, [`home::cargo_home`].
-    pub fn cargo_home(mut self, cargo_home: impl Into<Option<PathBuf>>) -> Self {
+    pub fn cargo_home<P: Into<Option<PathBuf>>>(mut self, cargo_home: P) -> Self {
         self.cargo_home = Some(cargo_home.into());
         self
     }
@@ -69,7 +69,7 @@ impl ResolveOptions {
     /// # Default value
     ///
     /// Parse the version output of `cargo` specified by [`Self::cargo`].
-    pub fn host_triple(mut self, triple: impl Into<String>) -> Self {
+    pub fn host_triple<S: Into<String>>(mut self, triple: S) -> Self {
         self.host_triple = Some(triple.into());
         self
     }
@@ -82,9 +82,9 @@ impl ResolveOptions {
     /// # Default value
     ///
     /// [`std::env::vars_os`]
-    pub fn env(
+    pub fn env<I: IntoIterator<Item = (K, V)>, K: Into<OsString>, V: Into<OsString>>(
         mut self,
-        vars: impl IntoIterator<Item = (impl Into<OsString>, impl Into<OsString>)>,
+        vars: I,
     ) -> Self {
         let mut env = HashMap::default();
         for (k, v) in vars {
