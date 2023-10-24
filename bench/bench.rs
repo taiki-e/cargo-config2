@@ -90,7 +90,6 @@ fn reference(c: &mut Criterion) {
             black_box(config)
         });
     });
-    // let config = &toml::from_slice::<cargo_config2::de::Config>(buf).unwrap();
 }
 
 criterion_group!(benches, reference);
