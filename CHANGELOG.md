@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Improve compile time.
+
 ## [0.1.14] - 2023-10-18
 
 - Improve compile time.
