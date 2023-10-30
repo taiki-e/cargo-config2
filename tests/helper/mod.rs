@@ -7,13 +7,13 @@ use std::{
 };
 
 use anyhow::{bail, Context as _, Result};
-pub use fs_err as fs;
+pub(crate) use fs_err as fs;
 
-pub fn fixtures_path() -> &'static Path {
+pub(crate) fn fixtures_path() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
 }
 
-pub fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
+pub(crate) fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
     let tmpdir = tempfile::tempdir()?;
     let tmpdir_path = tmpdir.path();
 

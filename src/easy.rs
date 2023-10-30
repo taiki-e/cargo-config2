@@ -246,7 +246,6 @@ impl Config {
     /// }
     /// # Ok(()) }
     /// ```
-    #[allow(single_use_lifetimes)]
     pub fn build_target_for_config<'a, I: IntoIterator<Item = T>, T: Into<TargetTripleRef<'a>>>(
         &self,
         targets: I,
@@ -277,7 +276,7 @@ impl Config {
     /// above) is set.
     /// Also, Unlike [`build_target_for_config`](Self::build_target_for_config)
     /// the target name specified in path is preserved.
-    #[allow(clippy::unnecessary_wraps)]
+    #[allow(clippy::unnecessary_wraps)] // TODO: change in next breaking release?
     pub fn build_target_for_cli<I: IntoIterator<Item = S>, S: AsRef<str>>(
         &self,
         targets: I,
@@ -313,21 +312,18 @@ impl Config {
         Ok(())
     }
     /// Returns the resolved `[target]` table for the given target.
-    #[allow(single_use_lifetimes)]
     pub fn target<'a, T: Into<TargetTripleRef<'a>>>(&self, target: T) -> Result<TargetConfig> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].clone())
     }
     /// Returns the resolved linker path for the given target.
-    #[allow(single_use_lifetimes)]
     pub fn linker<'a, T: Into<TargetTripleRef<'a>>>(&self, target: T) -> Result<Option<PathBuf>> {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].linker.clone())
     }
     /// Returns the resolved runner path and args for the given target.
-    #[allow(single_use_lifetimes)]
     pub fn runner<'a, T: Into<TargetTripleRef<'a>>>(
         &self,
         target: T,
@@ -337,7 +333,6 @@ impl Config {
         Ok(self.target.borrow()[target.cli_target()].runner.clone())
     }
     /// Returns the resolved rustflags for the given target.
-    #[allow(single_use_lifetimes)]
     pub fn rustflags<'a, T: Into<TargetTripleRef<'a>>>(&self, target: T) -> Result<Option<Flags>> {
         let target = target.into();
         self.init_target_config(&target)?;

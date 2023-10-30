@@ -38,10 +38,6 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 ))]
 #![forbid(unsafe_code)]
 #![warn(
-    rust_2018_idioms,
-    single_use_lifetimes,
-    unreachable_pub,
-    clippy::pedantic,
     // Lints that may help when writing public library.
     missing_debug_implementations,
     // missing_docs,
@@ -53,15 +49,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     // clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
 )]
-#![allow(
-    clippy::manual_assert,
-    clippy::missing_errors_doc,
-    clippy::module_name_repetitions,
-    clippy::must_use_candidate,
-    clippy::single_match_else,
-    clippy::single_match,
-    clippy::too_many_lines
-)]
+#![allow(clippy::must_use_candidate)]
 
 // Refs:
 // - https://doc.rust-lang.org/nightly/cargo/reference/config.html
