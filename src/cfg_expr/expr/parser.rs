@@ -140,11 +140,9 @@ impl Expression {
                         let key = pred_key.take();
                         let val = pred_val.take();
 
-                        // In this context, the boolean to int conversion is confusing.
-                        #[allow(clippy::bool_to_int_with_if)]
                         let num_predicates = top.predicates.len()
-                            + if key.is_some() { 1 } else { 0 }
-                            + top.nest_level as usize;
+                            + usize::from(key.is_some())
+                            + usize::from(top.nest_level);
 
                         let func = match top.func {
                             Func::All(_) => Func::All(num_predicates),
