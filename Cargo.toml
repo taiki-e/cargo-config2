@@ -30,7 +30,7 @@ home = "0.5"
 once_cell = { version = "1", default-features = false }
 serde = "1.0.165"
 serde_derive = "1.0.165"
-toml_edit = { version = "0.20", features = ["serde"] }
+toml_edit = { version = "0.21", features = ["serde"] }
 
 [dev-dependencies]
 anyhow = "1"
