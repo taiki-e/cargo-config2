@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.16] - 2023-11-17
+
 - Support `target.'cfg(..)'.linker` [that added in Cargo 1.74](https://github.com/rust-lang/cargo/pull/12535).
 
 ## [0.1.15] - 2023-10-24
@@ -84,7 +86,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.15...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.16...HEAD
+[0.1.16]: https://github.com/taiki-e/cargo-config2/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/taiki-e/cargo-config2/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/taiki-e/cargo-config2/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/taiki-e/cargo-config2/compare/v0.1.12...v0.1.13
