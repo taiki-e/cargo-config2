@@ -205,12 +205,10 @@ fn custom_target() {
         let dir = &root;
         fs::write(
             root.join(".cargo/config.toml"),
-            format!(
-                r#"
-                target.{target}.linker = "avr-gcc"
+            r#"
+                target.'cfg(target_arch = "avr")'.linker = "avr-gcc"
                 target.'cfg(target_arch = "avr")'.rustflags = "-C opt-level=s"
-                "#
-            ),
+                "#,
         )?;
         let spec_path = fixtures_path().join(format!("target-specs/{target}.json"));
         assert_eq!(spec_path.exists(), !is_builtin);
