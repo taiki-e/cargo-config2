@@ -218,6 +218,12 @@ impl Config {
                 continue;
             }
             if cx.eval_cfg(k, target_triple, build_config)? {
+                // https://github.com/rust-lang/cargo/pull/12535
+                if target_linker.is_none() {
+                    if let Some(linker) = v.linker.as_ref() {
+                        target_linker = Some(linker.clone());
+                    }
+                }
                 // Priorities (as of 1.68.0-nightly (2022-12-23)):
                 // 1. CARGO_TARGET_<triple>_RUNNER
                 // 2. target.<triple>.runner

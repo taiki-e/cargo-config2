@@ -91,7 +91,7 @@ impl Config {
             }
         }
 
-        // For self.target, we handle it in Config::resolve.
+        // For self.target, we handle it in de::Config::resolve_target.
 
         self.build.apply_env(cx)?;
         self.doc.apply_env(cx)?;
@@ -188,7 +188,7 @@ impl ApplyEnv for BuildConfig {
         // 2. RUSTFLAGS
         // 3. target.<triple>.rustflags (CARGO_TARGET_<triple>_RUSTFLAGS) and target.<cfg>.rustflags
         // 4. build.rustflags (CARGO_BUILD_RUSTFLAGS)
-        // For 3, we handle it in Config::resolve.
+        // For 3, we handle it in de::Config::resolve_target.
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustflags
         self.override_target_rustflags = false;
         if let Some(rustflags) = cx.env("CARGO_ENCODED_RUSTFLAGS")? {
