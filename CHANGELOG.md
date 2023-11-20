@@ -14,6 +14,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 - Support `target.'cfg(..)'.linker` [that added in Cargo 1.74](https://github.com/rust-lang/cargo/pull/12535).
 
+- Update `toml_edit` to 0.21.
+
 ## [0.1.15] - 2023-10-24
 
 - Improve compile time.
