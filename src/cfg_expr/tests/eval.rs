@@ -224,7 +224,6 @@ fn wasm_family() {
 
     // All of the above targets match.
     for target in [
-        "asmjs-unknown-emscripten",
         "wasm32-unknown-unknown",
         "wasm32-unknown-emscripten",
         "wasm32-wasi",
