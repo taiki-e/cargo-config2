@@ -19,10 +19,10 @@ fn assert_ref_unwind_safe<T: ?Sized + std::panic::RefUnwindSafe>() {}
 use core::marker::PhantomPinned;
 /// `Send` & `!Sync`
 #[allow(dead_code)]
-struct NotSync(core::cell::Cell<()>);
+struct NotSync(core::cell::UnsafeCell<()>);
 /// `!Send` & `!Sync`
 #[allow(dead_code)]
-struct NotSendSync(std::rc::Rc<()>);
+struct NotSendSync(*const ());
 /// `!UnwindSafe`
 #[allow(dead_code)]
 struct NotUnwindSafe(&'static mut ());
