@@ -113,7 +113,7 @@ impl Expression {
                             func: new_fn,
                             span: lt.span,
                             parens_index: 0,
-                            predicates: Vec::new(),
+                            predicates: vec![],
                             nest_level: 0,
                         });
                     } else {

@@ -141,7 +141,7 @@ fn gen_de() -> Result<()> {
                     let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
                     visited_types.insert(path_string.clone());
                     if !SET_PATH_EXCLUDE.contains(&path_string.as_str()) {
-                        let mut arms = vec![];
+                        let mut arms = Vec::with_capacity(variants.len());
                         for syn::Variant { ident, fields, .. } in variants {
                             match fields {
                                 Fields::Named(fields) => {
