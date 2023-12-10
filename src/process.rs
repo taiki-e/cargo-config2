@@ -78,17 +78,17 @@ impl ProcessBuilder {
 impl fmt::Display for ProcessBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if !f.alternate() {
-            write!(f, "`")?;
+            f.write_str("`")?;
         }
 
-        write!(f, "{}", self.cmd.get_program().to_string_lossy())?;
+        f.write_str(&self.cmd.get_program().to_string_lossy())?;
 
         for arg in self.cmd.get_args() {
             write!(f, " {}", arg.to_string_lossy())?;
         }
 
         if !f.alternate() {
-            write!(f, "`")?;
+            f.write_str("`")?;
         }
 
         Ok(())
