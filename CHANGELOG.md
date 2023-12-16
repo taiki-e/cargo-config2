@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Remove dependency on `once_cell`.
+
 ## [0.1.16] - 2023-11-17
 
 - Support `target.'cfg(..)'.linker` [that added in Cargo 1.74](https://github.com/rust-lang/cargo/pull/12535).
