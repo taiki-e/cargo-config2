@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/cargo-config2?style=flat-square&logo=rust)](https://crates.io/crates/cargo-config2)
 [![docs.rs](https://img.shields.io/badge/docs.rs-cargo--config2-blue?style=flat-square&logo=docs.rs)](https://docs.rs/cargo-config2)
 [![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)](#license)
-[![rustc](https://img.shields.io/badge/rustc-1.67+-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
+[![rustc](https://img.shields.io/badge/rustc-1.70+-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
 [![build status](https://img.shields.io/github/actions/workflow/status/taiki-e/cargo-config2/ci.yml?branch=main&style=flat-square&logo=github)](https://github.com/taiki-e/cargo-config2/actions)
 
 Load and resolve [Cargo configuration](https://doc.rust-lang.org/nightly/cargo/reference/config.html).
@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 cargo-config2 = "0.1"
 ```
 
-*Compiler support: requires rustc 1.67+*
+*Compiler support: requires rustc 1.70+*
 
 `cargo-config2` is usually runnable with Cargo versions older than the Rust version required for build. (e.g., a cargo subcommand using `cargo-config2` could work with older versions such as `cargo +1.59 <subcommand>`.)
 

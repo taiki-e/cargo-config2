@@ -2,7 +2,7 @@
 name = "cargo-config2"
 version = "0.1.16"
 edition = "2021"
-rust-version = "1.67"
+rust-version = "1.70"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/taiki-e/cargo-config2"
 keywords = ["cargo", "config"]
