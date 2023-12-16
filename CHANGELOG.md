@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.17] - 2023-12-16
+
 - Remove dependency on `once_cell`.
 
 ## [0.1.16] - 2023-11-17
@@ -90,7 +92,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.16...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.17...HEAD
+[0.1.17]: https://github.com/taiki-e/cargo-config2/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/taiki-e/cargo-config2/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/taiki-e/cargo-config2/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/taiki-e/cargo-config2/compare/v0.1.13...v0.1.14
