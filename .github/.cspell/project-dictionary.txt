@@ -1,5 +1,4 @@
 fxsr
 incompat
 unparse
-unsync
 USERPROFILE

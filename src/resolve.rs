@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use core::{cell::RefCell, hash::Hash, str::FromStr};
+use core::{
+    cell::{OnceCell, RefCell},
+    hash::Hash,
+    str::FromStr,
+};
 use std::{
     borrow::Cow,
     collections::{HashMap, HashSet},
@@ -8,7 +12,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use once_cell::unsync::OnceCell;
 use serde::{
     de::{Deserialize, Deserializer},
     ser::{Serialize, Serializer},
