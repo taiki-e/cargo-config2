@@ -1,4 +1,3 @@
 fxsr
-incompat
 unparse
 USERPROFILE
