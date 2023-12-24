@@ -557,6 +557,7 @@ mod tests {
         assert!(t.spec_path.is_none());
     }
 
+    #[rustversion::attr(not(nightly), ignore)]
     #[test]
     #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
     fn parse_cfg_list() {
