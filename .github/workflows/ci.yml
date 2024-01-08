@@ -61,9 +61,7 @@ jobs:
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+      - uses: taiki-e/github-actions/checkout@main
       - name: Install Rust
         run: rustup toolchain add ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
       - run: rustup toolchain add nightly --no-self-update
@@ -77,9 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+      - uses: taiki-e/github-actions/checkout@main
       - name: Install Rust
         run: rustup toolchain add nightly --no-self-update --component miri && rustup default nightly
       - run: cargo miri test --workspace --all-features $EXCLUDE
@@ -92,9 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+      - uses: taiki-e/github-actions/checkout@main
       - name: Install Rust
         run: rustup toolchain add nightly --no-self-update && rustup default nightly
       - run: tools/gen.sh
