@@ -132,8 +132,7 @@ impl<'a> Iterator for Lexer<'a> {
                         other => Some(Ok(Token::Key(other))),
                     }
                 } else {
-                    // clippy tries to help here, but we need
-                    // a Range here, not a RangeInclusive<>
+                    // https://github.com/rust-lang/rust-clippy/issues/3307
                     #[allow(clippy::range_plus_one)]
                     Some(Err(ParseError {
                         original: self.original.to_owned(),
