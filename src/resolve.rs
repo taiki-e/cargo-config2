@@ -519,7 +519,7 @@ pub(crate) fn host_triple(rustc_or_cargo: &OsStr) -> Result<String> {
     let host = verbose_version
         .lines()
         .find_map(|line| line.strip_prefix("host: "))
-        .ok_or_else(|| format_err!("unexpected version output from `{cmd}`: {verbose_version}"))?
+        .ok_or_else(|| format_err!("unexpected version output from {cmd}: {verbose_version}"))?
         .to_owned();
     Ok(host)
 }
