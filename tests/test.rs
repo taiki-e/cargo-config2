@@ -267,7 +267,7 @@ fn cargo_config_toml() {
 #[test]
 fn cargo_config_json() {
     fn de(dir: &Path) -> Result<de::Config> {
-        let s = duct::cmd!("cargo", "-Z", "unstable-options", "config", "get", "--format=json",)
+        let s = duct::cmd!("cargo", "-Z", "unstable-options", "config", "get", "--format=json")
             .dir(dir)
             .stderr_capture()
             .read()?;
