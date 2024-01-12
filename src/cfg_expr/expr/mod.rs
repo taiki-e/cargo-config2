@@ -7,7 +7,7 @@ use core::ops::Range;
 
 /// A predicate function, used to combine 1 or more predicates
 /// into a single value
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 enum Func {
     /// `not()` with a configuration predicate. It is true if its predicate
     /// is false and false if its predicate is true.
@@ -136,15 +136,6 @@ impl Expression {
         }
 
         result_stack.pop().unwrap()
-    }
-}
-
-/// [`PartialEq`] will do a **syntactical** comparison, so will just check if both
-/// expressions have been parsed from the same string, **not** if they are semantically
-/// equivalent.
-impl PartialEq for Expression {
-    fn eq(&self, other: &Self) -> bool {
-        self.original.eq(&other.original)
     }
 }
 
