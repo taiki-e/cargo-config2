@@ -37,6 +37,32 @@ fn config_path(path: &Path) -> Option<PathBuf> {
     None
 }
 
+// Use the home crate only on Windows which std::env::home_dir is not correct.
+// https://github.com/rust-lang/cargo/blob/b2e1d3b6235c07221dd0fcac54a7b0c754ef8b11/crates/home/src/lib.rs#L65-L72
+#[cfg(windows)]
+use home::home_dir;
+#[cfg(not(windows))]
+fn home_dir() -> Option<PathBuf> {
+    #[allow(deprecated)]
+    std::env::home_dir()
+}
+
+pub(crate) fn cargo_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
+    // Follow the cargo's behavior.
+    // https://github.com/rust-lang/cargo/blob/b2e1d3b6235c07221dd0fcac54a7b0c754ef8b11/crates/home/src/lib.rs#L77-L86
+    // https://github.com/rust-lang/cargo/blob/b2e1d3b6235c07221dd0fcac54a7b0c754ef8b11/crates/home/src/env.rs#L63-L77
+    match std::env::var_os("CARGO_HOME").filter(|h| !h.is_empty()).map(PathBuf::from) {
+        Some(home) => {
+            if home.is_absolute() {
+                Some(home)
+            } else {
+                Some(cwd.join(home))
+            }
+        }
+        _ => Some(home_dir()?.join(".cargo")),
+    }
+}
+
 /// An iterator over Cargo configuration file paths.
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
@@ -48,7 +74,7 @@ pub struct Walk<'a> {
 impl<'a> Walk<'a> {
     /// Creates an iterator over Cargo configuration file paths from the given path.
     pub fn new(current_dir: &'a Path) -> Self {
-        Self::with_cargo_home(current_dir, home::cargo_home_with_cwd(current_dir).ok())
+        Self::with_cargo_home(current_dir, cargo_home_with_cwd(current_dir))
     }
 
     /// Creates an iterator over Cargo configuration file paths from the given path

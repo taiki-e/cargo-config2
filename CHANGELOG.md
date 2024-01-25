@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Make `home` dependency Windows-only dependency.
+
 ## [0.1.17] - 2023-12-16
 
 - Remove dependency on `once_cell`.

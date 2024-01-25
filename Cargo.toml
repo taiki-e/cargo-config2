@@ -26,10 +26,12 @@ doc-scrape-examples = false
 
 # Note: serde is public dependencies.
 [dependencies]
-home = "0.5"
 serde = "1.0.165"
 serde_derive = "1.0.165"
 toml_edit = { version = "0.21", default-features = false, features = ["parse", "serde"] }
+
+[target.'cfg(windows)'.dependencies]
+home = "0.5"
 
 [dev-dependencies]
 anyhow = "1"

@@ -26,6 +26,7 @@ use crate::{
     easy,
     error::{Context as _, Error, Result},
     resolve::{ResolveContext, TargetTripleRef},
+    walk,
 };
 
 /// Cargo configuration that environment variables, config overrides, and
@@ -112,7 +113,7 @@ impl Config {
     /// Read config files hierarchically from the given directory and merges them.
     pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
-        Self::_load_with_options(cwd, home::cargo_home_with_cwd(cwd).ok())
+        Self::_load_with_options(cwd, walk::cargo_home_with_cwd(cwd))
     }
 
     /// Read config files hierarchically from the given directory and merges them.

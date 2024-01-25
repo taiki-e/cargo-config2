@@ -24,7 +24,7 @@ use crate::{
     error::{Context as _, Error, Result},
     process::ProcessBuilder,
     value::{Definition, Value},
-    PathAndArgs,
+    walk, PathAndArgs,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -63,6 +63,9 @@ impl ResolveOptions {
     ///
     /// [`home::cargo_home_with_cwd`] if the current directory was specified when
     /// loading config. Otherwise, [`home::cargo_home`].
+    ///
+    /// [`home::cargo_home_with_cwd`]: https://docs.rs/home/latest/home/fn.cargo_home_with_cwd.html
+    /// [`home::cargo_home`]: https://docs.rs/home/latest/home/fn.cargo_home.html
     pub fn cargo_home<P: Into<Option<PathBuf>>>(mut self, cargo_home: P) -> Self {
         self.cargo_home = Some(cargo_home.into());
         self
@@ -172,7 +175,7 @@ impl ResolveContext {
         })
     }
     pub(crate) fn cargo_home(&self, cwd: &Path) -> &Option<PathBuf> {
-        self.cargo_home.get_or_init(|| home::cargo_home_with_cwd(cwd).ok())
+        self.cargo_home.get_or_init(|| walk::cargo_home_with_cwd(cwd))
     }
     pub(crate) fn host_triple(&self, build_config: &easy::BuildConfig) -> Result<&str> {
         if let Some(host) = self.host_triple.get() {
