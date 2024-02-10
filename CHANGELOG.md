@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Update `toml_edit` to 0.22.
+
 ## [0.1.18] - 2024-01-25
 
 - Make `home` dependency Windows-only dependency.
