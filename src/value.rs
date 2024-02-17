@@ -101,7 +101,7 @@ impl fmt::Display for Definition {
         match self {
             Definition::Path(p) | Definition::Cli(Some(p)) => p.display().fmt(f),
             Definition::Environment(key) => write!(f, "environment variable `{key}`"),
-            Definition::Cli(None) => write!(f, "--config cli option"),
+            Definition::Cli(None) => f.write_str("--config cli option"),
         }
     }
 }
