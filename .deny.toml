@@ -15,15 +15,15 @@ multiple-versions = "warn"
 wildcards = "deny"
 allow-wildcard-paths = true
 build.allow-build-scripts = [
-    { name = "proc-macro2" },             # via serde_derive
+    { name = "proc-macro2" }, # via serde_derive
     { name = "serde" },
     { name = "windows_aarch64_gnullvm" }, # via home
-    { name = "windows_aarch64_msvc" },    # via home
-    { name = "windows_i686_gnu" },        # via home
-    { name = "windows_i686_msvc" },       # via home
-    { name = "windows_x86_64_gnu" },      # via home
-    { name = "windows_x86_64_gnullvm" },  # via home
-    { name = "windows_x86_64_msvc" },     # via home
+    { name = "windows_aarch64_msvc" }, # via home
+    { name = "windows_i686_gnu" }, # via home
+    { name = "windows_i686_msvc" }, # via home
+    { name = "windows_x86_64_gnu" }, # via home
+    { name = "windows_x86_64_gnullvm" }, # via home
+    { name = "windows_x86_64_msvc" }, # via home
 ]
 
 # https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
