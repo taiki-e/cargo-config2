@@ -255,13 +255,17 @@ impl Config {
             target_config.get_or_insert_with(TargetConfig::default).runner = Some(runner);
         }
         if override_target_rustflags {
-            target_config.get_or_insert_with(TargetConfig::default).rustflags =
-                build_rustflags.clone();
+            target_config
+                .get_or_insert_with(TargetConfig::default)
+                .rustflags
+                .clone_from(build_rustflags);
         } else if let Some(rustflags) = target_rustflags {
             target_config.get_or_insert_with(TargetConfig::default).rustflags = Some(rustflags);
         } else {
-            target_config.get_or_insert_with(TargetConfig::default).rustflags =
-                build_rustflags.clone();
+            target_config
+                .get_or_insert_with(TargetConfig::default)
+                .rustflags
+                .clone_from(build_rustflags);
         }
         Ok(target_config)
     }
