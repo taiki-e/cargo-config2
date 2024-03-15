@@ -14,7 +14,7 @@ macro_rules! test_validate {
             $(
                 let actual = predicates.next().unwrap();
 
-                similar_asserts::assert_eq!($expected, actual.1, "failed @ index {}", actual.0);
+                assert_eq!($expected, actual.1, "failed @ index {}", actual.0);
             )*
 
             if let Some((_, additional)) = predicates.next() {
@@ -31,7 +31,7 @@ macro_rules! err {
         let expected =
             ParseError { original: $text.to_owned(), span: $range, reason: Reason::$reason };
 
-        similar_asserts::assert_eq!(expected, act_err);
+        assert_eq!(expected, act_err);
     };
 
     ($text:expr => $unexpected:expr; $range:expr) => {
@@ -43,7 +43,7 @@ macro_rules! err {
             reason: Reason::Unexpected($unexpected),
         };
 
-        similar_asserts::assert_eq!(expected, act_err);
+        assert_eq!(expected, act_err);
     };
 }
 
