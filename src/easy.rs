@@ -174,7 +174,7 @@ impl Config {
     /// 1. `--target` option (`targets`)
     /// 2. `CARGO_BUILD_TARGET` environment variable
     /// 3. `build.target` config
-    /// 4. host triple (`host`)
+    /// 4. [host triple](Self::host_triple)
     ///
     /// **Note:** The result of this function is intended to handle target-specific
     /// configurations and is not always appropriate to propagate directly to Cargo.
@@ -346,7 +346,7 @@ impl Config {
     /// the path is the wrapper path and the argument is the rustc path.
     /// Otherwise, the path is the rustc path.
     ///
-    /// If you set `rustc` path by [`ResolveOptions::rustc`], this returns the path set by that method.
+    /// If you set `rustc` path by [`ResolveOptions::rustc`], this returns the path set by it.
     pub fn rustc(&self) -> &PathAndArgs {
         self.cx.rustc(&self.build)
     }
@@ -354,7 +354,7 @@ impl Config {
     ///
     /// The returned path is the value of the `CARGO` environment variable if it is set. Otherwise, "cargo".
     ///
-    /// If you set `cargo` path by [`ResolveOptions::cargo`], this returns the path set by that method.
+    /// If you set `cargo` path by [`ResolveOptions::cargo`], this returns the path set by it.
     pub fn cargo(&self) -> &OsStr {
         &self.cx.cargo
     }
