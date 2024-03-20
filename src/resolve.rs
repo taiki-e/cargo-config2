@@ -571,6 +571,23 @@ pub struct CargoVersion {
     pub nightly: bool,
 }
 
+impl RustcVersion {
+    /// Returns the pair of the major and minor versions.
+    ///
+    /// This is useful for comparing versions: `version.major_minor() < (1, 70)`
+    pub fn major_minor(&self) -> (u32, u32) {
+        (self.major, self.minor)
+    }
+}
+impl CargoVersion {
+    /// Returns the pair of the major and minor versions.
+    ///
+    /// This is useful for comparing versions: `version.major_minor() < (1, 70)`
+    pub fn major_minor(&self) -> (u32, u32) {
+        (self.major, self.minor)
+    }
+}
+
 fn verbose_version(rustc_or_cargo: &OsStr) -> Result<(String, ProcessBuilder)> {
     let mut cmd = cmd!(rustc_or_cargo, "--version", "--verbose");
     let verbose_version = cmd.read()?;
@@ -645,11 +662,28 @@ mod tests {
     fn version_and_host() {
         let rustc_vv = &verbose_version(OsStr::new("rustc")).unwrap();
         let cargo_vv = &verbose_version(OsStr::new("cargo")).unwrap();
+        let rustc_version = rustc_version(rustc_vv).unwrap();
+        let cargo_version = cargo_version(cargo_vv).unwrap();
         let mut stderr = io::stdout().lock();
-        let _ = writeln!(stderr, "rustc version: {:?}", rustc_version(rustc_vv).unwrap());
+        let _ = writeln!(stderr, "rustc version: {rustc_version:?}");
         let _ = writeln!(stderr, "rustc host: {:?}", host_triple(rustc_vv).unwrap());
-        let _ = writeln!(stderr, "cargo version: {:?}", cargo_version(cargo_vv).unwrap());
+        let _ = writeln!(stderr, "cargo version: {cargo_version:?}");
         let _ = writeln!(stderr, "cargo host: {:?}", host_triple(cargo_vv).unwrap());
+        let _ = stderr.flush();
+
+        assert_eq!(rustc_version.major_minor(), (rustc_version.major, rustc_version.minor));
+        assert!(rustc_version.major_minor() < (2, 0));
+        assert!(rustc_version.major_minor() < (1, u32::MAX));
+        assert!(rustc_version.major_minor() >= (1, 70));
+        assert!(rustc_version.major_minor() > (1, 0));
+        assert!(rustc_version.major_minor() > (0, u32::MAX));
+
+        assert_eq!(cargo_version.major_minor(), (cargo_version.major, cargo_version.minor));
+        assert!(cargo_version.major_minor() < (2, 0));
+        assert!(cargo_version.major_minor() < (1, u32::MAX));
+        assert!(cargo_version.major_minor() >= (1, 70));
+        assert!(cargo_version.major_minor() > (1, 0));
+        assert!(cargo_version.major_minor() > (0, u32::MAX));
     }
 
     #[test]

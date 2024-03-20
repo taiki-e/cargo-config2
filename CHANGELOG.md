@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Add `{RustcVersion,CargoVersion}::major_minor`.
+
 ## [0.1.20] - 2024-03-20
 
 - Add `Config::{rustc_version, cargo_version}`.
