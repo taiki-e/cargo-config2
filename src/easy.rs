@@ -16,7 +16,10 @@ use crate::{
     de::{self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol, When},
     error::{Context as _, Result},
     process::ProcessBuilder,
-    resolve::{ResolveContext, ResolveOptions, TargetTriple, TargetTripleBorrow, TargetTripleRef},
+    resolve::{
+        CargoVersion, ResolveContext, ResolveOptions, RustcVersion, TargetTriple,
+        TargetTripleBorrow, TargetTripleRef,
+    },
     value::Value,
 };
 
@@ -361,6 +364,29 @@ impl Config {
     /// Returns the host triple.
     pub fn host_triple(&self) -> Result<&str> {
         self.cx.host_triple(&self.build)
+    }
+    /// Returns the version of the [current rustc](Self::rustc).
+    ///
+    /// The result is usually the same as [`cargo_version`](Self::cargo_version),
+    /// but it may differ if a different rustc is specified in config or if the
+    /// [user is manipulating the output of the rustc](https://github.com/taiki-e/cargo-minimal-versions/issues/29).
+    ///
+    /// # rustc_version vs cargo_version
+    ///
+    /// Which is the preferred to use depends on the situation:
+    ///
+    /// - You will need to know the **rustc** version to determine whether options passed to rustc
+    ///   via RUSTFLAGS or RUSTDOCFLAGS like `-C instrument-coverage` are available.
+    /// - You will need to know the **cargo** version to determine whether fields in `Cargo.toml`
+    ///   or cargo’s CLI options are available.
+    pub fn rustc_version(&self) -> Result<RustcVersion> {
+        self.cx.rustc_version(&self.build)
+    }
+    /// Returns the version of the [current cargo](Self::cargo).
+    ///
+    /// See also [`rustc_version`](Self::rustc_version).
+    pub fn cargo_version(&self) -> Result<CargoVersion> {
+        self.cx.cargo_version(&self.build)
     }
 
     // TODO: add override instead?

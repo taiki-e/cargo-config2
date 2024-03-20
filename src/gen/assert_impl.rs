@@ -248,6 +248,16 @@ const _: fn() = || {
     assert_unpin::<crate::resolve::TargetTriple>();
     assert_unwind_safe::<crate::resolve::TargetTriple>();
     assert_ref_unwind_safe::<crate::resolve::TargetTriple>();
+    assert_send::<crate::resolve::RustcVersion>();
+    assert_sync::<crate::resolve::RustcVersion>();
+    assert_unpin::<crate::resolve::RustcVersion>();
+    assert_unwind_safe::<crate::resolve::RustcVersion>();
+    assert_ref_unwind_safe::<crate::resolve::RustcVersion>();
+    assert_send::<crate::resolve::CargoVersion>();
+    assert_sync::<crate::resolve::CargoVersion>();
+    assert_unpin::<crate::resolve::CargoVersion>();
+    assert_unwind_safe::<crate::resolve::CargoVersion>();
+    assert_ref_unwind_safe::<crate::resolve::CargoVersion>();
     assert_send::<crate::value::Value<()>>();
     assert_send::<crate::value::Value<NotSync>>();
     assert_not_send!(crate::value::Value<NotSend>);

@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Add `Config::{rustc_version, cargo_version}`.
+
 ## [0.1.19] - 2024-02-10
 
 - Update `toml_edit` to 0.22.

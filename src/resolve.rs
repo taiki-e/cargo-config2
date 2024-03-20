@@ -134,6 +134,8 @@ impl ResolveOptions {
             cargo,
             cargo_home,
             host_triple,
+            rustc_version: OnceCell::new(),
+            cargo_version: OnceCell::new(),
             cfg: RefCell::default(),
             current_dir,
         }
@@ -149,6 +151,8 @@ pub struct ResolveContext {
     pub(crate) cargo: OsString,
     cargo_home: OnceCell<Option<PathBuf>>,
     host_triple: OnceCell<String>,
+    rustc_version: OnceCell<RustcVersion>,
+    cargo_version: OnceCell<CargoVersion>,
     cfg: RefCell<CfgMap>,
     pub(crate) current_dir: PathBuf,
 }
@@ -182,17 +186,51 @@ impl ResolveContext {
         if let Some(host) = self.host_triple.get() {
             return Ok(host);
         }
-        let host = match host_triple(&self.cargo) {
+        let cargo_host = verbose_version(&self.cargo).and_then(|ref vv| {
+            let r = self.cargo_version.set(cargo_version(vv)?);
+            debug_assert!(r.is_ok());
+            host_triple(vv)
+        });
+        let host = match cargo_host {
             Ok(host) => host,
             Err(_) => {
                 let rustc = build_config
                     .rustc
                     .as_ref()
                     .map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
-                host_triple(rustc.as_os_str())?
+                let vv = &verbose_version(rustc.as_os_str())?;
+                let r = self.rustc_version.set(rustc_version(vv)?);
+                debug_assert!(r.is_ok());
+                host_triple(vv)?
             }
         };
         Ok(self.host_triple.get_or_init(|| host))
+    }
+    pub(crate) fn rustc_version(&self, build_config: &easy::BuildConfig) -> Result<RustcVersion> {
+        if let Some(&rustc_version) = self.rustc_version.get() {
+            return Ok(rustc_version);
+        }
+        let _ = self.host_triple(build_config);
+        if let Some(&rustc_version) = self.rustc_version.get() {
+            return Ok(rustc_version);
+        }
+        let rustc =
+            build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
+        let vv = &verbose_version(rustc.as_os_str())?;
+        let rustc_version = rustc_version(vv)?;
+        Ok(*self.rustc_version.get_or_init(|| rustc_version))
+    }
+    pub(crate) fn cargo_version(&self, build_config: &easy::BuildConfig) -> Result<CargoVersion> {
+        if let Some(&cargo_version) = self.cargo_version.get() {
+            return Ok(cargo_version);
+        }
+        let _ = self.host_triple(build_config);
+        if let Some(&cargo_version) = self.cargo_version.get() {
+            return Ok(cargo_version);
+        }
+        let vv = &verbose_version(&self.cargo)?;
+        let cargo_version = cargo_version(vv)?;
+        Ok(*self.cargo_version.get_or_init(|| cargo_version))
     }
 
     // micro-optimization for static name -- avoiding name allocation can speed up
@@ -516,10 +554,57 @@ impl<'de> Deserialize<'de> for TargetTripleRef<'static> {
     }
 }
 
-/// Gets host triple of the given `rustc` or `cargo`.
-pub(crate) fn host_triple(rustc_or_cargo: &OsStr) -> Result<String> {
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct RustcVersion {
+    pub major: u32,
+    pub minor: u32,
+    pub patch: Option<u32>,
+    pub nightly: bool,
+}
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct CargoVersion {
+    pub major: u32,
+    pub minor: u32,
+    pub patch: u32,
+    pub nightly: bool,
+}
+
+fn verbose_version(rustc_or_cargo: &OsStr) -> Result<(String, ProcessBuilder)> {
     let mut cmd = cmd!(rustc_or_cargo, "--version", "--verbose");
     let verbose_version = cmd.read()?;
+    Ok((verbose_version, cmd))
+}
+
+fn parse_version(verbose_version: &str) -> Option<(u32, u32, Option<u32>, bool)> {
+    let release = verbose_version.lines().find_map(|line| line.strip_prefix("release: "))?;
+    let (version, channel) = release.split_once('-').unwrap_or((release, ""));
+    let mut digits = version.splitn(3, '.');
+    let major = digits.next()?.parse::<u32>().ok()?;
+    let minor = digits.next()?.parse::<u32>().ok()?;
+    let patch = match digits.next() {
+        Some(p) => Some(p.parse::<u32>().ok()?),
+        None => None,
+    };
+    let nightly = channel == "nightly" || channel == "dev";
+    Some((major, minor, patch, nightly))
+}
+
+fn rustc_version((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<RustcVersion> {
+    let (major, minor, patch, nightly) = parse_version(verbose_version)
+        .ok_or_else(|| format_err!("unexpected version output from {cmd}: {verbose_version}"))?;
+    Ok(RustcVersion { major, minor, patch, nightly })
+}
+fn cargo_version((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<CargoVersion> {
+    let (major, minor, patch, nightly) = parse_version(verbose_version)
+        .and_then(|(major, minor, patch, nightly)| Some((major, minor, patch?, nightly)))
+        .ok_or_else(|| format_err!("unexpected version output from {cmd}: {verbose_version}"))?;
+    Ok(CargoVersion { major, minor, patch, nightly })
+}
+
+/// Gets host triple of the given `rustc` or `cargo`.
+fn host_triple((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<String> {
     let host = verbose_version
         .lines()
         .find_map(|line| line.strip_prefix("host: "))
@@ -528,7 +613,7 @@ pub(crate) fn host_triple(rustc_or_cargo: &OsStr) -> Result<String> {
     Ok(host)
 }
 
-pub(crate) fn rustc_path(cargo: &OsStr) -> PathBuf {
+fn rustc_path(cargo: &OsStr) -> PathBuf {
     // When toolchain override shorthand (`+toolchain`) is used, `rustc` in
     // PATH and `CARGO` environment variable may be different toolchains.
     // When Rust was installed using rustup, the same toolchain's rustc
@@ -545,12 +630,26 @@ pub(crate) fn rustc_path(cargo: &OsStr) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{self, Write};
+
     use fs_err as fs;
 
     use super::*;
 
     fn fixtures_path() -> &'static Path {
         Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+    fn version_and_host() {
+        let rustc_vv = &verbose_version(OsStr::new("rustc")).unwrap();
+        let cargo_vv = &verbose_version(OsStr::new("cargo")).unwrap();
+        let mut stderr = io::stdout().lock();
+        let _ = writeln!(stderr, "rustc version: {:?}", rustc_version(rustc_vv).unwrap());
+        let _ = writeln!(stderr, "rustc host: {:?}", host_triple(rustc_vv).unwrap());
+        let _ = writeln!(stderr, "cargo version: {:?}", cargo_version(cargo_vv).unwrap());
+        let _ = writeln!(stderr, "cargo host: {:?}", host_triple(cargo_vv).unwrap());
     }
 
     #[test]

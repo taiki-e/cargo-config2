@@ -84,6 +84,6 @@ pub use crate::{
         TermConfig, TermProgressConfig,
     },
     error::Error,
-    resolve::{ResolveOptions, TargetTriple, TargetTripleRef},
+    resolve::{CargoVersion, ResolveOptions, RustcVersion, TargetTriple, TargetTripleRef},
     walk::Walk,
 };
