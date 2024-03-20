@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Implement `From<&PathAndArgs>` for `std::process::Command`.
+
 ## [0.1.21] - 2024-03-20
 
 - Add `{RustcVersion,CargoVersion}::major_minor`.

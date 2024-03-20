@@ -1081,13 +1081,18 @@ impl Serialize for PathAndArgs {
 
 impl From<PathAndArgs> for Command {
     fn from(value: PathAndArgs) -> Self {
-        let mut cmd = Command::new(value.path);
-        cmd.args(value.args);
+        Self::from(&value)
+    }
+}
+impl From<&PathAndArgs> for Command {
+    fn from(value: &PathAndArgs) -> Self {
+        let mut cmd = Command::new(&value.path);
+        cmd.args(&value.args);
         cmd
     }
 }
-impl From<PathAndArgs> for ProcessBuilder {
-    fn from(value: PathAndArgs) -> Self {
+impl From<&PathAndArgs> for ProcessBuilder {
+    fn from(value: &PathAndArgs) -> Self {
         ProcessBuilder::from_std(Command::from(value))
     }
 }
