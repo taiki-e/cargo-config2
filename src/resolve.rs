@@ -2,6 +2,7 @@
 
 use core::{
     cell::{OnceCell, RefCell},
+    cmp,
     hash::Hash,
     str::FromStr,
 };
@@ -358,12 +359,12 @@ impl PartialEq for TargetTripleRef<'_> {
 }
 impl Eq for TargetTripleRef<'_> {}
 impl PartialOrd for TargetTripleRef<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 impl Ord for TargetTripleRef<'_> {
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.cli_target().cmp(other.cli_target())
     }
 }
