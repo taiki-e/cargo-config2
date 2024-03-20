@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.20] - 2024-03-20
+
 - Add `Config::{rustc_version, cargo_version}`.
 
 ## [0.1.19] - 2024-02-10
@@ -102,7 +104,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.19...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.20...HEAD
+[0.1.20]: https://github.com/taiki-e/cargo-config2/compare/v0.1.19...v0.1.20
 [0.1.19]: https://github.com/taiki-e/cargo-config2/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/taiki-e/cargo-config2/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/taiki-e/cargo-config2/compare/v0.1.16...v0.1.17
