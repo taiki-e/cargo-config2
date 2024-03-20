@@ -130,7 +130,7 @@ impl Config {
         Self::from_unresolved(de, cx)
     }
 
-    pub(crate) fn from_unresolved(mut de: de::Config, cx: ResolveContext) -> Result<Self> {
+    fn from_unresolved(mut de: de::Config, cx: ResolveContext) -> Result<Self> {
         de.apply_env(&cx)?;
 
         let mut alias = BTreeMap::new();
@@ -490,11 +490,11 @@ pub struct BuildConfig {
     #[serde(skip)]
     override_target_rustflags: bool,
     #[serde(skip)]
-    pub(crate) de_rustflags: Option<de::Flags>,
+    de_rustflags: Option<de::Flags>,
 }
 
 impl BuildConfig {
-    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Self {
+    fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Self {
         let jobs = de.jobs.map(|v| v.val);
         let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let rustc_wrapper =
@@ -567,7 +567,7 @@ pub struct TargetConfig {
 }
 
 impl TargetConfig {
-    pub(crate) fn from_unresolved(de: de::TargetConfig, current_dir: &Path) -> Self {
+    fn from_unresolved(de: de::TargetConfig, current_dir: &Path) -> Self {
         let linker = de.linker.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let runner = match de.runner {
             Some(v) => Some(PathAndArgs {
@@ -598,7 +598,7 @@ pub struct DocConfig {
 }
 
 impl DocConfig {
-    pub(crate) fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Self {
+    fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Self {
         let browser = de.browser.map(|v| PathAndArgs {
             path: v.path.resolve_program(current_dir).into_owned(),
             args: v.args.into_iter().map(|v| v.val.into()).collect(),
@@ -619,7 +619,7 @@ pub struct EnvConfigValue {
 }
 
 impl EnvConfigValue {
-    pub(crate) fn from_unresolved(de: de::EnvConfigValue, current_dir: &Path) -> Self {
+    fn from_unresolved(de: de::EnvConfigValue, current_dir: &Path) -> Self {
         if let de::EnvConfigValue::Table {
             force, relative: Some(Value { val: true, .. }), ..
         } = &de
@@ -690,7 +690,7 @@ pub struct FutureIncompatReportConfig {
 }
 
 impl FutureIncompatReportConfig {
-    pub(crate) fn from_unresolved(de: de::FutureIncompatReportConfig) -> Self {
+    fn from_unresolved(de: de::FutureIncompatReportConfig) -> Self {
         let frequency = de.frequency.map(|v| v.val);
         Self { frequency }
     }
@@ -726,7 +726,7 @@ pub struct NetConfig {
 }
 
 impl NetConfig {
-    pub(crate) fn from_unresolved(de: de::NetConfig) -> Self {
+    fn from_unresolved(de: de::NetConfig) -> Self {
         let retry = de.retry.map(|v| v.val);
         let git_fetch_with_cli = de.git_fetch_with_cli.map(|v| v.val);
         let offline = de.offline.map(|v| v.val);
@@ -764,7 +764,7 @@ pub struct RegistriesConfigValue {
 }
 
 impl RegistriesConfigValue {
-    pub(crate) fn from_unresolved(de: de::RegistriesConfigValue) -> Self {
+    fn from_unresolved(de: de::RegistriesConfigValue) -> Self {
         let index = de.index.map(|v| v.val);
         let token = de.token.map(|v| v.val);
         let protocol = de.protocol.map(|v| match v.val {
@@ -814,7 +814,7 @@ pub struct RegistryConfig {
 }
 
 impl RegistryConfig {
-    pub(crate) fn from_unresolved(de: de::RegistryConfig) -> Self {
+    fn from_unresolved(de: de::RegistryConfig) -> Self {
         let default = de.default.map(|v| v.val);
         let token = de.token.map(|v| v.val);
         Self { default, token }
@@ -860,7 +860,7 @@ pub struct TermConfig {
 }
 
 impl TermConfig {
-    pub(crate) fn from_unresolved(de: de::TermConfig) -> Self {
+    fn from_unresolved(de: de::TermConfig) -> Self {
         let quiet = de.quiet.map(|v| v.val);
         let verbose = de.verbose.map(|v| v.val);
         let color = de.color.map(|v| v.val);
@@ -886,7 +886,7 @@ pub struct TermProgressConfig {
 }
 
 impl TermProgressConfig {
-    pub(crate) fn from_unresolved(de: de::TermProgress) -> Self {
+    fn from_unresolved(de: de::TermProgress) -> Self {
         let when = de.when.map(|v| v.val);
         let width = de.width.map(|v| v.val);
         Self { when, width }
@@ -1106,13 +1106,13 @@ pub struct StringList {
 }
 
 impl StringList {
-    pub(crate) fn from_string(value: &str) -> Self {
+    fn from_string(value: &str) -> Self {
         Self { list: split_space_separated(value).map(str::to_owned).collect() }
     }
-    pub(crate) fn from_array(list: Vec<String>) -> Self {
+    fn from_array(list: Vec<String>) -> Self {
         Self { list }
     }
-    pub(crate) fn from_unresolved(value: de::StringList) -> Self {
+    fn from_unresolved(value: de::StringList) -> Self {
         Self { list: value.list.into_iter().map(|v| v.val).collect() }
     }
 }
