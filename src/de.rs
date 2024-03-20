@@ -113,7 +113,7 @@ impl Config {
     /// Read config files hierarchically from the given directory and merges them.
     pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
-        Self::_load_with_options(cwd, walk::cargo_home_with_cwd(cwd))
+        Self::_load_with_options(cwd, walk::cargo_home_with_cwd(cwd).as_deref())
     }
 
     /// Read config files hierarchically from the given directory and merges them.
@@ -121,14 +121,14 @@ impl Config {
         cwd: P,
         cargo_home: Q,
     ) -> Result<Self> {
-        Self::_load_with_options(cwd.as_ref(), cargo_home.into())
+        Self::_load_with_options(cwd.as_ref(), cargo_home.into().as_deref())
     }
     pub(crate) fn _load_with_options(
         current_dir: &Path,
-        cargo_home: Option<PathBuf>,
+        cargo_home: Option<&Path>,
     ) -> Result<Config> {
         let mut base = None;
-        for path in crate::Walk::with_cargo_home(current_dir, cargo_home) {
+        for path in crate::walk::WalkInner::with_cargo_home(current_dir, cargo_home) {
             let config = Self::_load_file(&path)?;
             match &mut base {
                 None => base = Some((path, config)),

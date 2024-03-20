@@ -17,6 +17,7 @@
 // >   - Windows: `%USERPROFILE%\.cargo\config.toml`
 // >   - Unix: `$HOME/.cargo/config.toml`
 
+use core::ops;
 use std::path::{Path, PathBuf};
 
 fn config_path(path: &Path) -> Option<PathBuf> {
@@ -66,10 +67,40 @@ pub(crate) fn cargo_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
 /// An iterator over Cargo configuration file paths.
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct Walk<'a> {
+pub(crate) struct WalkInner<'a, P> {
     ancestors: std::path::Ancestors<'a>,
-    cargo_home: Option<PathBuf>,
+    cargo_home: Option<P>,
 }
+
+impl<'a, P: ops::Deref<Target = Path>> WalkInner<'a, P> {
+    /// Creates an iterator over Cargo configuration file paths from the given path
+    /// and `CARGO_HOME` path.
+    pub(crate) fn with_cargo_home(current_dir: &'a Path, cargo_home: Option<P>) -> Self {
+        Self { ancestors: current_dir.ancestors(), cargo_home }
+    }
+}
+
+impl<P: ops::Deref<Target = Path>> Iterator for WalkInner<'_, P> {
+    type Item = PathBuf;
+    fn next(&mut self) -> Option<Self::Item> {
+        for p in self.ancestors.by_ref() {
+            let p = p.join(".cargo");
+            // dedup CARGO_HOME
+            if self.cargo_home.as_deref() == Some(&p) {
+                self.cargo_home = None;
+            }
+            if let Some(p) = config_path(&p) {
+                return Some(p);
+            }
+        }
+        config_path(&self.cargo_home.take()?)
+    }
+}
+
+/// An iterator over Cargo configuration file paths.
+#[derive(Debug)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct Walk<'a>(WalkInner<'a, PathBuf>);
 
 impl<'a> Walk<'a> {
     /// Creates an iterator over Cargo configuration file paths from the given path.
@@ -80,24 +111,14 @@ impl<'a> Walk<'a> {
     /// Creates an iterator over Cargo configuration file paths from the given path
     /// and `CARGO_HOME` path.
     pub fn with_cargo_home(current_dir: &'a Path, cargo_home: Option<PathBuf>) -> Self {
-        Self { ancestors: current_dir.ancestors(), cargo_home }
+        Self(WalkInner::with_cargo_home(current_dir, cargo_home))
     }
 }
 
 impl Iterator for Walk<'_> {
     type Item = PathBuf;
     fn next(&mut self) -> Option<Self::Item> {
-        for p in self.ancestors.by_ref() {
-            let p = p.join(".cargo");
-            // dedup CARGO_HOME
-            if self.cargo_home.as_ref() == Some(&p) {
-                self.cargo_home = None;
-            }
-            if let Some(p) = config_path(&p) {
-                return Some(p);
-            }
-        }
-        config_path(&self.cargo_home.take()?)
+        self.0.next()
     }
 }
 
