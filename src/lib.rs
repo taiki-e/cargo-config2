@@ -54,6 +54,11 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 // Refs:
 // - https://doc.rust-lang.org/nightly/cargo/reference/config.html
 
+// TODO: add API to return cfgs
+// TODO: https://github.com/taiki-e/cargo-config2/issues/3
+// TODO: https://github.com/taiki-e/cargo-config2/issues/16
+// TODO: https://github.com/taiki-e/cargo-config2/issues/1
+
 #[cfg(test)]
 #[path = "gen/assert_impl.rs"]
 mod assert_impl;
