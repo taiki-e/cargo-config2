@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.23] - 2024-03-29
+
 - Fix `Config::rustc` when both rustc_wrapper and rustc_workspace_wrapper are set.
 
 ## [0.1.22] - 2024-03-20
@@ -114,7 +116,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.22...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.23...HEAD
+[0.1.23]: https://github.com/taiki-e/cargo-config2/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/taiki-e/cargo-config2/compare/v0.1.21...v0.1.22
 [0.1.21]: https://github.com/taiki-e/cargo-config2/compare/v0.1.20...v0.1.21
 [0.1.20]: https://github.com/taiki-e/cargo-config2/compare/v0.1.19...v0.1.20
