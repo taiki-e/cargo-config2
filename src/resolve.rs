@@ -160,22 +160,24 @@ pub struct ResolveContext {
 impl ResolveContext {
     pub(crate) fn rustc(&self, build_config: &easy::BuildConfig) -> &PathAndArgs {
         self.rustc.get_or_init(|| {
-            // TODO: Update comment based on https://github.com/rust-lang/cargo/pull/10896?
-            // The following priorities are not documented, but at as of cargo
-            // 1.63.0-nightly (2022-05-31), `RUSTC_WRAPPER` is preferred over `RUSTC_WORKSPACE_WRAPPER`.
-            // See also https://github.com/taiki-e/cargo-llvm-cov/pull/180#discussion_r887904341.
+            // https://github.com/rust-lang/cargo/pull/10896
+            // https://github.com/rust-lang/cargo/pull/13648
             let rustc =
                 build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
-            match build_config
-                .rustc_wrapper
-                .as_ref()
-                .or(build_config.rustc_workspace_wrapper.as_ref())
-            {
-                // The wrapper's first argument is supposed to be the path to rustc.
-                Some(wrapper) => {
-                    PathAndArgs { path: wrapper.clone(), args: vec![rustc.into_os_string()] }
+            if let Some(rustc_wrapper) = &build_config.rustc_wrapper {
+                let mut cmd = PathAndArgs { path: rustc_wrapper.clone(), args: vec![] };
+                if let Some(rustc_workspace_wrapper) = &build_config.rustc_workspace_wrapper {
+                    cmd.arg(rustc_workspace_wrapper.clone().into_os_string());
                 }
-                None => PathAndArgs { path: rustc, args: vec![] },
+                cmd.arg(rustc.into_os_string());
+                cmd
+            } else if let Some(rustc_workspace_wrapper) = &build_config.rustc_workspace_wrapper {
+                PathAndArgs {
+                    path: rustc_workspace_wrapper.clone(),
+                    args: vec![rustc.into_os_string()],
+                }
+            } else {
+                PathAndArgs { path: rustc, args: vec![] }
             }
         })
     }
@@ -770,6 +772,113 @@ mod tests {
             } else {
                 assert_eq!(cx.env[k], v, "key={k},value={v}");
             }
+        }
+    }
+
+    #[test]
+    fn rustc_wrapper() {
+        for (env_list, expected) in [
+            (
+                &[
+                    ("RUSTC", "rustc"),
+                    ("CARGO_BUILD_RUSTC", "cargo_build_rustc"),
+                    ("RUSTC_WRAPPER", "rustc_wrapper"),
+                    ("CARGO_BUILD_RUSTC_WRAPPER", "cargo_build_rustc_wrapper"),
+                    ("RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper"),
+                    ("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER", "cargo_build_rustc_workspace_wrapper"),
+                ][..],
+                PathAndArgs {
+                    path: "rustc_wrapper".into(),
+                    args: vec!["rustc_workspace_wrapper".into(), "rustc".into()],
+                },
+            ),
+            (
+                &[
+                    ("RUSTC", "rustc"),
+                    ("CARGO_BUILD_RUSTC", "cargo_build_rustc"),
+                    ("RUSTC_WRAPPER", ""),
+                    ("CARGO_BUILD_RUSTC_WRAPPER", "cargo_build_rustc_wrapper"),
+                    ("RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper"),
+                    ("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER", "cargo_build_rustc_workspace_wrapper"),
+                ][..],
+                PathAndArgs { path: "rustc_workspace_wrapper".into(), args: vec!["rustc".into()] },
+            ),
+            (
+                &[
+                    ("RUSTC", "rustc"),
+                    ("CARGO_BUILD_RUSTC", "cargo_build_rustc"),
+                    ("RUSTC_WRAPPER", "rustc_wrapper"),
+                    ("CARGO_BUILD_RUSTC_WRAPPER", "cargo_build_rustc_wrapper"),
+                    ("RUSTC_WORKSPACE_WRAPPER", ""),
+                    ("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER", "cargo_build_rustc_workspace_wrapper"),
+                ][..],
+                PathAndArgs { path: "rustc_wrapper".into(), args: vec!["rustc".into()] },
+            ),
+            (
+                &[
+                    ("CARGO_BUILD_RUSTC", "cargo_build_rustc"),
+                    ("CARGO_BUILD_RUSTC_WRAPPER", "cargo_build_rustc_wrapper"),
+                    ("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER", "cargo_build_rustc_workspace_wrapper"),
+                ],
+                PathAndArgs {
+                    path: "cargo_build_rustc_wrapper".into(),
+                    args: vec![
+                        "cargo_build_rustc_workspace_wrapper".into(),
+                        "cargo_build_rustc".into(),
+                    ],
+                },
+            ),
+            (
+                &[
+                    ("RUSTC", "rustc"),
+                    ("RUSTC_WRAPPER", "rustc_wrapper"),
+                    ("RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper"),
+                ],
+                PathAndArgs {
+                    path: "rustc_wrapper".into(),
+                    args: vec!["rustc_workspace_wrapper".into(), "rustc".into()],
+                },
+            ),
+            (
+                &[
+                    ("RUSTC", "rustc"),
+                    ("RUSTC_WRAPPER", "rustc_wrapper"),
+                    ("RUSTC_WORKSPACE_WRAPPER", ""),
+                ],
+                PathAndArgs { path: "rustc_wrapper".into(), args: vec!["rustc".into()] },
+            ),
+            (
+                &[
+                    ("RUSTC", "rustc"),
+                    ("RUSTC_WRAPPER", ""),
+                    ("RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper"),
+                ],
+                PathAndArgs { path: "rustc_workspace_wrapper".into(), args: vec!["rustc".into()] },
+            ),
+            (&[("RUSTC", "rustc"), ("RUSTC_WRAPPER", "rustc_wrapper")], PathAndArgs {
+                path: "rustc_wrapper".into(),
+                args: vec!["rustc".into()],
+            }),
+            (
+                &[("RUSTC", "rustc"), ("RUSTC_WORKSPACE_WRAPPER", "rustc_workspace_wrapper")],
+                PathAndArgs { path: "rustc_workspace_wrapper".into(), args: vec!["rustc".into()] },
+            ),
+            (&[("RUSTC", "rustc"), ("RUSTC_WRAPPER", "")], PathAndArgs {
+                path: "rustc".into(),
+                args: vec![],
+            }),
+            (&[("RUSTC", "rustc"), ("RUSTC_WORKSPACE_WRAPPER", "")], PathAndArgs {
+                path: "rustc".into(),
+                args: vec![],
+            }),
+        ] {
+            let mut config = crate::de::Config::default();
+            let cx = &ResolveOptions::default()
+                .env(env_list.iter().copied())
+                .into_context(std::env::current_dir().unwrap());
+            config.apply_env(cx).unwrap();
+            let build = crate::easy::BuildConfig::from_unresolved(config.build, &cx.current_dir);
+            assert_eq!(*cx.rustc(&build), expected);
         }
     }
 

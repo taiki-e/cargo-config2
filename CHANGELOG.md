@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix `Config::rustc` when both rustc_wrapper and rustc_workspace_wrapper are set.
+
 ## [0.1.22] - 2024-03-20
 
 - Implement `From<&PathAndArgs>` for `std::process::Command`.

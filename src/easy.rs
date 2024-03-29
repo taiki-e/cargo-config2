@@ -494,7 +494,7 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Self {
+    pub(crate) fn from_unresolved(de: de::BuildConfig, current_dir: &Path) -> Self {
         let jobs = de.jobs.map(|v| v.val);
         let rustc = de.rustc.map(|v| v.resolve_as_program_path(current_dir).into_owned());
         let rustc_wrapper =
