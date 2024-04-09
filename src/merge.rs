@@ -19,23 +19,23 @@ use crate::{
 // > Container and non-container types cannot be mixed.
 pub(crate) trait Merge {
     /// Merges given config into this config.
-    fn merge(&mut self, from: Self, force: bool) -> Result<()>;
+    fn merge(&mut self, low: Self, force: bool) -> Result<()>;
 }
 
 macro_rules! merge_non_container {
     ($($ty:tt)*) => {
         impl Merge for $($ty)* {
-            fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+            fn merge(&mut self, low: Self, force: bool) -> Result<()> {
                 if force {
-                    *self = from;
+                    *self = low;
                 }
                 Ok(())
             }
         }
         impl Merge for Value<$($ty)*> {
-            fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+            fn merge(&mut self, low: Self, force: bool) -> Result<()> {
                 if force {
-                    *self = from;
+                    *self = low;
                 }
                 Ok(())
             }
@@ -52,25 +52,28 @@ merge_non_container!(When);
 merge_non_container!(RegistriesProtocol);
 
 impl<T: Merge> Merge for Option<T> {
-    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        match (self, from) {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        match (self, low) {
             (_, None) => {}
-            (this @ None, from) => *this = from,
-            (Some(this), Some(from)) => this.merge(from, force)?,
+            (this @ None, low) => *this = low,
+            (Some(this), Some(low)) => this.merge(low, force)?,
         }
         Ok(())
     }
 }
 impl Merge for de::StringOrArray {
-    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        match (self, from) {
-            (this @ de::StringOrArray::String(_), from @ de::StringOrArray::String(_)) => {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        match (self, low) {
+            (this @ de::StringOrArray::String(_), low @ de::StringOrArray::String(_)) => {
                 if force {
-                    *this = from;
+                    *this = low;
                 }
             }
-            (de::StringOrArray::Array(this), de::StringOrArray::Array(mut from)) => {
-                this.append(&mut from);
+            (de::StringOrArray::Array(this), de::StringOrArray::Array(mut low)) => {
+                // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
+                // > Arrays will be joined together with higher precedence items being placed later in the merged array.
+                low.append(this);
+                *this = low;
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.kind(), actual.kind());
@@ -80,11 +83,11 @@ impl Merge for de::StringOrArray {
     }
 }
 impl Merge for de::PathAndArgs {
-    fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
-        match (self.deserialized_repr, from.deserialized_repr) {
+    fn merge(&mut self, mut low: Self, force: bool) -> Result<()> {
+        match (self.deserialized_repr, low.deserialized_repr) {
             (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
                 if force {
-                    *self = from;
+                    *self = low;
                 }
             }
             (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
@@ -98,8 +101,8 @@ impl Merge for de::PathAndArgs {
                 // # a/.cargo/config
                 // [doc]
                 // browser = ["a"]
-                self.args.push(from.path.0);
-                self.args.append(&mut from.args);
+                self.args.push(low.path.0);
+                self.args.append(&mut low.args);
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
@@ -109,15 +112,18 @@ impl Merge for de::PathAndArgs {
     }
 }
 impl Merge for de::StringList {
-    fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
-        match (self.deserialized_repr, from.deserialized_repr) {
+    fn merge(&mut self, mut low: Self, force: bool) -> Result<()> {
+        match (self.deserialized_repr, low.deserialized_repr) {
             (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
                 if force {
-                    *self = from;
+                    *self = low;
                 }
             }
             (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
-                self.list.append(&mut from.list);
+                // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
+                // > Arrays will be joined together with higher precedence items being placed later in the merged array.
+                low.list.append(&mut self.list);
+                self.list = low.list;
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
@@ -127,20 +133,20 @@ impl Merge for de::StringList {
     }
 }
 impl Merge for de::EnvConfigValue {
-    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        match (self, from) {
-            (Self::Value(this), Self::Value(from)) => {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        match (self, low) {
+            (Self::Value(this), Self::Value(low)) => {
                 if force {
-                    *this = from;
+                    *this = low;
                 }
             }
             (
                 Self::Table { value: this_value, force: this_force, relative: this_relative },
-                Self::Table { value: from_value, force: from_force, relative: from_relative },
+                Self::Table { value: low_value, force: low_force, relative: low_relative },
             ) => {
-                this_value.merge(from_value, force)?;
-                this_force.merge(from_force, force)?;
-                this_relative.merge(from_relative, force)?;
+                this_value.merge(low_value, force)?;
+                this_force.merge(low_force, force)?;
+                this_relative.merge(low_relative, force)?;
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.kind(), actual.kind());
@@ -150,15 +156,18 @@ impl Merge for de::EnvConfigValue {
     }
 }
 impl Merge for de::Flags {
-    fn merge(&mut self, mut from: Self, force: bool) -> Result<()> {
-        match (self.deserialized_repr, from.deserialized_repr) {
+    fn merge(&mut self, mut low: Self, force: bool) -> Result<()> {
+        match (self.deserialized_repr, low.deserialized_repr) {
             (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
                 if force {
-                    *self = from;
+                    *self = low;
                 }
             }
             (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
-                self.flags.append(&mut from.flags);
+                // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
+                // > Arrays will be joined together with higher precedence items being placed later in the merged array.
+                low.flags.append(&mut self.flags);
+                self.flags = low.flags;
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
@@ -168,8 +177,8 @@ impl Merge for de::Flags {
     }
 }
 impl<V: Merge + Clone + core::fmt::Debug> Merge for BTreeMap<String, V> {
-    fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        for (key, value) in from {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        for (key, value) in low {
             match self.entry(key.clone()) {
                 btree_map::Entry::Occupied(mut entry) => {
                     let entry = entry.get_mut();

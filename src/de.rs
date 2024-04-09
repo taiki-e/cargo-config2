@@ -168,8 +168,8 @@ impl Config {
     ///
     /// If `force` is `true`, this matches the way cargo's `--config` CLI option
     /// overrides config.
-    pub(crate) fn merge(&mut self, from: Self, force: bool) -> Result<()> {
-        crate::merge::Merge::merge(self, from, force)
+    pub(crate) fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        crate::merge::Merge::merge(self, low, force)
     }
 
     pub(crate) fn set_path(&mut self, path: &Path) {

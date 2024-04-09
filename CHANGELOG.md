@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix bug when merging array fields in config.
+
 ## [0.1.23] - 2024-03-29
 
 - Fix `Config::rustc` when both rustc_wrapper and rustc_workspace_wrapper are set.

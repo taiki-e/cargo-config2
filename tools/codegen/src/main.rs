@@ -71,11 +71,11 @@ fn gen_de() -> Result<()> {
                                     && f.ident.as_ref().unwrap() != "deserialized_repr"
                             })
                             .map(|syn::Field { ident, .. }| {
-                                quote! { self.#ident.merge(from.#ident, force)?; }
+                                quote! { self.#ident.merge(low.#ident, force)?; }
                             });
                         tokens.extend(quote! {
                             impl Merge for crate:: #(#module::)* #ident {
-                                fn merge(&mut self, from: Self, force: bool) -> Result<()> {
+                                fn merge(&mut self, low: Self, force: bool) -> Result<()> {
                                     #(#fields)*
                                     Ok(())
                                 }
