@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.24] - 2024-04-09
+
 - Fix bug when merging array fields in config.
 
 ## [0.1.23] - 2024-03-29
@@ -118,7 +120,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.23...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.24...HEAD
+[0.1.24]: https://github.com/taiki-e/cargo-config2/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/taiki-e/cargo-config2/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/taiki-e/cargo-config2/compare/v0.1.21...v0.1.22
 [0.1.21]: https://github.com/taiki-e/cargo-config2/compare/v0.1.20...v0.1.21
