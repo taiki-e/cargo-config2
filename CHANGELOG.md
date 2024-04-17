@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.25] - 2024-04-17
+
 - Respect rustc_wrapper and rustc_workspace_wrapper in `Config::{rustc_version, host_triple}` to match the [Cargo's new behavior](https://github.com/rust-lang/cargo/pull/13659). (Other APIs such as `Config::rustc` are already respecting wrappers.)
 
 ## [0.1.24] - 2024-04-09
@@ -122,7 +124,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.24...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.25...HEAD
+[0.1.25]: https://github.com/taiki-e/cargo-config2/compare/v0.1.24...v0.1.25
 [0.1.24]: https://github.com/taiki-e/cargo-config2/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/taiki-e/cargo-config2/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/taiki-e/cargo-config2/compare/v0.1.21...v0.1.22
