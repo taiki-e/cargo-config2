@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Respect rustc_wrapper and rustc_workspace_wrapper in `Config::{rustc_version, host_triple}` to match the [Cargo's new behavior](https://github.com/rust-lang/cargo/pull/13659). (Other APIs such as `Config::rustc` are already respecting wrappers.)
+
 ## [0.1.24] - 2024-04-09
 
 - Fix bug when merging array fields in config.

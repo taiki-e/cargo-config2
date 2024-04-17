@@ -4,6 +4,7 @@ use core::{
     cell::{OnceCell, RefCell},
     cmp,
     hash::Hash,
+    iter,
     str::FromStr,
 };
 use std::{
@@ -164,20 +165,13 @@ impl ResolveContext {
             // https://github.com/rust-lang/cargo/pull/13648
             let rustc =
                 build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
-            if let Some(rustc_wrapper) = &build_config.rustc_wrapper {
-                let mut cmd = PathAndArgs { path: rustc_wrapper.clone(), args: vec![] };
-                if let Some(rustc_workspace_wrapper) = &build_config.rustc_workspace_wrapper {
-                    cmd.arg(rustc_workspace_wrapper.clone().into_os_string());
-                }
-                cmd.arg(rustc.into_os_string());
-                cmd
-            } else if let Some(rustc_workspace_wrapper) = &build_config.rustc_workspace_wrapper {
-                PathAndArgs {
-                    path: rustc_workspace_wrapper.clone(),
-                    args: vec![rustc.into_os_string()],
-                }
-            } else {
-                PathAndArgs { path: rustc, args: vec![] }
+            let rustc_wrapper = build_config.rustc_wrapper.clone();
+            let rustc_workspace_wrapper = build_config.rustc_workspace_wrapper.clone();
+            let mut path_and_args =
+                rustc_wrapper.into_iter().chain(rustc_workspace_wrapper).chain(iter::once(rustc));
+            PathAndArgs {
+                path: path_and_args.next().unwrap(),
+                args: path_and_args.map(PathBuf::into_os_string).collect(),
             }
         })
     }
@@ -188,7 +182,7 @@ impl ResolveContext {
         if let Some(host) = self.host_triple.get() {
             return Ok(host);
         }
-        let cargo_host = verbose_version(&self.cargo).and_then(|ref vv| {
+        let cargo_host = verbose_version(cmd!(&self.cargo)).and_then(|ref vv| {
             let r = self.cargo_version.set(cargo_version(vv)?);
             debug_assert!(r.is_ok());
             host_triple(vv)
@@ -196,11 +190,7 @@ impl ResolveContext {
         let host = match cargo_host {
             Ok(host) => host,
             Err(_) => {
-                let rustc = build_config
-                    .rustc
-                    .as_ref()
-                    .map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
-                let vv = &verbose_version(rustc.as_os_str())?;
+                let vv = &verbose_version(self.rustc(build_config).into())?;
                 let r = self.rustc_version.set(rustc_version(vv)?);
                 debug_assert!(r.is_ok());
                 host_triple(vv)?
@@ -216,9 +206,7 @@ impl ResolveContext {
         if let Some(&rustc_version) = self.rustc_version.get() {
             return Ok(rustc_version);
         }
-        let rustc =
-            build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
-        let vv = &verbose_version(rustc.as_os_str())?;
+        let vv = &verbose_version(self.rustc(build_config).into())?;
         let rustc_version = rustc_version(vv)?;
         Ok(*self.rustc_version.get_or_init(|| rustc_version))
     }
@@ -230,7 +218,7 @@ impl ResolveContext {
         if let Some(&cargo_version) = self.cargo_version.get() {
             return Ok(cargo_version);
         }
-        let vv = &verbose_version(&self.cargo)?;
+        let vv = &verbose_version(cmd!(&self.cargo))?;
         let cargo_version = cargo_version(vv)?;
         Ok(*self.cargo_version.get_or_init(|| cargo_version))
     }
@@ -590,10 +578,10 @@ impl CargoVersion {
     }
 }
 
-fn verbose_version(rustc_or_cargo: &OsStr) -> Result<(String, ProcessBuilder)> {
-    let mut cmd = cmd!(rustc_or_cargo, "--version", "--verbose");
-    let verbose_version = cmd.read()?;
-    Ok((verbose_version, cmd))
+fn verbose_version(mut rustc_or_cargo: ProcessBuilder) -> Result<(String, ProcessBuilder)> {
+    rustc_or_cargo.args(["--version", "--verbose"]);
+    let verbose_version = rustc_or_cargo.read()?;
+    Ok((verbose_version, rustc_or_cargo))
 }
 
 fn parse_version(verbose_version: &str) -> Option<(u32, u32, Option<u32>, bool)> {
@@ -662,8 +650,8 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
     fn version_and_host() {
-        let rustc_vv = &verbose_version(OsStr::new("rustc")).unwrap();
-        let cargo_vv = &verbose_version(OsStr::new("cargo")).unwrap();
+        let rustc_vv = &verbose_version(cmd!("rustc")).unwrap();
+        let cargo_vv = &verbose_version(cmd!("cargo")).unwrap();
         let rustc_version = rustc_version(rustc_vv).unwrap();
         let cargo_version = cargo_version(cargo_vv).unwrap();
         let mut stderr = io::stdout().lock();
