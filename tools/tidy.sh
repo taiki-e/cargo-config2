@@ -78,7 +78,7 @@ if [[ -n "$(git ls-files '*.rs')" ]]; then
         # `cargo fmt` cannot recognize files not included in the current workspace and modules
         # defined inside macros, so run rustfmt directly.
         # We need to use nightly rustfmt because we use the unstable formatting options of rustfmt.
-        rustc_version=$(rustc -Vv | grep 'release: ' | sed 's/release: //')
+        rustc_version=$(rustc -vV | grep 'release: ' | sed 's/release: //')
         if [[ "${rustc_version}" == *"nightly"* ]] || [[ "${rustc_version}" == *"dev"* ]]; then
             rustup component add rustfmt &>/dev/null
             echo "+ rustfmt \$(git ls-files '*.rs')"
