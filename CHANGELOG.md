@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix regression [when buggy rustc_workspace_wrapper is set](https://github.com/cuviper/autocfg/issues/58#issuecomment-2067625980), introduced in 0.1.25.
+
 ## [0.1.25] - 2024-04-17
 
 - Respect rustc_wrapper and rustc_workspace_wrapper in `Config::{rustc_version, host_triple}` to match the [Cargo's new behavior](https://github.com/rust-lang/cargo/pull/13659). (Other APIs such as `Config::rustc` are already respecting wrappers.)

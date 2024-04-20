@@ -167,13 +167,24 @@ impl ResolveContext {
                 build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
             let rustc_wrapper = build_config.rustc_wrapper.clone();
             let rustc_workspace_wrapper = build_config.rustc_workspace_wrapper.clone();
-            let mut path_and_args =
+            let mut rustc =
                 rustc_wrapper.into_iter().chain(rustc_workspace_wrapper).chain(iter::once(rustc));
             PathAndArgs {
-                path: path_and_args.next().unwrap(),
-                args: path_and_args.map(PathBuf::into_os_string).collect(),
+                path: rustc.next().unwrap(),
+                args: rustc.map(PathBuf::into_os_string).collect(),
             }
         })
+    }
+    pub(crate) fn rustc_for_version(&self, build_config: &easy::BuildConfig) -> PathAndArgs {
+        // Do not apply RUSTC_WORKSPACE_WRAPPER: https://github.com/cuviper/autocfg/issues/58#issuecomment-2067625980
+        let rustc =
+            build_config.rustc.as_ref().map_or_else(|| rustc_path(&self.cargo), PathBuf::from);
+        let rustc_wrapper = build_config.rustc_wrapper.clone();
+        let mut rustc = rustc_wrapper.into_iter().chain(iter::once(rustc));
+        PathAndArgs {
+            path: rustc.next().unwrap(),
+            args: rustc.map(PathBuf::into_os_string).collect(),
+        }
     }
     pub(crate) fn cargo_home(&self, cwd: &Path) -> &Option<PathBuf> {
         self.cargo_home.get_or_init(|| walk::cargo_home_with_cwd(cwd))
@@ -190,7 +201,7 @@ impl ResolveContext {
         let host = match cargo_host {
             Ok(host) => host,
             Err(_) => {
-                let vv = &verbose_version(self.rustc(build_config).into())?;
+                let vv = &verbose_version((&self.rustc_for_version(build_config)).into())?;
                 let r = self.rustc_version.set(rustc_version(vv)?);
                 debug_assert!(r.is_ok());
                 host_triple(vv)?
@@ -206,7 +217,7 @@ impl ResolveContext {
         if let Some(&rustc_version) = self.rustc_version.get() {
             return Ok(rustc_version);
         }
-        let vv = &verbose_version(self.rustc(build_config).into())?;
+        let vv = &verbose_version((&self.rustc_for_version(build_config)).into())?;
         let rustc_version = rustc_version(vv)?;
         Ok(*self.rustc_version.get_or_init(|| rustc_version))
     }
@@ -579,7 +590,10 @@ impl CargoVersion {
 }
 
 fn verbose_version(mut rustc_or_cargo: ProcessBuilder) -> Result<(String, ProcessBuilder)> {
-    rustc_or_cargo.args(["--version", "--verbose"]);
+    // Use verbose version output because the packagers add extra strings to the normal version output.
+    // Do not use long flags (--version --verbose) because clippy-deriver doesn't handle them properly.
+    // -vV is also matched with that cargo internally uses: https://github.com/rust-lang/cargo/blob/14b46ecc62aa671d7477beba237ad9c6a209cf5d/src/cargo/util/rustc.rs#L65
+    rustc_or_cargo.arg("-vV");
     let verbose_version = rustc_or_cargo.read()?;
     Ok((verbose_version, rustc_or_cargo))
 }

@@ -33,11 +33,11 @@ impl ProcessBuilder {
         Self { cmd }
     }
 
-    // /// Adds an argument to pass to the program.
-    // pub(crate) fn arg(&mut self, arg: impl AsRef<OsStr>) -> &mut Self {
-    //     self.cmd.arg(arg.as_ref());
-    //     self
-    // }
+    /// Adds an argument to pass to the program.
+    pub(crate) fn arg(&mut self, arg: impl AsRef<OsStr>) -> &mut Self {
+        self.cmd.arg(arg.as_ref());
+        self
+    }
 
     /// Adds multiple arguments to pass to the program.
     pub(crate) fn args(&mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> &mut Self {
