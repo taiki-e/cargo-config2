@@ -344,9 +344,9 @@ mod tests {
         let mut config = crate::de::BuildConfig::default();
         let cx =
             &ResolveOptions::default().env(env_list).into_context(std::env::current_dir().unwrap());
-        config.rustc_wrapper = Some(Value { val: "rustc_wrapper".to_string(), definition: None });
+        config.rustc_wrapper = Some(Value { val: "rustc_wrapper".to_owned(), definition: None });
         config.rustc_workspace_wrapper =
-            Some(Value { val: "rustc_workspace_wrapper".to_string(), definition: None });
+            Some(Value { val: "rustc_workspace_wrapper".to_owned(), definition: None });
         config.apply_env(cx).unwrap();
         assert!(config.rustc_wrapper.is_none());
         assert!(config.rustc_workspace_wrapper.is_none());
