@@ -204,7 +204,6 @@ impl Config {
     /// With single-target:
     ///
     /// ```no_run
-    /// # fn main() -> anyhow::Result<()> {
     /// use anyhow::bail;
     /// use clap::Parser;
     ///
@@ -224,13 +223,12 @@ impl Config {
     /// let target = targets.pop().unwrap();
     ///
     /// println!("{:?}", config.rustflags(target));
-    /// # Ok(()) }
+    /// # Ok::<(), anyhow::Error>(())
     /// ```
     ///
     /// With multi-target:
     ///
     /// ```no_run
-    /// # fn main() -> anyhow::Result<()> {
     /// use clap::Parser;
     ///
     /// #[derive(Parser)]
@@ -247,7 +245,7 @@ impl Config {
     /// for target in targets {
     ///     println!("{:?}", config.rustflags(target)?);
     /// }
-    /// # Ok(()) }
+    /// # Ok::<(), anyhow::Error>(())
     /// ```
     pub fn build_target_for_config<'a, I: IntoIterator<Item = T>, T: Into<TargetTripleRef<'a>>>(
         &self,
