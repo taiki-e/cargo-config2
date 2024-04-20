@@ -18,7 +18,7 @@ macro_rules! test_validate {
             )*
 
             if let Some((_, additional)) = predicates.next() {
-                assert!(false, "found additional requirement {:?}", additional);
+                assert!(false, "found additional requirement {additional:?}");
             }
         )+
     };
