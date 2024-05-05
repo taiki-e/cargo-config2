@@ -50,6 +50,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::std_instead_of_core,
 )]
 #![allow(clippy::must_use_candidate)]
+#![allow(unexpected_cfgs)] // https://github.com/rust-lang/rust/issues/124735
 
 // Refs:
 // - https://doc.rust-lang.org/nightly/cargo/reference/config.html
