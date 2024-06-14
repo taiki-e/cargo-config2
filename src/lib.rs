@@ -47,7 +47,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::impl_trait_in_params,
     // clippy::missing_inline_in_public_items,
     // clippy::std_instead_of_alloc,
-    clippy::std_instead_of_core,
+    // clippy::std_instead_of_core,
 )]
 #![allow(clippy::must_use_candidate)]
 
