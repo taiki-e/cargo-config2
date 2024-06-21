@@ -226,7 +226,7 @@ fn wasm_family() {
     for target in [
         "wasm32-unknown-unknown",
         "wasm32-unknown-emscripten",
-        "wasm32-wasi",
+        "wasm32-wasip1",
         "wasm64-unknown-unknown",
     ] {
         assert!(map.eval_cfg(&wasm, &target.into(), || cmd!("rustc")).unwrap(), "{target}");
