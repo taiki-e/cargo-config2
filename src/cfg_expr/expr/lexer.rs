@@ -132,8 +132,6 @@ impl<'a> Iterator for Lexer<'a> {
                         other => Some(Ok(Token::Key(other))),
                     }
                 } else {
-                    // https://github.com/rust-lang/rust-clippy/issues/3307
-                    #[allow(clippy::range_plus_one)]
                     Some(Err(ParseError {
                         original: self.original.to_owned(),
                         span: self.offset..self.offset + 1,
