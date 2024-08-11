@@ -67,7 +67,12 @@ pub struct Config {
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
     // TODO: cargo-new
-    // TODO: http
+    /// The `[http]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "HttpConfig::is_none")]
+    pub http: HttpConfig,
     // TODO: install
     /// The `[net]` table.
     ///
@@ -436,6 +441,73 @@ pub struct FutureIncompatReportConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub frequency: Option<Value<Frequency>>,
+}
+
+/// The `[http]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct HttpConfig {
+    /// If true, enables debugging of HTTP requests.
+    /// The debug information can be seen by setting the `CARGO_LOG=network=debug` environment variable
+    /// (or use `network=trace` for even more information).
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpdebug)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub debug: Option<Value<bool>>,
+    /// Sets an HTTP and HTTPS proxy to use. The format is in libcurl format as in `[protocol://]host[:port]`.
+    /// If not set, Cargo will also check the http.proxy setting in your global git configuration.
+    /// If none of those are set, the HTTPS_PROXY or https_proxy environment variables set the proxy for HTTPS requests,
+    /// and http_proxy sets it for HTTP requests.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpproxy)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy: Option<Value<String>>,
+    /// Sets the timeout for each HTTP request, in seconds.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httptimeout)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<Value<u32>>,
+    /// Path to a Certificate Authority (CA) bundle file, used to verify TLS certificates.
+    /// If not specified, Cargo attempts to use the system certificates.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcainfo)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cainfo: Option<Value<String>>,
+    /// This determines whether or not TLS certificate revocation checks should be performed.
+    /// This only works on Windows.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcheck-revoke)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub check_revoke: Option<Value<bool>>,
+    /// This sets the minimum TLS version to use.
+    /// It takes a string, with one of the possible values of "default", "tlsv1", "tlsv1.0", "tlsv1.1", "tlsv1.2", or "tlsv1.3".
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpssl-version)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ssl_version: Option<Value<String>>, // TODO: Make into an enum?
+    /// This setting controls timeout behavior for slow connections.
+    /// If the average transfer speed in bytes per second is below the given value
+    /// for `http.timeout` seconds (default 30 seconds), then the connection is considered too slow and Cargo will abort and retry.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httplow-speed-limit)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub low_speed_limit: Option<Value<u32>>,
+    /// When true, Cargo will attempt to use the HTTP2 protocol with multiplexing.
+    /// This allows multiple requests to use the same connection, usually improving performance when fetching multiple files.
+    /// If false, Cargo will use HTTP 1.1 without pipelining.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpmultiplexing)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub multiplexing: Option<Value<bool>>,
+    /// Specifies a custom user-agent header to use.
+    /// The default if not specified is a string that includes Cargo’s version.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpuser-agent)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_agent: Option<Value<String>>,
 }
 
 /// The `[net]` table.

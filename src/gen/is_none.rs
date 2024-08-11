@@ -64,6 +64,18 @@ impl crate::de::FutureIncompatReportConfig {
         self.frequency.is_none()
     }
 }
+impl crate::de::HttpConfig {
+    pub(crate) fn is_none(&self) -> bool {
+        self.debug.is_none() && self.proxy.is_none()
+            && self.timeout.is_none()
+            && self.cainfo.is_none()
+            && self.check_revoke.is_none()
+            && self.ssl_version.is_none()
+            && self.low_speed_limit.is_none()
+            && self.multiplexing.is_none()
+            && self.user_agent.is_none()
+    }
+}
 impl crate::de::NetConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.retry.is_none() && self.git_fetch_with_cli.is_none()
