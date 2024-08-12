@@ -741,12 +741,7 @@ pub struct HttpConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcheck-revoke)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub check_revoke: Option<bool>,
-    /// This sets the minimum TLS version to use.
-    /// It takes a string, with one of the possible values of "default", "tlsv1", "tlsv1.0", "tlsv1.1", "tlsv1.2", or "tlsv1.3".
-    ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpssl-version)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ssl_version: Option<String>,
+    // TODO: Add ssl-version
     /// This setting controls timeout behavior for slow connections.
     /// If the average transfer speed in bytes per second is below the given value
     /// for `http.timeout` seconds (default 30 seconds), then the connection is considered too slow and Cargo will abort and retry.
@@ -777,7 +772,6 @@ impl HttpConfig {
             timeout: de.timeout.map(|v| v.val),
             cainfo: de.cainfo.map(|v| v.val),
             check_revoke: de.check_revoke.map(|v| v.val),
-            ssl_version: de.ssl_version.map(|v| v.val),
             low_speed_limit: de.low_speed_limit.map(|v| v.val),
             multiplexing: de.multiplexing.map(|v| v.val),
             user_agent: de.user_agent.map(|v| v.val),

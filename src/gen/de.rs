@@ -126,7 +126,6 @@ impl Merge for crate::de::HttpConfig {
         self.timeout.merge(low.timeout, force)?;
         self.cainfo.merge(low.cainfo, force)?;
         self.check_revoke.merge(low.check_revoke, force)?;
-        self.ssl_version.merge(low.ssl_version, force)?;
         self.low_speed_limit.merge(low.low_speed_limit, force)?;
         self.multiplexing.merge(low.multiplexing, force)?;
         self.user_agent.merge(low.user_agent, force)?;
@@ -140,7 +139,6 @@ impl SetPath for crate::de::HttpConfig {
         self.timeout.set_path(path);
         self.cainfo.set_path(path);
         self.check_revoke.set_path(path);
-        self.ssl_version.set_path(path);
         self.low_speed_limit.set_path(path);
         self.multiplexing.set_path(path);
         self.user_agent.set_path(path);
