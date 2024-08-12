@@ -1,3 +1,5 @@
 fxsr
 unparse
 USERPROFILE
+cainfo
+libcurl
