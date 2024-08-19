@@ -5,8 +5,9 @@
 
 use crate::{
     de::{
-        BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, NetConfig, PathAndArgs,
-        RegistriesConfigValue, RegistryConfig, StringList, StringOrArray, TermConfig, TermProgress,
+        BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, HttpConfig, NetConfig,
+        PathAndArgs, RegistriesConfigValue, RegistryConfig, StringList, StringOrArray, TermConfig,
+        TermProgress,
     },
     error::{Context as _, Error, Result},
     resolve::ResolveContext,
@@ -96,6 +97,7 @@ impl Config {
         self.build.apply_env(cx)?;
         self.doc.apply_env(cx)?;
         self.future_incompat_report.apply_env(cx)?;
+        self.http.apply_env(cx)?;
         self.net.apply_env(cx)?;
         self.registry.apply_env(cx)?;
         self.term.apply_env(cx)?;
@@ -263,6 +265,48 @@ impl ApplyEnv for FutureIncompatReportConfig {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency
         if let Some(frequency) = cx.env_parse("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY")? {
             self.frequency = Some(frequency);
+        }
+        Ok(())
+    }
+}
+
+impl ApplyEnv for HttpConfig {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpdebug
+        if let Some(debug) = cx.env_parse("CARGO_HTTP_DEBUG")? {
+            self.debug = Some(debug);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpproxy
+        // TODO:
+        // > CARGO_HTTP_PROXY or HTTPS_PROXY or https_proxy or http_proxy
+        if let Some(proxy) = cx.env("CARGO_HTTP_PROXY")? {
+            self.proxy = Some(proxy);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httptimeout
+        // TODO:
+        // > CARGO_HTTP_TIMEOUT or HTTP_TIMEOUT
+        if let Some(timeout) = cx.env_parse("CARGO_HTTP_TIMEOUT")? {
+            self.timeout = Some(timeout);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcainfo
+        if let Some(cainfo) = cx.env("CARGO_HTTP_CAINFO")? {
+            self.cainfo = Some(cainfo);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcheck-revoke
+        if let Some(check_revoke) = cx.env_parse("CARGO_HTTP_CHECK_REVOKE")? {
+            self.check_revoke = Some(check_revoke);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httplow-speed-limit
+        if let Some(low_speed_limit) = cx.env_parse("CARGO_HTTP_LOW_SPEED_LIMIT")? {
+            self.low_speed_limit = Some(low_speed_limit);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpmultiplexing
+        if let Some(multiplexing) = cx.env_parse("CARGO_HTTP_MULTIPLEXING")? {
+            self.multiplexing = Some(multiplexing);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpuser-agent
+        if let Some(user_agent) = cx.env("CARGO_HTTP_USER_AGENT")? {
+            self.user_agent = Some(user_agent);
         }
         Ok(())
     }
