@@ -83,6 +83,11 @@ const _: fn() = || {
     assert_unpin::<crate::de::FutureIncompatReportConfig>();
     assert_unwind_safe::<crate::de::FutureIncompatReportConfig>();
     assert_ref_unwind_safe::<crate::de::FutureIncompatReportConfig>();
+    assert_send::<crate::de::HttpConfig>();
+    assert_sync::<crate::de::HttpConfig>();
+    assert_unpin::<crate::de::HttpConfig>();
+    assert_unwind_safe::<crate::de::HttpConfig>();
+    assert_ref_unwind_safe::<crate::de::HttpConfig>();
     assert_send::<crate::de::NetConfig>();
     assert_sync::<crate::de::NetConfig>();
     assert_unpin::<crate::de::NetConfig>();
@@ -183,6 +188,11 @@ const _: fn() = || {
     assert_unpin::<crate::easy::FutureIncompatReportConfig>();
     assert_unwind_safe::<crate::easy::FutureIncompatReportConfig>();
     assert_ref_unwind_safe::<crate::easy::FutureIncompatReportConfig>();
+    assert_send::<crate::easy::HttpConfig>();
+    assert_sync::<crate::easy::HttpConfig>();
+    assert_unpin::<crate::easy::HttpConfig>();
+    assert_unwind_safe::<crate::easy::HttpConfig>();
+    assert_ref_unwind_safe::<crate::easy::HttpConfig>();
     assert_send::<crate::easy::NetConfig>();
     assert_sync::<crate::easy::NetConfig>();
     assert_unpin::<crate::easy::NetConfig>();

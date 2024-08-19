@@ -41,18 +41,18 @@ frequency = 'always' # when to display a notification about a future incompat re
 # [cargo-new]
 # vcs = "none"              # VCS to use ('git', 'hg', 'pijul', 'fossil', 'none')
 
-# [http]
-# debug = false               # HTTP debugging
-# proxy = "host:port"         # HTTP proxy in libcurl format
-# # ssl-version = "tlsv1.3"     # TLS version to use
+[http]
+debug = false # HTTP debugging
+proxy = "host:port" # HTTP proxy in libcurl format
+# ssl-version = "tlsv1.3"     # TLS version to use
 # ssl-version.max = "tlsv1.3" # maximum TLS version
 # ssl-version.min = "tlsv1.1" # minimum TLS version
-# timeout = 30                # timeout for each HTTP request, in seconds
-# low-speed-limit = 10        # network timeout threshold (bytes/sec)
-# cainfo = "cert.pem"         # path to Certificate Authority (CA) bundle
-# check-revoke = true         # check for SSL certificate revocation
-# multiplexing = true         # HTTP/2 multiplexing
-# user-agent = "…"            # the user-agent header
+timeout = 30 # timeout for each HTTP request, in seconds
+low-speed-limit = 10 # network timeout threshold (bytes/sec)
+cainfo = "cert.pem" # path to Certificate Authority (CA) bundle
+check-revoke = true # check for SSL certificate revocation
+multiplexing = true # HTTP/2 multiplexing
+user-agent = "foo-usr-agt" # the user-agent header
 
 # [install]
 # root = "/some/path"         # `cargo install` destination directory

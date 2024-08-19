@@ -74,8 +74,15 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     // TODO
     // [cargo-new]
 
-    // TODO
     // [http]
+    assert_eq!(config.http.debug, Some(false));
+    assert_eq!(config.http.proxy.as_deref(), Some("host:port"));
+    assert_eq!(config.http.timeout, Some(30));
+    assert_eq!(config.http.low_speed_limit, Some(10));
+    assert_eq!(config.http.cainfo.as_deref(), Some("cert.pem"));
+    assert_eq!(config.http.check_revoke, Some(true));
+    assert_eq!(config.http.multiplexing, Some(true));
+    assert_eq!(config.http.user_agent.as_deref(), Some("foo-usr-agt"));
 
     // TODO
     // [install]

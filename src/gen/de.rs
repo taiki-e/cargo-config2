@@ -13,6 +13,7 @@ impl Merge for crate::de::Config {
         self.doc.merge(low.doc, force)?;
         self.env.merge(low.env, force)?;
         self.future_incompat_report.merge(low.future_incompat_report, force)?;
+        self.http.merge(low.http, force)?;
         self.net.merge(low.net, force)?;
         self.registries.merge(low.registries, force)?;
         self.registry.merge(low.registry, force)?;
@@ -28,6 +29,7 @@ impl SetPath for crate::de::Config {
         self.doc.set_path(path);
         self.env.set_path(path);
         self.future_incompat_report.set_path(path);
+        self.http.set_path(path);
         self.net.set_path(path);
         self.registries.set_path(path);
         self.registry.set_path(path);
@@ -115,6 +117,31 @@ impl Merge for crate::de::FutureIncompatReportConfig {
 impl SetPath for crate::de::FutureIncompatReportConfig {
     fn set_path(&mut self, path: &Path) {
         self.frequency.set_path(path);
+    }
+}
+impl Merge for crate::de::HttpConfig {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        self.debug.merge(low.debug, force)?;
+        self.proxy.merge(low.proxy, force)?;
+        self.timeout.merge(low.timeout, force)?;
+        self.cainfo.merge(low.cainfo, force)?;
+        self.check_revoke.merge(low.check_revoke, force)?;
+        self.low_speed_limit.merge(low.low_speed_limit, force)?;
+        self.multiplexing.merge(low.multiplexing, force)?;
+        self.user_agent.merge(low.user_agent, force)?;
+        Ok(())
+    }
+}
+impl SetPath for crate::de::HttpConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.debug.set_path(path);
+        self.proxy.set_path(path);
+        self.timeout.set_path(path);
+        self.cainfo.set_path(path);
+        self.check_revoke.set_path(path);
+        self.low_speed_limit.set_path(path);
+        self.multiplexing.set_path(path);
+        self.user_agent.set_path(path);
     }
 }
 impl Merge for crate::de::NetConfig {
