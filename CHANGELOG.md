@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Support the `[http]` table. ([#20](https://github.com/taiki-e/cargo-config2/pull/20), thanks @ranger-ross)
+
 ## [0.1.26] - 2024-04-20
 
 - Fix regression [when buggy rustc_workspace_wrapper is set](https://github.com/cuviper/autocfg/issues/58#issuecomment-2067625980), introduced in 0.1.25.
@@ -96,7 +98,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.1.6] - 2023-03-07
 
-- Implement the `[registries]` and `[registry]` tables. ([#8](https://github.com/taiki-e/cargo-config2/pull/8), thanks @yottalogical)
+- Support the `[registries]` and `[registry]` tables. ([#8](https://github.com/taiki-e/cargo-config2/pull/8), thanks @yottalogical)
 
 ## [0.1.5] - 2023-02-23
 
