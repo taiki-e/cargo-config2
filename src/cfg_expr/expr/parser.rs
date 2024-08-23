@@ -140,9 +140,8 @@ impl Expression {
                         let key = pred_key.take();
                         let val = pred_val.take();
 
-                        let num_predicates = top.predicates.len()
-                            + usize::from(key.is_some())
-                            + usize::from(top.nest_level);
+                        let num_predicates =
+                            top.predicates.len() + key.is_some() as usize + top.nest_level as usize;
 
                         let func = match top.func {
                             Func::All(_) => Func::All(num_predicates),
