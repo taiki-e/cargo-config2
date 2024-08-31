@@ -66,7 +66,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
-    // TODO: cargo-new
+    /// The `[cargo-new]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "CargoNewConfig::is_none")]
+    pub cargo_new: CargoNewConfig,
     /// The `[http]` table.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
@@ -441,6 +446,64 @@ pub struct FutureIncompatReportConfig {
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub frequency: Option<Value<Frequency>>,
+}
+
+/// The `[cargo-new]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct CargoNewConfig {
+    /// Specifies the source control system to use for initializing a new repository.
+    /// Valid values are git, hg (for Mercurial), pijul, fossil or none to disable this behavior.
+    /// Defaults to git, or none if already inside a VCS repository. Can be overridden with the --vcs CLI option.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vcs: Option<Value<VersionControlSoftware>>,
+}
+
+#[allow(clippy::exhaustive_enums)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum VersionControlSoftware {
+    /// Git
+    Git,
+    /// Mercurial
+    #[serde(rename = "hg")]
+    Mercurial,
+    /// Pijul
+    Pijul,
+    /// Fossil
+    Fossil,
+    /// No VCS
+    None,
+}
+
+impl VersionControlSoftware {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            VersionControlSoftware::Git => "git",
+            VersionControlSoftware::Mercurial => "hg",
+            VersionControlSoftware::Pijul => "pijul",
+            VersionControlSoftware::Fossil => "fossil",
+            VersionControlSoftware::None => "none",
+        }
+    }
+}
+
+impl FromStr for VersionControlSoftware {
+    type Err = Error;
+
+    fn from_str(vcs: &str) -> Result<Self, Self::Err> {
+        match vcs {
+            "git" => Ok(Self::Git),
+            "hg" => Ok(Self::Mercurial),
+            "pijul" => Ok(Self::Pijul),
+            "fossil" => Ok(Self::Fossil),
+            "none" => Ok(Self::None),
+            other => bail!("must be git, hg, pijul, fossil, none, but found `{other}`"),
+        }
+    }
 }
 
 /// The `[http]` table.

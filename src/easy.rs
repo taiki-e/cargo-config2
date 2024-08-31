@@ -13,7 +13,10 @@ use serde::ser::{Serialize, Serializer};
 use serde_derive::Serialize;
 
 use crate::{
-    de::{self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol, When},
+    de::{
+        self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol,
+        VersionControlSoftware, When,
+    },
     error::{Context as _, Result},
     process::ProcessBuilder,
     resolve::{
@@ -59,7 +62,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
-    // TODO: cargo-new
+    /// The `[cargo-new]` table.
+    ///
+    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "CargoNewConfig::is_none")]
+    pub cargo_new: CargoNewConfig,
     /// The `[http]` table.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
@@ -151,6 +159,7 @@ impl Config {
         }
         let future_incompat_report =
             FutureIncompatReportConfig::from_unresolved(de.future_incompat_report);
+        let cargo_new = CargoNewConfig::from_unresolved(de.cargo_new);
         let http = HttpConfig::from_unresolved(de.http);
         let net = NetConfig::from_unresolved(de.net);
         let mut registries = BTreeMap::new();
@@ -166,6 +175,7 @@ impl Config {
             doc,
             env,
             future_incompat_report,
+            cargo_new,
             http,
             net,
             registries,
@@ -699,6 +709,26 @@ impl FutureIncompatReportConfig {
     fn from_unresolved(de: de::FutureIncompatReportConfig) -> Self {
         let frequency = de.frequency.map(|v| v.val);
         Self { frequency }
+    }
+}
+
+/// The `[cargo-new]` table.
+///
+/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct CargoNewConfig {
+    /// Specifies the source control system to use for initializing a new repository.
+    /// Valid values are git, hg (for Mercurial), pijul, fossil or none to disable this behavior.
+    /// Defaults to git, or none if already inside a VCS repository. Can be overridden with the --vcs CLI option.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vcs: Option<VersionControlSoftware>,
+}
+
+impl CargoNewConfig {
+    fn from_unresolved(de: de::CargoNewConfig) -> Self {
+        Self { vcs: de.vcs.map(|v| v.val) }
     }
 }
 
