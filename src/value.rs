@@ -84,7 +84,7 @@ impl Definition {
         }
     }
 
-    // /// Returns true if self is a higher priority to other.
+    // /// Returns `true` if self is a higher priority to other.
     // ///
     // /// CLI is preferred over environment, which is preferred over files.
     // pub(crate) fn is_higher_priority(&self, other: &Definition) -> bool {

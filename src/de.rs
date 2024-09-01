@@ -951,7 +951,7 @@ impl Flags {
     /// - `target.<triple>.rustflags`
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
-    /// - `target.<triple>.rustdocflags`
+    /// - `target.<triple>.rustdocflags` (Cargo 1.78+)
     /// - `build.rustdocflags`
     ///
     /// See also `encode_space_separated`.
