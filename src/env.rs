@@ -5,9 +5,9 @@
 
 use crate::{
     de::{
-        BuildConfig, Config, DocConfig, Flags, FutureIncompatReportConfig, HttpConfig, NetConfig,
-        PathAndArgs, RegistriesConfigValue, RegistryConfig, StringList, StringOrArray, TermConfig,
-        TermProgress,
+        BuildConfig, CargoNewConfig, Config, DocConfig, Flags, FutureIncompatReportConfig,
+        HttpConfig, NetConfig, PathAndArgs, RegistriesConfigValue, RegistryConfig, StringList,
+        StringOrArray, TermConfig, TermProgress,
     },
     error::{Context as _, Error, Result},
     resolve::ResolveContext,
@@ -265,6 +265,16 @@ impl ApplyEnv for FutureIncompatReportConfig {
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency
         if let Some(frequency) = cx.env_parse("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY")? {
             self.frequency = Some(frequency);
+        }
+        Ok(())
+    }
+}
+
+impl ApplyEnv for CargoNewConfig {
+    fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-newvcs
+        if let Some(vcs) = cx.env_parse("CARGO_CARGO_NEW_VCS")? {
+            self.vcs = Some(vcs);
         }
         Ok(())
     }

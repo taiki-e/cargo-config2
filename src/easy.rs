@@ -74,7 +74,6 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "HttpConfig::is_none")]
     pub http: HttpConfig,
-
     // TODO: install
     /// The `[net]` table.
     ///

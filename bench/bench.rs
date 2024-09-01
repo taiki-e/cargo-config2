@@ -61,6 +61,7 @@ fn reference(c: &mut Criterion) {
             ("CARGO_BUILD_DEP_INFO_BASEDIR", "1"),
             ("BROWSER", "1"),
             ("CARGO_FUTURE_INCOMPAT_REPORT_FREQUENCY", "always"),
+            ("CARGO_CARGO_NEW_VCS", "git"),
             ("CARGO_HTTP_DEBUG", "true"),
             ("CARGO_HTTP_PROXY", "-"),
             ("CARGO_HTTP_TIMEOUT", "1"),
