@@ -39,7 +39,7 @@ fn config_path(path: &Path) -> Option<PathBuf> {
 }
 
 // Use the home crate only on Windows which std::env::home_dir is not correct.
-// https://github.com/rust-lang/cargo/blob/b2e1d3b6235c07221dd0fcac54a7b0c754ef8b11/crates/home/src/lib.rs#L65-L72
+// https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/lib.rs#L65-L72
 #[cfg(windows)]
 use home::home_dir;
 #[cfg(not(windows))]
@@ -50,8 +50,8 @@ fn home_dir() -> Option<PathBuf> {
 
 pub(crate) fn cargo_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
     // Follow the cargo's behavior.
-    // https://github.com/rust-lang/cargo/blob/b2e1d3b6235c07221dd0fcac54a7b0c754ef8b11/crates/home/src/lib.rs#L77-L86
-    // https://github.com/rust-lang/cargo/blob/b2e1d3b6235c07221dd0fcac54a7b0c754ef8b11/crates/home/src/env.rs#L63-L77
+    // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/lib.rs#L77-L86
+    // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/env.rs#L63-L77
     match std::env::var_os("CARGO_HOME").filter(|h| !h.is_empty()).map(PathBuf::from) {
         Some(home) => {
             if home.is_absolute() {

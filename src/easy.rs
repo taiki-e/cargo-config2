@@ -580,7 +580,7 @@ impl BuildConfig {
     }
 }
 
-// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
+// https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/target.rs
 /// A `[target.<triple>]` or `[target.<cfg>]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)

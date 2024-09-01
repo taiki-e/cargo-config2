@@ -9,7 +9,10 @@ use crate::{
     Color, Frequency, When,
 };
 
-// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/mod.rs#L1900-L1908
+// https://github.com/rust-lang/cargo/blob/0.74.0/src/cargo/util/config/mod.rs#L2107-L2115
+// TODO:
+// - https://github.com/rust-lang/cargo/pull/12515
+// - https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/mod.rs#L2159-L2167
 //
 // > If `force` is true, primitive (non-container) types will override existing values.
 // > If false, the original will be kept and the new value ignored.

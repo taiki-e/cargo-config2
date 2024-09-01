@@ -252,7 +252,7 @@ impl ApplyEnv for BuildConfig {
 impl ApplyEnv for DocConfig {
     fn apply_env(&mut self, cx: &ResolveContext) -> Result<()> {
         // doc.browser config value is prefer over BROWSER environment variable.
-        // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/ops/cargo_doc.rs#L52-L53
+        // https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/ops/cargo_doc.rs#L143-L144
         if self.browser.is_none() {
             if let Some(browser) = cx.env("BROWSER")? {
                 self.browser = Some(

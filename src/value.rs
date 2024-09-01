@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-// Based on https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/value.rs.
+// Based on https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/value.rs.
 
 use core::{fmt, mem, str::FromStr};
 use std::{

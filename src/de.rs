@@ -386,7 +386,7 @@ pub struct BuildConfig {
     pub(crate) override_target_rustdocflags: bool,
 }
 
-// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
+// https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/target.rs
 /// A `[target.<triple>]` or `[target.<cfg>]` table.
 ///
 /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
@@ -984,7 +984,7 @@ impl<'de> Deserialize<'de> for Flags {
     }
 }
 
-// https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/path.rs
+// https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/path.rs
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(transparent)]
 pub struct ConfigRelativePath(pub(crate) Value<String>);
@@ -1226,5 +1226,7 @@ pub(crate) fn split_encoded(s: &str) -> impl Iterator<Item = &str> {
     s.split('\x1f')
 }
 pub(crate) fn split_space_separated(s: &str) -> impl Iterator<Item = &str> {
+    // TODO: tab/line?
+    // https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/path.rs#L89
     s.split(' ').map(str::trim).filter(|s| !s.is_empty())
 }
