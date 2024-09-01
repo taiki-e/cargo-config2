@@ -104,6 +104,7 @@ token = "00000000000000000000000000000000000" # authentication token for crates.
 linker = "b" # linker to use
 runner = "b" # wrapper to run executables
 rustflags = ["b", "bb"] # custom flags for `rustc`
+rustdocflags = ["d", "dd"] # custom flags for `rustc`
 
 [target.'cfg(target_arch = "x86_64")']
 runner = "c" # wrapper to run executables

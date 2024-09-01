@@ -191,6 +191,8 @@ impl Config {
         target_configs: &BTreeMap<String, TargetConfig>,
         override_target_rustflags: bool,
         build_rustflags: &Option<Flags>,
+        override_target_rustdocflags: bool,
+        build_rustdocflags: &Option<Flags>,
         target_triple: &TargetTripleRef<'_>,
         build_config: &easy::BuildConfig,
     ) -> Result<Option<TargetConfig>> {
@@ -205,6 +207,8 @@ impl Config {
         let mut target_runner = target_config.as_mut().and_then(|c| c.runner.take());
         let mut target_rustflags: Option<Flags> =
             target_config.as_mut().and_then(|c| c.rustflags.take());
+        let mut target_rustdocflags: Option<Flags> =
+            target_config.as_mut().and_then(|c| c.rustdocflags.take());
         if let Some(linker) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_LINKER"))? {
             target_linker = Some(linker);
         }
@@ -222,6 +226,18 @@ impl Config {
                     target_rustflags.flags.append(&mut rustflags.flags);
                 }
                 target_rustflags @ None => *target_rustflags = Some(rustflags),
+            }
+        }
+        if let Some(rustdocflags) =
+            cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUSTDOCFLAGS"))?
+        {
+            let mut rustdocflags =
+                Flags::from_space_separated(&rustdocflags.val, rustdocflags.definition.as_ref());
+            match &mut target_rustdocflags {
+                Some(target_rustdocflags) => {
+                    target_rustdocflags.flags.append(&mut rustdocflags.flags);
+                }
+                target_rustdocflags @ None => *target_rustdocflags = Some(rustdocflags),
             }
         }
         for (k, v) in target_configs {
@@ -276,6 +292,20 @@ impl Config {
                 .get_or_insert_with(TargetConfig::default)
                 .rustflags
                 .clone_from(build_rustflags);
+        }
+        if override_target_rustdocflags {
+            target_config
+                .get_or_insert_with(TargetConfig::default)
+                .rustdocflags
+                .clone_from(build_rustdocflags);
+        } else if let Some(rustdocflags) = target_rustdocflags {
+            target_config.get_or_insert_with(TargetConfig::default).rustdocflags =
+                Some(rustdocflags);
+        } else {
+            target_config
+                .get_or_insert_with(TargetConfig::default)
+                .rustdocflags
+                .clone_from(build_rustdocflags);
         }
         Ok(target_config)
     }
@@ -352,6 +382,8 @@ pub struct BuildConfig {
     // Resolve contexts. Completely ignored in serialization and deserialization.
     #[serde(skip)]
     pub(crate) override_target_rustflags: bool,
+    #[serde(skip)]
+    pub(crate) override_target_rustdocflags: bool,
 }
 
 // https://github.com/rust-lang/cargo/blob/0.67.0/src/cargo/util/config/target.rs
@@ -375,6 +407,11 @@ pub struct TargetConfig {
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustflags: Option<Flags>,
+    /// [reference (`target.<triple>.rustdocflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerustdocflags)
+    ///
+    /// [reference (`target.<cfg>.rustdocflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustdocflags)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rustdocflags: Option<Flags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
 }
 
@@ -906,6 +943,7 @@ impl Flags {
     /// - `CARGO_TARGET_<triple>_RUSTFLAGS`
     /// - `CARGO_BUILD_RUSTFLAGS`
     /// - `RUSTDOCFLAGS`
+    /// - `CARGO_TARGET_<triple>_RUSTDOCFLAGS`
     /// - `CARGO_BUILD_RUSTDOCFLAGS`
     ///
     /// And the following configs:
@@ -913,6 +951,7 @@ impl Flags {
     /// - `target.<triple>.rustflags`
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
+    /// - `target.<triple>.rustdocflags`
     /// - `build.rustdocflags`
     ///
     /// See also `encode_space_separated`.

@@ -10,6 +10,9 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Support `target.<triple>.rustdocflags` [that added in Cargo 1.78](https://github.com/rust-lang/cargo/pull/13197).
+  `Config::rustdocflags` is a new recommended interface to get rustdocflags.
+
 ## [0.1.28] - 2024-09-01
 
 - Support the `[cargo-new]` table. ([#21](https://github.com/taiki-e/cargo-config2/pull/21), thanks @ranger-ross)

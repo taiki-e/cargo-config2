@@ -319,6 +319,8 @@ impl Config {
                     &self.de_target,
                     self.build.override_target_rustflags,
                     &self.build.de_rustflags,
+                    self.build.override_target_rustdocflags,
+                    &self.build.de_rustdocflags,
                     target,
                     &self.build,
                 )?
@@ -355,6 +357,15 @@ impl Config {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].rustflags.clone())
+    }
+    /// Returns the resolved rustdocflags for the given target.
+    pub fn rustdocflags<'a, T: Into<TargetTripleRef<'a>>>(
+        &self,
+        target: T,
+    ) -> Result<Option<Flags>> {
+        let target = target.into();
+        self.init_target_config(&target)?;
+        Ok(self.target.borrow()[target.cli_target()].rustdocflags.clone())
     }
 
     /// Returns the path and args that calls `rustc`.
@@ -488,6 +499,10 @@ pub struct BuildConfig {
     /// of strings or a space-separated string.
     ///
     /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags)
+    ///
+    /// **Note:** This field does not reflect the target-specific rustdocflags
+    /// configuration, so you may want to use [`Config::rustdocflags`] which respects
+    /// the target-specific rustdocflags configuration.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustdocflags: Option<Flags>,
     /// Whether or not to perform incremental compilation.
@@ -506,6 +521,10 @@ pub struct BuildConfig {
     override_target_rustflags: bool,
     #[serde(skip)]
     de_rustflags: Option<de::Flags>,
+    #[serde(skip)]
+    override_target_rustdocflags: bool,
+    #[serde(skip)]
+    de_rustdocflags: Option<de::Flags>,
 }
 
 impl BuildConfig {
@@ -533,12 +552,14 @@ impl BuildConfig {
         let de_rustflags = de.rustflags.clone();
         let rustflags =
             de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+        let de_rustdocflags = de.rustdocflags.clone();
         let rustdocflags =
             de.rustdocflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
         let incremental = de.incremental.map(|v| v.val);
         let dep_info_basedir =
             de.dep_info_basedir.map(|v| v.resolve_as_path(current_dir).into_owned());
         let override_target_rustflags = de.override_target_rustflags;
+        let override_target_rustdocflags = de.override_target_rustdocflags;
         Self {
             jobs,
             rustc,
@@ -553,6 +574,8 @@ impl BuildConfig {
             dep_info_basedir,
             override_target_rustflags,
             de_rustflags,
+            override_target_rustdocflags,
+            de_rustdocflags,
         }
     }
 }
@@ -578,6 +601,11 @@ pub struct TargetConfig {
     /// [reference (`target.<cfg>.rustflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustflags)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustflags: Option<Flags>,
+    /// [reference (`target.<triple>.rustdocflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerustdocflags)
+    ///
+    /// [reference (`target.<cfg>.rustdocflags`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targetcfgrustdocflags)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rustdocflags: Option<Flags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
 }
 
@@ -593,7 +621,9 @@ impl TargetConfig {
         };
         let rustflags =
             de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
-        Self { linker, runner, rustflags }
+        let rustdocflags =
+            de.rustdocflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+        Self { linker, runner, rustflags, rustdocflags }
     }
 }
 
@@ -1005,7 +1035,7 @@ impl TermProgressConfig {
     }
 }
 
-/// A representation of rustflags and rustdocflags.
+/// A representation of rustflags or rustdocflags.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 #[non_exhaustive]
@@ -1014,7 +1044,7 @@ pub struct Flags {
 }
 
 impl Flags {
-    /// Creates a rustflags from a string separated with ASCII unit separator ('\x1f').
+    /// Creates a rustflags or rustdocflags from a string separated with ASCII unit separator ('\x1f').
     ///
     /// This is a valid format for the following environment variables:
     ///
@@ -1026,7 +1056,7 @@ impl Flags {
         Self { flags: split_encoded(s).map(str::to_owned).collect() }
     }
 
-    /// Creates a rustflags from a string separated with space (' ').
+    /// Creates a rustflags or rustdocflags from a string separated with space (' ').
     ///
     /// This is a valid format for the following environment variables:
     ///
@@ -1034,6 +1064,7 @@ impl Flags {
     /// - `CARGO_TARGET_<triple>_RUSTFLAGS`
     /// - `CARGO_BUILD_RUSTFLAGS`
     /// - `RUSTDOCFLAGS`
+    /// - `CARGO_TARGET_<triple>_RUSTDOCFLAGS`
     /// - `CARGO_BUILD_RUSTDOCFLAGS`
     ///
     /// And the following configs:
@@ -1041,6 +1072,7 @@ impl Flags {
     /// - `target.<triple>.rustflags`
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
+    /// - `target.<triple>.rustdocflags`
     /// - `build.rustdocflags`
     ///
     /// See also [`encode_space_separated`](Self::encode_space_separated).
@@ -1048,7 +1080,7 @@ impl Flags {
         Self { flags: split_space_separated(s).map(str::to_owned).collect() }
     }
 
-    /// Concatenates this rustflags with ASCII unit separator ('\x1f').
+    /// Concatenates this rustflags or rustdocflags with ASCII unit separator ('\x1f').
     ///
     /// This is a valid format for the following environment variables:
     ///
@@ -1063,8 +1095,8 @@ impl Flags {
     /// separator, Cargo will interpret it as a separator.
     ///
     /// Since it is not easy to insert an ASCII unit separator in a toml file or
-    /// Shell environment variable, this usually occurs when this rustflags is
-    /// created in the wrong way ([`from_encoded`](Self::from_encoded) vs
+    /// Shell environment variable, this usually occurs when this rustflags or rustdocflags
+    /// is created in the wrong way ([`from_encoded`](Self::from_encoded) vs
     /// [`from_space_separated`](Self::from_space_separated)) or when a flag
     /// containing a separator is written in the rust code ([`push`](Self::push),
     /// `into`, `from`, etc.).
@@ -1072,7 +1104,7 @@ impl Flags {
         self.encode_internal('\x1f')
     }
 
-    /// Concatenates this rustflags with space (' ').
+    /// Concatenates this rustflags or rustdocflags with space (' ').
     ///
     /// This is a valid format for the following environment variables:
     ///
@@ -1080,6 +1112,7 @@ impl Flags {
     /// - `CARGO_TARGET_<triple>_RUSTFLAGS`
     /// - `CARGO_BUILD_RUSTFLAGS`
     /// - `RUSTDOCFLAGS`
+    /// - `CARGO_TARGET_<triple>_RUSTDOCFLAGS`
     /// - `CARGO_BUILD_RUSTDOCFLAGS`
     ///
     /// And the following configs:
@@ -1087,6 +1120,7 @@ impl Flags {
     /// - `target.<triple>.rustflags`
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
+    /// - `target.<triple>.rustdocflags`
     /// - `build.rustdocflags`
     ///
     /// # Errors
@@ -1118,7 +1152,7 @@ impl Flags {
         Ok(buf)
     }
 
-    /// Appends a flag to the back of this rustflags.
+    /// Appends a flag to the back of this rustflags or rustdocflags.
     pub fn push<S: Into<String>>(&mut self, flag: S) {
         self.flags.push(flag.into());
     }

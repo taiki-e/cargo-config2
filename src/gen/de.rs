@@ -75,6 +75,7 @@ impl Merge for crate::de::TargetConfig {
         self.linker.merge(low.linker, force)?;
         self.runner.merge(low.runner, force)?;
         self.rustflags.merge(low.rustflags, force)?;
+        self.rustdocflags.merge(low.rustdocflags, force)?;
         Ok(())
     }
 }
@@ -83,6 +84,7 @@ impl SetPath for crate::de::TargetConfig {
         self.linker.set_path(path);
         self.runner.set_path(path);
         self.rustflags.set_path(path);
+        self.rustdocflags.set_path(path);
     }
 }
 impl Merge for crate::de::DocConfig {

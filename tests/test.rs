@@ -47,8 +47,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     assert_eq!(config.build.rustdoc.as_ref().unwrap().as_os_str(), "rustdoc");
     assert_eq!(config.build.target.as_ref().unwrap(), &vec!["triple".into()]);
     assert_eq!(config.build.target_dir.as_ref().unwrap(), &dir.join("target"));
-    // TODO
-    // assert_eq!(config.build.rustflags, Some(["…", "…"].into()));
+    assert_eq!(config.build.rustflags, Some(["…", "…"].into()));
     assert_eq!(config.build.rustdocflags, Some(["…", "…"].into()));
     assert_eq!(config.build.incremental, Some(true));
     assert_eq!(config.build.dep_info_basedir.as_ref().unwrap(), &dir.join("…"));
@@ -122,10 +121,12 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
         config.target("x86_64-unknown-linux-gnu")?.rustflags,
         Some(["b", "bb", "c", "cc"].into())
     );
+    assert_eq!(config.target("x86_64-unknown-linux-gnu")?.rustdocflags, Some(["d", "dd"].into()));
     assert_eq!(config.linker("x86_64-unknown-linux-gnu")?.unwrap().as_os_str(), "b");
     assert_eq!(config.runner("x86_64-unknown-linux-gnu")?.unwrap().path.as_os_str(), "b");
     assert!(config.runner("x86_64-unknown-linux-gnu")?.unwrap().args.is_empty());
     assert_eq!(config.rustflags("x86_64-unknown-linux-gnu")?, Some(["b", "bb", "c", "cc"].into()));
+    assert_eq!(config.rustdocflags("x86_64-unknown-linux-gnu")?, Some(["d", "dd"].into()));
     // TODO: [target.<triple>.<links>]
 
     // resolved target config cannot be accessed by cfg(...)

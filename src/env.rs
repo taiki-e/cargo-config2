@@ -206,15 +206,20 @@ impl ApplyEnv for BuildConfig {
         }
         // 1. CARGO_ENCODED_RUSTDOCFLAGS
         // 2. RUSTDOCFLAGS
-        // 3. build.rustdocflags (CARGO_BUILD_RUSTDOCFLAGS)
+        // 3. target.<triple>.rustdocflags (CARGO_TARGET_<triple>_RUSTDOCFLAGS)
+        // 4. build.rustdocflags (CARGO_BUILD_RUSTDOCFLAGS)
+        // For 3, we handle it in de::Config::resolve_target.
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags
+        self.override_target_rustdocflags = false;
         if let Some(rustdocflags) = cx.env("CARGO_ENCODED_RUSTDOCFLAGS")? {
             self.rustdocflags = Some(Flags::from_encoded(&rustdocflags));
+            self.override_target_rustdocflags = true;
         } else if let Some(rustdocflags) = cx.env("RUSTDOCFLAGS")? {
             self.rustdocflags = Some(Flags::from_space_separated(
                 &rustdocflags.val,
                 rustdocflags.definition.as_ref(),
             ));
+            self.override_target_rustdocflags = true;
         } else if let Some(rustdocflags) = cx.env("CARGO_BUILD_RUSTDOCFLAGS")? {
             self.rustdocflags = Some(Flags::from_space_separated(
                 &rustdocflags.val,
