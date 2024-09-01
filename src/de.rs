@@ -462,9 +462,9 @@ pub struct CargoNewConfig {
     pub vcs: Option<Value<VersionControlSoftware>>,
 }
 
-#[allow(clippy::exhaustive_enums)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub enum VersionControlSoftware {
     /// Git
     Git,

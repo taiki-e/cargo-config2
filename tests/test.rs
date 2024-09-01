@@ -9,6 +9,7 @@ use std::{collections::HashMap, path::Path, str};
 use anyhow::{Context as _, Result};
 use build_context::TARGET;
 use cargo_config2::*;
+use de::VersionControlSoftware;
 use helper::*;
 
 fn test_options() -> ResolveOptions {
@@ -71,8 +72,8 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     // [future-incompat-report]
     assert_eq!(config.future_incompat_report.frequency, Some(Frequency::Always));
 
-    // TODO
-    assert_eq!(config.cargo_new.vcs, None);
+    // [cargo-new]
+    assert_eq!(config.cargo_new.vcs, Some(VersionControlSoftware::None));
 
     // [http]
     assert_eq!(config.http.debug, Some(false));
