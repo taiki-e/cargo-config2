@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.29] - 2024-09-01
+
 - Support `target.<triple>.rustdocflags` [that added in Cargo 1.78](https://github.com/rust-lang/cargo/pull/13197).
   `Config::rustdocflags` is a new recommended interface to get rustdocflags.
 
@@ -139,7 +141,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.28...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.29...HEAD
+[0.1.29]: https://github.com/taiki-e/cargo-config2/compare/v0.1.28...v0.1.29
 [0.1.28]: https://github.com/taiki-e/cargo-config2/compare/v0.1.27...v0.1.28
 [0.1.27]: https://github.com/taiki-e/cargo-config2/compare/v0.1.26...v0.1.27
 [0.1.26]: https://github.com/taiki-e/cargo-config2/compare/v0.1.25...v0.1.26
