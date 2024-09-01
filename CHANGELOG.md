@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Support the `[cargo-new]` table. ([#21](https://github.com/taiki-e/cargo-config2/pull/21), thanks @ranger-ross)
+
 ## [0.1.27] - 2024-08-19
 
 - Support the `[http]` table. ([#20](https://github.com/taiki-e/cargo-config2/pull/20), thanks @ranger-ross)
