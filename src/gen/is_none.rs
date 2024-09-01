@@ -23,6 +23,11 @@ impl crate::easy::FutureIncompatReportConfig {
         self.frequency.is_none()
     }
 }
+impl crate::easy::CargoNewConfig {
+    pub(crate) fn is_none(&self) -> bool {
+        self.vcs.is_none()
+    }
+}
 impl crate::easy::HttpConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.debug.is_none() && self.proxy.is_none() && self.timeout.is_none()
@@ -70,6 +75,11 @@ impl crate::de::DocConfig {
 impl crate::de::FutureIncompatReportConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.frequency.is_none()
+    }
+}
+impl crate::de::CargoNewConfig {
+    pub(crate) fn is_none(&self) -> bool {
+        self.vcs.is_none()
     }
 }
 impl crate::de::HttpConfig {

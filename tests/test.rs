@@ -71,8 +71,8 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     // [future-incompat-report]
     assert_eq!(config.future_incompat_report.frequency, Some(Frequency::Always));
 
-    // TODO
     // [cargo-new]
+    assert_eq!(config.cargo_new.vcs, Some(VersionControlSoftware::None));
 
     // [http]
     assert_eq!(config.http.debug, Some(false));

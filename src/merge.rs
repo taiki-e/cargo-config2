@@ -3,7 +3,7 @@
 use std::collections::{btree_map, BTreeMap};
 
 use crate::{
-    de::{self, RegistriesProtocol},
+    de::{self, RegistriesProtocol, VersionControlSoftware},
     error::{Context as _, Result},
     value::Value,
     Color, Frequency, When,
@@ -47,6 +47,7 @@ merge_non_container!(i32);
 merge_non_container!(u32);
 merge_non_container!(String);
 merge_non_container!(Color);
+merge_non_container!(VersionControlSoftware);
 merge_non_container!(Frequency);
 merge_non_container!(When);
 merge_non_container!(RegistriesProtocol);

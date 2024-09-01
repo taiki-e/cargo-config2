@@ -13,6 +13,7 @@ impl Merge for crate::de::Config {
         self.doc.merge(low.doc, force)?;
         self.env.merge(low.env, force)?;
         self.future_incompat_report.merge(low.future_incompat_report, force)?;
+        self.cargo_new.merge(low.cargo_new, force)?;
         self.http.merge(low.http, force)?;
         self.net.merge(low.net, force)?;
         self.registries.merge(low.registries, force)?;
@@ -29,6 +30,7 @@ impl SetPath for crate::de::Config {
         self.doc.set_path(path);
         self.env.set_path(path);
         self.future_incompat_report.set_path(path);
+        self.cargo_new.set_path(path);
         self.http.set_path(path);
         self.net.set_path(path);
         self.registries.set_path(path);
@@ -117,6 +119,17 @@ impl Merge for crate::de::FutureIncompatReportConfig {
 impl SetPath for crate::de::FutureIncompatReportConfig {
     fn set_path(&mut self, path: &Path) {
         self.frequency.set_path(path);
+    }
+}
+impl Merge for crate::de::CargoNewConfig {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        self.vcs.merge(low.vcs, force)?;
+        Ok(())
+    }
+}
+impl SetPath for crate::de::CargoNewConfig {
+    fn set_path(&mut self, path: &Path) {
+        self.vcs.set_path(path);
     }
 }
 impl Merge for crate::de::HttpConfig {
