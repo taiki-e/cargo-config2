@@ -9,7 +9,6 @@ use std::{collections::HashMap, path::Path, str};
 use anyhow::{Context as _, Result};
 use build_context::TARGET;
 use cargo_config2::*;
-use de::VersionControlSoftware;
 use helper::*;
 
 fn test_options() -> ResolveOptions {

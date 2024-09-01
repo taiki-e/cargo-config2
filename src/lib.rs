@@ -76,7 +76,7 @@ mod value;
 mod walk;
 
 #[doc(no_inline)]
-pub use crate::de::{Color, Frequency, RegistriesProtocol, When};
+pub use crate::de::{Color, Frequency, RegistriesProtocol, VersionControlSoftware, When};
 pub use crate::{
     easy::{
         BuildConfig, Config, DocConfig, EnvConfigValue, Flags, FutureIncompatReportConfig,
