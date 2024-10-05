@@ -139,7 +139,7 @@ impl Config {
         let cwd = cwd.as_ref();
         let cx = options.into_context(cwd.to_owned());
 
-        let de = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home(cwd).as_deref())?;
+        let de = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home(cwd))?;
         Self::from_unresolved(de, cx)
     }
 

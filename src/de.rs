@@ -186,6 +186,7 @@ impl Config {
         crate::value::SetPath::set_path(self, path);
     }
 
+    #[allow(clippy::ref_option)]
     pub(crate) fn resolve_target(
         cx: &ResolveContext,
         target_configs: &BTreeMap<String, TargetConfig>,

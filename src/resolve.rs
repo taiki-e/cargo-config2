@@ -186,8 +186,8 @@ impl ResolveContext {
             args: rustc.map(PathBuf::into_os_string).collect(),
         }
     }
-    pub(crate) fn cargo_home(&self, cwd: &Path) -> &Option<PathBuf> {
-        self.cargo_home.get_or_init(|| walk::cargo_home_with_cwd(cwd))
+    pub(crate) fn cargo_home(&self, cwd: &Path) -> Option<&Path> {
+        self.cargo_home.get_or_init(|| walk::cargo_home_with_cwd(cwd)).as_deref()
     }
     pub(crate) fn host_triple(&self, build_config: &easy::BuildConfig) -> Result<&str> {
         if let Some(host) = self.host_triple.get() {
