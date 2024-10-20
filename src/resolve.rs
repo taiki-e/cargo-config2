@@ -707,10 +707,8 @@ mod tests {
             let _cfg = Cfg::from_rustc(cmd!("rustc"), &target.into()).unwrap();
         }
         // custom targets
-        for spec_path in fs::read_dir(fixtures_path().join("target-specs"))
-            .unwrap()
-            .filter_map(Result::ok)
-            .map(|e| e.path())
+        for spec_path in
+            fs::read_dir(fixtures_path().join("target-specs")).unwrap().map(|e| e.unwrap().path())
         {
             let _cfg = Cfg::from_rustc(cmd!("rustc"), &spec_path.to_str().unwrap().into()).unwrap();
         }
@@ -895,7 +893,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn env_no_utf8() {
+    fn env_non_utf8() {
         use std::{ffi::OsStr, os::unix::prelude::OsStrExt};
 
         let cx = &ResolveOptions::default()

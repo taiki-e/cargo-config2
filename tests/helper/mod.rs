@@ -6,15 +6,15 @@ use std::{
     str,
 };
 
-use anyhow::{bail, Context as _, Result};
 pub(crate) use fs_err as fs;
 
 pub(crate) fn fixtures_path() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
 }
 
-pub(crate) fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> {
-    let tmpdir = tempfile::tempdir()?;
+#[track_caller]
+pub(crate) fn test_project(model: &str) -> (tempfile::TempDir, PathBuf) {
+    let tmpdir = tempfile::tempdir().unwrap();
     let tmpdir_path = tmpdir.path();
 
     let model_path;
@@ -29,30 +29,32 @@ pub(crate) fn test_project(model: &str) -> Result<(tempfile::TempDir, PathBuf)> 
         workspace_root = tmpdir_path.to_path_buf();
     }
 
-    for (file_name, from) in git_ls_files(&model_path, &[])? {
+    for (file_name, from) in git_ls_files(&model_path, &[]) {
         let to = &tmpdir_path.join(file_name);
         if !to.parent().unwrap().is_dir() {
-            fs::create_dir_all(to.parent().unwrap())?;
+            fs::create_dir_all(to.parent().unwrap()).unwrap();
         }
-        fs::copy(from, to)?;
+        fs::copy(from, to).unwrap();
     }
 
-    Ok((tmpdir, workspace_root))
+    (tmpdir, workspace_root)
 }
 
-fn git_ls_files(dir: &Path, filters: &[&str]) -> Result<Vec<(String, PathBuf)>> {
+#[track_caller]
+fn git_ls_files(dir: &Path, filters: &[&str]) -> Vec<(String, PathBuf)> {
     let mut cmd = Command::new("git");
     cmd.arg("ls-files").args(filters).current_dir(dir);
-    let output = cmd.output().with_context(|| format!("could not execute process `{cmd:?}`"))?;
-    if !output.status.success() {
-        bail!(
-            "process didn't exit successfully: `{cmd:?}`:\n\nSTDOUT:\n{0}\n{1}\n{0}\n\nSTDERR:\n{0}\n{2}\n{0}\n",
-            "-".repeat(60),
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr),
-        );
-    }
-    Ok(str::from_utf8(&output.stdout)?
+    let output =
+        cmd.output().unwrap_or_else(|e| panic!("could not execute process `{cmd:?}`: {e}"));
+    assert!(
+        output.status.success(),
+        "process didn't exit successfully: `{cmd:?}`:\n\nSTDOUT:\n{0}\n{1}\n{0}\n\nSTDERR:\n{0}\n{2}\n{0}\n",
+        "-".repeat(60),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr),
+    );
+    str::from_utf8(&output.stdout)
+        .unwrap()
         .lines()
         .map(str::trim)
         .filter_map(|f| {
@@ -65,5 +67,5 @@ fn git_ls_files(dir: &Path, filters: &[&str]) -> Result<Vec<(String, PathBuf)>> 
             }
             Some((f.to_owned(), p))
         })
-        .collect())
+        .collect()
 }

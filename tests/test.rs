@@ -4,9 +4,8 @@
 
 mod helper;
 
-use std::{collections::HashMap, path::Path, str};
+use std::{collections::HashMap, path::Path, process::Command, str};
 
-use anyhow::{Context as _, Result};
 use build_context::TARGET;
 use cargo_config2::*;
 use helper::*;
@@ -18,10 +17,10 @@ fn test_options() -> ResolveOptions {
         .rustc(PathAndArgs::new("rustc"))
 }
 
-fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> Result<()> {
-    let (_tmp, root) = test_project("reference")?;
+fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Error>) {
+    let (_tmp, root) = test_project("reference");
     let dir = &root;
-    let base_config = &de(dir, test_options())?;
+    let base_config = &de(dir, test_options()).unwrap();
     let config = base_config.clone();
 
     // [alias]
@@ -114,19 +113,28 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     // [source.<name>]
 
     // [target.<triple>] and [target.<cfg>]
-    assert_eq!(config.target("x86_64-unknown-linux-gnu")?.linker.unwrap().as_os_str(), "b");
-    assert_eq!(config.target("x86_64-unknown-linux-gnu")?.runner.unwrap().path.as_os_str(), "b");
-    assert!(config.target("x86_64-unknown-linux-gnu")?.runner.unwrap().args.is_empty());
+    assert_eq!(config.target("x86_64-unknown-linux-gnu").unwrap().linker.unwrap().as_os_str(), "b");
     assert_eq!(
-        config.target("x86_64-unknown-linux-gnu")?.rustflags,
+        config.target("x86_64-unknown-linux-gnu").unwrap().runner.unwrap().path.as_os_str(),
+        "b"
+    );
+    assert!(config.target("x86_64-unknown-linux-gnu").unwrap().runner.unwrap().args.is_empty());
+    assert_eq!(
+        config.target("x86_64-unknown-linux-gnu").unwrap().rustflags,
         Some(["b", "bb", "c", "cc"].into())
     );
-    assert_eq!(config.target("x86_64-unknown-linux-gnu")?.rustdocflags, Some(["d", "dd"].into()));
-    assert_eq!(config.linker("x86_64-unknown-linux-gnu")?.unwrap().as_os_str(), "b");
-    assert_eq!(config.runner("x86_64-unknown-linux-gnu")?.unwrap().path.as_os_str(), "b");
-    assert!(config.runner("x86_64-unknown-linux-gnu")?.unwrap().args.is_empty());
-    assert_eq!(config.rustflags("x86_64-unknown-linux-gnu")?, Some(["b", "bb", "c", "cc"].into()));
-    assert_eq!(config.rustdocflags("x86_64-unknown-linux-gnu")?, Some(["d", "dd"].into()));
+    assert_eq!(
+        config.target("x86_64-unknown-linux-gnu").unwrap().rustdocflags,
+        Some(["d", "dd"].into())
+    );
+    assert_eq!(config.linker("x86_64-unknown-linux-gnu").unwrap().unwrap().as_os_str(), "b");
+    assert_eq!(config.runner("x86_64-unknown-linux-gnu").unwrap().unwrap().path.as_os_str(), "b");
+    assert!(config.runner("x86_64-unknown-linux-gnu").unwrap().unwrap().args.is_empty());
+    assert_eq!(
+        config.rustflags("x86_64-unknown-linux-gnu").unwrap(),
+        Some(["b", "bb", "c", "cc"].into())
+    );
+    assert_eq!(config.rustdocflags("x86_64-unknown-linux-gnu").unwrap(), Some(["d", "dd"].into()));
     // TODO: [target.<triple>.<links>]
 
     // resolved target config cannot be accessed by cfg(...)
@@ -159,19 +167,17 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config>) -> 
     assert_eq!(config.term.progress.width, Some(80));
 
     let _config = toml::to_string(&config).unwrap();
-
-    Ok(())
 }
 
-fn easy_load(dir: &Path, options: ResolveOptions) -> Result<Config> {
-    Ok(Config::load_with_options(dir, options)?)
+fn easy_load(dir: &Path, options: ResolveOptions) -> Result<Config, Error> {
+    Config::load_with_options(dir, options)
 }
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
 fn easy() {
     use easy_load as de;
 
-    assert_reference_example(de).unwrap();
+    assert_reference_example(de);
 }
 
 #[test]
@@ -184,15 +190,15 @@ fn no_manifest_dir() {
     );
 }
 
-fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config> {
-    Ok(de::Config::load_with_options(dir, None)?)
+fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config, Error> {
+    de::Config::load_with_options(dir, None)
 }
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
 fn de() {
     use de_load as de;
 
-    let (_tmp, root) = test_project("reference").unwrap();
+    let (_tmp, root) = test_project("reference");
     let dir = &root;
     let base_config = &de(dir, test_options()).unwrap();
     let config = base_config.clone();
@@ -208,8 +214,8 @@ fn custom_target() {
     use easy_load as de;
     struct IsBuiltin(bool);
     #[track_caller]
-    fn t(target: &str, IsBuiltin(is_builtin): IsBuiltin) -> Result<()> {
-        let (_tmp, root) = test_project("empty")?;
+    fn t(target: &str, IsBuiltin(is_builtin): IsBuiltin) {
+        let (_tmp, root) = test_project("empty");
         let dir = &root;
         fs::write(
             root.join(".cargo/config.toml"),
@@ -217,78 +223,89 @@ fn custom_target() {
                 target.'cfg(target_arch = "avr")'.linker = "avr-gcc"
                 target.'cfg(target_arch = "avr")'.rustflags = "-C opt-level=s"
                 "#,
-        )?;
+        )
+        .unwrap();
         let spec_path = fixtures_path().join(format!("target-specs/{target}.json"));
         assert_eq!(spec_path.exists(), !is_builtin);
         let cli_target = if spec_path.exists() { spec_path.to_str().unwrap() } else { target };
 
-        let config = de(dir, test_options())?;
+        let config = de(dir, test_options()).unwrap();
         assert_eq!(
             config
-                .build_target_for_config([cli_target])?
+                .build_target_for_config([cli_target])
+                .unwrap()
                 .iter()
                 .map(|t| t.triple().to_owned())
                 .collect::<Vec<_>>(),
             vec![target.to_owned()]
         );
-        assert_eq!(config.build_target_for_cli([cli_target])?, vec![cli_target.to_owned()]);
+        assert_eq!(config.build_target_for_cli([cli_target]).unwrap(), vec![cli_target.to_owned()]);
 
-        assert_eq!(config.linker(cli_target)?.unwrap().as_os_str(), "avr-gcc");
-        assert_eq!(config.rustflags(cli_target)?, Some(["-C", "opt-level=s"].into()));
+        assert_eq!(config.linker(cli_target).unwrap().unwrap().as_os_str(), "avr-gcc");
+        assert_eq!(config.rustflags(cli_target).unwrap(), Some(["-C", "opt-level=s"].into()));
 
         // only resolve relative path from config or environment variables
         let spec_file_name = spec_path.file_name().unwrap().to_str().unwrap();
         assert_eq!(
-            config.build_target_for_config([spec_file_name])?[0].spec_path().unwrap().as_os_str(),
+            config.build_target_for_config([spec_file_name]).unwrap()[0]
+                .spec_path()
+                .unwrap()
+                .as_os_str(),
             spec_file_name
         );
-        assert_eq!(config.build_target_for_cli([spec_file_name])?, vec![spec_file_name.to_owned()]);
+        assert_eq!(config.build_target_for_cli([spec_file_name]).unwrap(), vec![
+            spec_file_name.to_owned()
+        ]);
 
         let _config = toml::to_string(&config).unwrap();
-
-        Ok(())
     }
 
-    t("avr-unknown-gnu-atmega328", IsBuiltin(true)).unwrap();
-    t("avr-unknown-gnu-atmega2560", IsBuiltin(false)).unwrap();
+    t("avr-unknown-gnu-atmega328", IsBuiltin(true));
+    t("avr-unknown-gnu-atmega2560", IsBuiltin(false));
 }
 
 #[rustversion::attr(not(nightly), ignore)]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
 fn cargo_config_toml() {
-    fn de(dir: &Path) -> Result<de::Config> {
+    fn de(dir: &Path) -> de::Config {
         // remove CARGO_PKG_DESCRIPTION -- if field in Cargo.toml contains newline, --format=toml display invalid toml
-        let s = duct::cmd!("cargo", "-Z", "unstable-options", "config", "get", "--format=toml")
-            .dir(dir)
+        let output = Command::new("cargo")
+            .args(["-Z", "unstable-options", "config", "get", "--format=toml"])
+            .current_dir(dir)
             .env_remove("CARGO_PKG_DESCRIPTION")
-            .stderr_capture()
-            .read()?;
-        toml::from_str(&s).context("failed to parse output from cargo")
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let s = str::from_utf8(&output.stdout).unwrap();
+        toml::from_str(s).unwrap()
     }
 
-    let _config = de(&fixtures_path().join("reference")).unwrap();
+    let _config = de(&fixtures_path().join("reference"));
 }
 
 #[rustversion::attr(not(nightly), ignore)]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
 #[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
 fn cargo_config_json() {
-    fn de(dir: &Path) -> Result<de::Config> {
-        let s = duct::cmd!("cargo", "-Z", "unstable-options", "config", "get", "--format=json")
-            .dir(dir)
-            .stderr_capture()
-            .read()?;
-        serde_json::from_str(&s).context("failed to parse output from cargo")
+    fn de(dir: &Path) -> de::Config {
+        let output = Command::new("cargo")
+            .args(["-Z", "unstable-options", "config", "get", "--format=json"])
+            .current_dir(dir)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let s = str::from_utf8(&output.stdout).unwrap();
+        serde_json::from_str(s).unwrap()
     }
 
-    let _config = de(&fixtures_path().join("reference")).unwrap();
+    let _config = de(&fixtures_path().join("reference"));
 }
 
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside duct::Expression::read)
-fn test_cargo_behavior() -> Result<()> {
-    let (_tmp, root) = test_project("empty").unwrap();
+#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+fn test_cargo_behavior() {
+    let (_tmp, root) = test_project("empty");
     let dir = &root;
 
     // [env] table doesn't affect config resolution
@@ -301,20 +318,20 @@ fn test_cargo_behavior() -> Result<()> {
             [build]
             rustflags = "--cfg b"
             "#,
-    )?;
-    let output = duct::cmd!("cargo", "build", "-v")
-        .dir(dir)
+    )
+    .unwrap();
+    let output = Command::new("cargo")
+        .args(["build", "-v"])
+        .current_dir(dir)
         .env("CARGO_HOME", root.join(".cargo"))
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env_remove("RUSTFLAGS")
         .env_remove(format!("CARGO_TARGET_{}_RUSTFLAGS", TARGET.replace(['-', '.'], "_")))
         .env_remove("CARGO_BUILD_RUSTFLAGS")
-        .stdout_capture()
-        .stderr_capture()
-        .run()?;
-    let stderr = str::from_utf8(&output.stderr)?;
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stderr = str::from_utf8(&output.stderr).unwrap();
     assert!(!stderr.contains("--cfg a"), "actual:\n---\n{stderr}\n---\n");
     assert!(stderr.contains("--cfg b"), "actual:\n---\n{stderr}\n---\n");
-
-    Ok(())
 }

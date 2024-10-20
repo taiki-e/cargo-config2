@@ -37,7 +37,6 @@ home = "0.5"
 anyhow = "1"
 build-context = "0.1"
 clap = { version = "4", default-features = false, features = ["std", "derive"] }
-duct = "0.13"
 fs-err = "2"
 lexopt = "0.3"
 rustversion = "1"
