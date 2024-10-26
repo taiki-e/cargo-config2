@@ -8,7 +8,8 @@ use std::{collections::HashMap, path::Path, process::Command, str};
 
 use build_context::TARGET;
 use cargo_config2::*;
-use helper::*;
+
+use self::helper::*;
 
 fn test_options() -> ResolveOptions {
     ResolveOptions::default()
