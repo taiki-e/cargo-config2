@@ -461,7 +461,7 @@ impl EnvConfigValue {
         match self {
             Self::Value(v) => OsStr::new(&v.val).into(),
             Self::Table { value, relative, .. } => {
-                if relative.as_ref().map_or(false, |v| v.val) {
+                if relative.as_ref().is_some_and(|v| v.val) {
                     if let Some(def) = &value.definition {
                         return def.root(current_dir).join(&value.val).into_os_string().into();
                     }

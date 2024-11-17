@@ -324,7 +324,7 @@ impl CfgMap {
                 match *key {
                     // https://github.com/rust-lang/cargo/pull/7660
                     "feature" => false,
-                    key => cfg.key_values.get(key).map_or(false, |values| values.contains(*val)),
+                    key => cfg.key_values.get(key).is_some_and(|values| values.contains(*val)),
                 }
             }
         }))

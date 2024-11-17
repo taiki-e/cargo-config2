@@ -671,7 +671,7 @@ impl EnvConfigValue {
         {
             return Self {
                 value: de.resolve(current_dir).into_owned(),
-                force: force.as_ref().map_or(false, |v| v.val),
+                force: force.as_ref().is_some_and(|v| v.val),
                 // Since we resolved the value, it is no longer relative.
                 relative: false,
             };
@@ -682,7 +682,7 @@ impl EnvConfigValue {
             }
             de::EnvConfigValue::Table { value, force, .. } => Self {
                 value: value.val.into(),
-                force: force.map_or(false, |v| v.val),
+                force: force.is_some_and(|v| v.val),
                 relative: false,
             },
         }
