@@ -1,5 +1,8 @@
 cainfo
+DONT
+FOLDERID
 fxsr
+pijul
 unparse
 USERPROFILE
-pijul
+wcslen

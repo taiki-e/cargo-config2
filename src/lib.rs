@@ -36,7 +36,8 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
         allow(dead_code, unused_variables)
     )
 ))]
-#![forbid(unsafe_code)]
+// Windows needs unsafe code until MSRV become Rust 1.85: https://github.com/rust-lang/rust/pull/132515
+#![cfg_attr(not(windows), forbid(unsafe_code))]
 #![warn(
     // Lints that may help when writing public library.
     missing_debug_implementations,
@@ -85,5 +86,5 @@ pub use crate::{
     },
     error::Error,
     resolve::{CargoVersion, ResolveOptions, RustcVersion, TargetTriple, TargetTripleRef},
-    walk::Walk,
+    walk::{cargo_home_with_cwd, home_dir, rustup_home_with_cwd, Walk},
 };

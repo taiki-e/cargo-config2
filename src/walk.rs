@@ -38,17 +38,67 @@ fn config_path(path: &Path) -> Option<PathBuf> {
     None
 }
 
-// Use the home crate only on Windows which std::env::home_dir is not correct.
+// Do not use std::env::home_dir only on Windows which std::env::home_dir is not correct.
 // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/lib.rs#L65-L72
+// Do not use home crate since it is no longer a crate for ecosystem use.
+// https://github.com/rust-lang/cargo/pull/14600
+// This is needed until MSRV become Rust 1.85: https://github.com/rust-lang/rust/pull/132515
 #[cfg(windows)]
-use home::home_dir;
+pub fn home_dir() -> Option<PathBuf> {
+    // Adapted from https://github.com/rust-lang/cargo/blob/0.83.0/crates/home/src/windows.rs.
+    use std::{
+        env,
+        ffi::{c_void, OsString},
+        os::windows::ffi::OsStringExt,
+        ptr, slice,
+    };
+
+    use windows_sys::Win32::{
+        Foundation::S_OK,
+        System::Com::CoTaskMemFree,
+        UI::Shell::{FOLDERID_Profile, SHGetKnownFolderPath, KF_FLAG_DONT_VERIFY},
+    };
+
+    #[cfg(not(target_vendor = "uwp"))]
+    fn home_dir_crt() -> Option<PathBuf> {
+        unsafe {
+            let mut path = ptr::null_mut();
+            match SHGetKnownFolderPath(
+                &FOLDERID_Profile,
+                KF_FLAG_DONT_VERIFY as u32,
+                std::ptr::null_mut(),
+                &mut path,
+            ) {
+                S_OK => {
+                    let path_slice = slice::from_raw_parts(path, wcslen(path));
+                    let s = OsString::from_wide(&path_slice);
+                    CoTaskMemFree(path.cast::<c_void>());
+                    Some(PathBuf::from(s))
+                }
+                _ => {
+                    // Free any allocated memory even on failure. A null ptr is a no-op for `CoTaskMemFree`.
+                    CoTaskMemFree(path.cast::<c_void>());
+                    None
+                }
+            }
+        }
+    }
+    #[cfg(target_vendor = "uwp")]
+    fn home_dir_crt() -> Option<PathBuf> {
+        None
+    }
+    extern "C" {
+        fn wcslen(buf: *const u16) -> usize;
+    }
+
+    env::var_os("USERPROFILE").filter(|s| !s.is_empty()).map(PathBuf::from).or_else(home_dir_crt)
+}
 #[cfg(not(windows))]
-fn home_dir() -> Option<PathBuf> {
+pub fn home_dir() -> Option<PathBuf> {
     #[allow(deprecated)]
     std::env::home_dir()
 }
-
-pub(crate) fn cargo_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
+pub fn cargo_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
     // Follow the cargo's behavior.
     // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/lib.rs#L77-L86
     // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/env.rs#L63-L77
@@ -61,6 +111,21 @@ pub(crate) fn cargo_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
             }
         }
         _ => Some(home_dir()?.join(".cargo")),
+    }
+}
+pub fn rustup_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
+    // Follow the cargo's behavior.
+    // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/lib.rs#L114-L123
+    // https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/env.rs#L92-L106
+    match std::env::var_os("RUSTUP_HOME").filter(|h| !h.is_empty()).map(PathBuf::from) {
+        Some(home) => {
+            if home.is_absolute() {
+                Some(home)
+            } else {
+                Some(cwd.join(home))
+            }
+        }
+        _ => Some(home_dir()?.join(".rustup")),
     }
 }
 

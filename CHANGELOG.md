@@ -12,6 +12,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Remove dependency on `home` to restore the MSRV on Windows.
+
+- Add `home_dir`, `cargo_home_with_cwd`, and `rustup_home_with_cwd` functions.
+
 ## [0.1.30] - 2024-12-21
 
 - Respect [`RUSTC_BOOTSTRAP=-1` recently added in nightly](https://github.com/rust-lang/rust/pull/132993) in rustc version detection.
