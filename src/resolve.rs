@@ -615,6 +615,11 @@ fn parse_version(verbose_version: &str) -> Option<(u32, u32, Option<u32>, bool)>
 fn rustc_version((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<RustcVersion> {
     let (major, minor, patch, nightly) = parse_version(verbose_version)
         .ok_or_else(|| format_err!("unexpected version output from {cmd}: {verbose_version}"))?;
+    let nightly = match std::env::var_os("RUSTC_BOOTSTRAP") {
+        // When -1 is passed rustc works like stable, e.g., cfg(target_feature = "unstable_target_feature") will never be set. https://github.com/rust-lang/rust/pull/132993
+        Some(v) if v == "-1" => false,
+        _ => nightly,
+    };
     Ok(RustcVersion { major, minor, patch, nightly })
 }
 fn cargo_version((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<CargoVersion> {
