@@ -12,7 +12,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
-- Expose `CargoNewConfig` and `HttpConfig`.
+- Expose `CargoNewConfig` and `HttpConfig`. ([69ecb94](https://github.com/taiki-e/cargo-config2/commit/69ecb94d6eb30702d0150043533146df489723cd))
 
 ## [0.1.31] - 2024-12-21
 
