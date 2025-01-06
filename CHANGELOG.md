@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Expose `CargoNewConfig` and `HttpConfig`.
+
 ## [0.1.31] - 2024-12-21
 
 - Remove dependency on `home` to restore the MSRV on Windows.
