@@ -128,10 +128,27 @@ impl Config {
         Self::load_with_cwd(std::env::current_dir().context("failed to get current directory")?)
     }
 
+    /// Read config files hierarchically from the current directory and merges them with other configurations passed.
+    pub fn load_with_configs<C: AsRef<str>>(configs: &[C]) -> Result<Self> {
+        Self::load_with_cwd_and_configs(
+            std::env::current_dir().context("failed to get current directory")?,
+            configs,
+        )
+    }
+
     /// Read config files hierarchically from the given directory and merges them.
     pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
         Self::load_with_options(cwd, ResolveOptions::default())
+    }
+
+    /// Read config files hierarchically from the given directory and merges them with other configurations passed.
+    pub fn load_with_cwd_and_configs<P: AsRef<Path>, C: AsRef<str>>(
+        cwd: P,
+        configs: &[C],
+    ) -> Result<Self> {
+        let cwd = cwd.as_ref();
+        Self::load_with_options_and_configs(cwd, ResolveOptions::default(), configs)
     }
 
     /// Read config files hierarchically from the given directory and merges them.
@@ -141,6 +158,26 @@ impl Config {
 
         let de = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home(cwd))?;
         Self::from_unresolved(de, cx)
+    }
+
+    /// Read config files hierarchically from the given directory and merges them with other configurations passed.
+    pub fn load_with_options_and_configs<P: AsRef<Path>, C: AsRef<str>>(
+        cwd: P,
+        options: ResolveOptions,
+        configs: &[C],
+    ) -> Result<Self> {
+        let cwd = cwd.as_ref();
+        let cx = options.into_context(cwd.to_owned());
+
+        let mut main = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home(cwd))?;
+        for override_config in configs {
+            // load_file???
+            let de = de::Config::load_file(override_config.as_ref())?;
+            main.merge(de, true)?;
+        }
+
+        let main: Config = Self::from_unresolved(main, cx)?;
+        Ok(main)
     }
 
     fn from_unresolved(mut de: de::Config, cx: ResolveContext) -> Result<Self> {
