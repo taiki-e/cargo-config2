@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.32] - 2025-01-06
+
 - Expose `CargoNewConfig` and `HttpConfig`. ([69ecb94](https://github.com/taiki-e/cargo-config2/commit/69ecb94d6eb30702d0150043533146df489723cd))
 
 ## [0.1.31] - 2024-12-21
@@ -155,7 +157,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.31...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.32...HEAD
+[0.1.32]: https://github.com/taiki-e/cargo-config2/compare/v0.1.31...v0.1.32
 [0.1.31]: https://github.com/taiki-e/cargo-config2/compare/v0.1.30...v0.1.31
 [0.1.30]: https://github.com/taiki-e/cargo-config2/compare/v0.1.29...v0.1.30
 [0.1.29]: https://github.com/taiki-e/cargo-config2/compare/v0.1.28...v0.1.29
