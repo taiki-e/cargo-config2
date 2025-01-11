@@ -43,7 +43,6 @@ impl Config {
                         definition().as_ref(),
                     ),
                 );
-                continue;
             }
             // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries
             else if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
@@ -59,7 +58,6 @@ impl Config {
                             protocol: None,
                         });
                     }
-                    continue;
                 } else if let Some(k) = k.strip_suffix("_TOKEN") {
                     let v = v.to_str().ok_or_else(error_env_not_unicode_redacted)?;
                     let token = Some(Value { val: v.to_owned(), definition: definition() });
@@ -72,7 +70,6 @@ impl Config {
                             protocol: None,
                         });
                     }
-                    continue;
                 } else if k == "CRATES_IO_PROTOCOL" {
                     let k = "crates-io";
                     let v = v.to_str().ok_or_else(error_env_not_unicode)?;
@@ -87,7 +84,6 @@ impl Config {
                             protocol,
                         });
                     }
-                    continue;
                 }
             }
         }
