@@ -360,9 +360,9 @@ impl Cfg {
                 }
                 Some((name, value)) => {
                     if value.len() < 2 || !value.starts_with('"') || !value.ends_with('"') {
-                        #[cfg(test)]
-                        panic!("invalid value '{value}'");
-                        #[cfg(not(test))]
+                        if cfg!(test) {
+                            panic!("invalid value '{value}'");
+                        }
                         continue;
                     }
                     let value = &value[1..value.len() - 1];
