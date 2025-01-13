@@ -4,7 +4,7 @@
 //! target-specific configurations have not been resolved.
 
 #[path = "gen/de.rs"]
-mod gen;
+mod generated;
 
 use core::{fmt, slice, str::FromStr};
 use std::{
