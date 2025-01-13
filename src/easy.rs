@@ -123,18 +123,18 @@ fn ref_cell_bree_map_is_empty<K, V>(map: &RefCell<BTreeMap<K, V>>) -> bool {
 }
 
 impl Config {
-    /// Read config files hierarchically from the current directory and merges them.
+    /// Reads config files hierarchically from the current directory and merges them.
     pub fn load() -> Result<Self> {
         Self::load_with_cwd(std::env::current_dir().context("failed to get current directory")?)
     }
 
-    /// Read config files hierarchically from the given directory and merges them.
+    /// Reads config files hierarchically from the given directory and merges them.
     pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
         Self::load_with_options(cwd, ResolveOptions::default())
     }
 
-    /// Read config files hierarchically from the given directory and merges them.
+    /// Reads config files hierarchically from the given directory and merges them.
     pub fn load_with_options<P: AsRef<Path>>(cwd: P, options: ResolveOptions) -> Result<Self> {
         let cwd = cwd.as_ref();
         let cx = options.into_context(cwd.to_owned());

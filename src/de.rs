@@ -115,18 +115,18 @@ pub struct Config {
 }
 
 impl Config {
-    /// Read config files hierarchically from the current directory and merges them.
+    /// Reads config files hierarchically from the current directory and merges them.
     pub fn load() -> Result<Self> {
         Self::load_with_cwd(std::env::current_dir().context("failed to get current directory")?)
     }
 
-    /// Read config files hierarchically from the given directory and merges them.
+    /// Reads config files hierarchically from the given directory and merges them.
     pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
         let cwd = cwd.as_ref();
         Self::_load_with_options(cwd, walk::cargo_home_with_cwd(cwd).as_deref())
     }
 
-    /// Read config files hierarchically from the given directory and merges them.
+    /// Reads config files hierarchically from the given directory and merges them.
     pub fn load_with_options<P: AsRef<Path>, Q: Into<Option<PathBuf>>>(
         cwd: P,
         cargo_home: Q,
