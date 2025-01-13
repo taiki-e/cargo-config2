@@ -49,7 +49,7 @@ pub fn home_dir() -> Option<PathBuf> {
     use std::{
         env,
         ffi::{c_void, OsString},
-        os::windows::ffi::OsStringExt,
+        os::windows::ffi::OsStringExt as _,
         ptr, slice,
     };
 

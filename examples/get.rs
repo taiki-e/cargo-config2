@@ -4,7 +4,7 @@
 
 use std::{
     env,
-    io::{self, Write},
+    io::{self, Write as _},
     str::FromStr,
 };
 
@@ -12,7 +12,7 @@ use anyhow::{bail, Result};
 use cargo_config2::de::Config;
 use lexopt::{
     Arg::{Long, Short},
-    ValueExt,
+    ValueExt as _,
 };
 
 // TODO: --show-origin and --config
@@ -73,7 +73,7 @@ fn try_main() -> Result<()> {
     Ok(())
 }
 
-fn print_config(writer: &mut dyn Write, format: Format, config: &Config) -> Result<()> {
+fn print_config(writer: &mut dyn io::Write, format: Format, config: &Config) -> Result<()> {
     match format {
         Format::Json => writeln!(writer, "{}", serde_json::to_string(&config)?)?,
         Format::Toml => {
@@ -85,7 +85,11 @@ fn print_config(writer: &mut dyn Write, format: Format, config: &Config) -> Resu
             // ```
             //
             // Neither toml nor toml_edit supports this output format, so format it manually.
-            fn print_value(writer: &mut dyn Write, path: &str, value: &toml::Value) -> Result<()> {
+            fn print_value(
+                writer: &mut dyn io::Write,
+                path: &str,
+                value: &toml::Value,
+            ) -> Result<()> {
                 match value {
                     toml::Value::Table(table) => {
                         for (key, item) in table {

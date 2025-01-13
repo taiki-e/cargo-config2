@@ -390,7 +390,7 @@ impl ApplyEnv for TermProgress {
 
 #[cfg(test)]
 mod tests {
-    use super::ApplyEnv;
+    use super::ApplyEnv as _;
     use crate::{value::Value, ResolveOptions};
 
     #[test]

@@ -657,7 +657,7 @@ fn rustc_path(cargo: &OsStr) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{self, Write};
+    use std::io::{self, Write as _};
 
     use fs_err as fs;
 
@@ -900,7 +900,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn env_non_utf8() {
-        use std::{ffi::OsStr, os::unix::prelude::OsStrExt};
+        use std::{ffi::OsStr, os::unix::prelude::OsStrExt as _};
 
         let cx = &ResolveOptions::default()
             .env([("CARGO_ALIAS_a", OsStr::from_bytes(&[b'f', b'o', 0x80, b'o']))])
