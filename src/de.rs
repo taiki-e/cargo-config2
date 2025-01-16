@@ -975,6 +975,7 @@ impl<'de> Deserialize<'de> for Flags {
     where
         D: Deserializer<'de>,
     {
+        // TODO: use visitor?
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
             StringOrArray::String(s) => {
@@ -1092,6 +1093,7 @@ impl<'de> Deserialize<'de> for PathAndArgs {
             String(String),
             Array(Vec<Value<String>>),
         }
+        // TODO: use visitor?
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         let res = match v {
             StringOrArray::String(s) => Self::from_string(&s, None),
@@ -1169,6 +1171,7 @@ impl<'de> Deserialize<'de> for StringList {
     where
         D: Deserializer<'de>,
     {
+        // TODO: use visitor?
         let v: StringOrArray = Deserialize::deserialize(deserializer)?;
         match v {
             StringOrArray::String(s) => Ok(Self::from_string(&s.val, s.definition.as_ref())),
