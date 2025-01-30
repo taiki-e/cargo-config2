@@ -34,50 +34,50 @@ pub struct Config {
     // TODO: paths
     /// The `[alias]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#alias)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub alias: BTreeMap<String, StringList>,
     /// The `[build]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
     #[serde(default)]
     #[serde(skip_serializing_if = "BuildConfig::is_none")]
     pub build: BuildConfig,
     /// The `[doc]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
     #[serde(default)]
     #[serde(skip_serializing_if = "DocConfig::is_none")]
     pub doc: DocConfig,
     /// The `[env]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, EnvConfigValue>,
     /// The `[future-incompat-report]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
     #[serde(default)]
     #[serde(skip_serializing_if = "FutureIncompatReportConfig::is_none")]
     pub future_incompat_report: FutureIncompatReportConfig,
     /// The `[cargo-new]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
     #[serde(default)]
     #[serde(skip_serializing_if = "CargoNewConfig::is_none")]
     pub cargo_new: CargoNewConfig,
     /// The `[http]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
     #[serde(default)]
     #[serde(skip_serializing_if = "HttpConfig::is_none")]
     pub http: HttpConfig,
     // TODO: install
     /// The `[net]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
     #[serde(default)]
     #[serde(skip_serializing_if = "NetConfig::is_none")]
     pub net: NetConfig,
@@ -85,13 +85,13 @@ pub struct Config {
     // TODO: profile
     /// The `[registries]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
     #[serde(default)]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub registries: BTreeMap<String, RegistriesConfigValue>,
     /// The `[registry]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
     #[serde(default)]
     #[serde(skip_serializing_if = "RegistryConfig::is_none")]
     pub registry: RegistryConfig,
@@ -108,7 +108,7 @@ pub struct Config {
 
     /// The `[term]` table.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
     #[serde(default)]
     #[serde(skip_serializing_if = "TermConfig::is_none")]
     pub term: TermConfig,
@@ -430,7 +430,7 @@ impl Config {
 
 /// The `[build]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#build)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -439,12 +439,12 @@ pub struct BuildConfig {
     /// If negative, it sets the maximum number of compiler processes to the
     /// number of logical CPUs plus provided value. Should not be 0.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildjobs)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jobs: Option<i32>,
     /// Sets the executable to use for `rustc`.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc)
     ///
     /// **Note:** If a wrapper is set, cargo's actual rustc call goes through
     /// the wrapper, so you may want to use [`Config::rustc`], which respects
@@ -453,7 +453,7 @@ pub struct BuildConfig {
     pub rustc: Option<PathBuf>,
     /// Sets a wrapper to execute instead of `rustc`.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-wrapper)
     ///
     /// **Note:** If a wrapper is set, cargo's actual rustc call goes through
     /// the wrapper, so you may want to use [`Config::rustc`], which respects
@@ -462,7 +462,7 @@ pub struct BuildConfig {
     pub rustc_wrapper: Option<PathBuf>,
     /// Sets a wrapper to execute instead of `rustc`, for workspace members only.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustc-workspace-wrapper)
     ///
     /// **Note:** If a wrapper is set, cargo's actual rustc call goes through
     /// the wrapper, so you may want to use [`Config::rustc`], which respects
@@ -471,24 +471,24 @@ pub struct BuildConfig {
     pub rustc_workspace_wrapper: Option<PathBuf>,
     /// Sets the executable to use for `rustdoc`.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdoc)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdoc)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustdoc: Option<PathBuf>,
     /// The default target platform triples to compile to.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<Vec<TargetTriple>>,
     /// The path to where all compiler output is placed. The default if not
     /// specified is a directory named target located at the root of the workspace.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_dir: Option<PathBuf>,
     /// Extra command-line flags to pass to rustc. The value may be an array
     /// of strings or a space-separated string.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustflags)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustflags)
     ///
     /// **Note:** This field does not reflect the target-specific rustflags
     /// configuration, so you may want to use [`Config::rustflags`] which respects
@@ -498,7 +498,7 @@ pub struct BuildConfig {
     /// Extra command-line flags to pass to `rustdoc`. The value may be an array
     /// of strings or a space-separated string.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags)
     ///
     /// **Note:** This field does not reflect the target-specific rustdocflags
     /// configuration, so you may want to use [`Config::rustdocflags`] which respects
@@ -507,12 +507,12 @@ pub struct BuildConfig {
     pub rustdocflags: Option<Flags>,
     /// Whether or not to perform incremental compilation.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildincremental)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildincremental)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
     /// Strips the given path prefix from dep info file paths.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#builddep-info-basedir)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dep_info_basedir: Option<PathBuf>,
 
@@ -583,12 +583,12 @@ impl BuildConfig {
 // https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/target.rs
 /// A `[target.<triple>]` or `[target.<cfg>]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct TargetConfig {
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinker)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinker)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linker: Option<PathBuf>,
     /// [reference (`target.<triple>.runner`)](https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplerunner)
@@ -629,7 +629,7 @@ impl TargetConfig {
 
 /// The `[doc]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -637,7 +637,7 @@ pub struct DocConfig {
     /// This option sets the browser to be used by `cargo doc`, overriding the
     /// `BROWSER` environment variable when opening documentation with the `--open` option.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#docbrowser)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#docbrowser)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub browser: Option<PathAndArgs>,
 }
@@ -654,7 +654,7 @@ impl DocConfig {
 
 /// A value of the `[env]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#env)
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct EnvConfigValue {
@@ -722,14 +722,14 @@ impl Serialize for EnvConfigValue {
 
 /// The `[future-incompat-report]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-report)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct FutureIncompatReportConfig {
     /// Controls how often we display a notification to the terminal when a future incompat report is available.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#future-incompat-reportfrequency)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub frequency: Option<Frequency>,
 }
@@ -743,7 +743,7 @@ impl FutureIncompatReportConfig {
 
 /// The `[cargo-new]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#cargo-new)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -763,7 +763,7 @@ impl CargoNewConfig {
 
 /// The `[http]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#http)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -772,7 +772,7 @@ pub struct HttpConfig {
     /// The debug information can be seen by setting the `CARGO_LOG=network=debug` environment variable
     /// (or use `network=trace` for even more information).
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpdebug)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpdebug)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub debug: Option<bool>,
     /// Sets an HTTP and HTTPS proxy to use. The format is in libcurl format as in `[protocol://]host[:port]`.
@@ -780,24 +780,24 @@ pub struct HttpConfig {
     /// If none of those are set, the HTTPS_PROXY or https_proxy environment variables set the proxy for HTTPS requests,
     /// and http_proxy sets it for HTTP requests.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpproxy)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpproxy)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy: Option<String>,
     /// Sets the timeout for each HTTP request, in seconds.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httptimeout)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httptimeout)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout: Option<u32>,
     /// Path to a Certificate Authority (CA) bundle file, used to verify TLS certificates.
     /// If not specified, Cargo attempts to use the system certificates.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcainfo)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcainfo)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cainfo: Option<String>,
     /// This determines whether or not TLS certificate revocation checks should be performed.
     /// This only works on Windows.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcheck-revoke)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpcheck-revoke)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub check_revoke: Option<bool>,
     // TODO: Add ssl-version
@@ -805,20 +805,20 @@ pub struct HttpConfig {
     /// If the average transfer speed in bytes per second is below the given value
     /// for `http.timeout` seconds (default 30 seconds), then the connection is considered too slow and Cargo will abort and retry.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httplow-speed-limit)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httplow-speed-limit)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub low_speed_limit: Option<u32>,
     /// When true, Cargo will attempt to use the HTTP2 protocol with multiplexing.
     /// This allows multiple requests to use the same connection, usually improving performance when fetching multiple files.
     /// If false, Cargo will use HTTP 1.1 without pipelining.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpmultiplexing)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpmultiplexing)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub multiplexing: Option<bool>,
     /// Specifies a custom user-agent header to use.
     /// The default if not specified is a string that includes Cargo’s version.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpuser-agent)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpuser-agent)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user_agent: Option<String>,
 }
@@ -840,21 +840,21 @@ impl HttpConfig {
 
 /// The `[net]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#net)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct NetConfig {
     /// Number of times to retry possibly spurious network errors.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netretry)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry: Option<u32>,
     /// If this is `true`, then Cargo will use the `git` executable to fetch
     /// registry indexes and git dependencies. If `false`, then it uses a
     /// built-in `git` library.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netgit-fetch-with-cli)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netgit-fetch-with-cli)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub git_fetch_with_cli: Option<bool>,
     /// If this is `true`, then Cargo will avoid accessing the network, and
@@ -862,7 +862,7 @@ pub struct NetConfig {
     /// access the network as needed, and generate an error if it encounters a
     /// network error.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#netoffline)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offline: Option<bool>,
 }
@@ -878,14 +878,14 @@ impl NetConfig {
 
 /// A value of the `[registries]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries)
 #[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct RegistriesConfigValue {
     /// Specifies the URL of the git index for the registry.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnameindex)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub index: Option<String>,
     /// Specifies the authentication token for the given registry.
@@ -894,13 +894,13 @@ pub struct RegistriesConfigValue {
     /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
     /// file.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
     /// Specifies the protocol used to access crates.io.
     /// Not allowed for any registries besides crates.io.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescrates-ioprotocol)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub protocol: Option<RegistriesProtocol>,
 }
@@ -931,7 +931,7 @@ impl fmt::Debug for RegistriesConfigValue {
 
 /// The `[registry]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registry)
 #[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
@@ -941,7 +941,7 @@ pub struct RegistryConfig {
     /// to use by default for registry commands like
     /// [`cargo publish`](https://doc.rust-lang.org/nightly/cargo/commands/cargo-publish.html).
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
     /// Specifies the authentication token for [crates.io](https://crates.io/).
@@ -950,7 +950,7 @@ pub struct RegistryConfig {
     /// [credentials](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credentials)
     /// file.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
@@ -976,24 +976,24 @@ impl fmt::Debug for RegistryConfig {
 
 /// The `[term]` table.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#term)
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct TermConfig {
     /// Controls whether or not log messages are displayed by Cargo.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termquiet)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quiet: Option<bool>,
     /// Controls whether or not extra detailed messages are displayed by Cargo.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termverbose)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termverbose)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub verbose: Option<bool>,
     /// Controls whether or not colored output is used in the terminal.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termcolor)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termcolor)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<Color>,
     #[serde(default)]
@@ -1017,12 +1017,12 @@ impl TermConfig {
 pub struct TermProgressConfig {
     /// Controls whether or not progress bar is shown in the terminal.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswhen)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswhen)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub when: Option<When>,
     /// Sets the width for progress bar.
     ///
-    /// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswidth)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#termprogresswidth)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<u32>,
 }
@@ -1186,7 +1186,7 @@ impl<const N: usize> From<[&str; N]> for Flags {
 
 /// An executable path with arguments.
 ///
-/// [reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments)
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#executable-paths-with-arguments)
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct PathAndArgs {
