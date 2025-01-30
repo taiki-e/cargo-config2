@@ -196,7 +196,7 @@ impl<V: Merge + Clone + core::fmt::Debug> Merge for BTreeMap<String, V> {
                 btree_map::Entry::Vacant(entry) => {
                     entry.insert(value);
                 }
-            };
+            }
         }
         Ok(())
     }
