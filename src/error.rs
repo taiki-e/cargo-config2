@@ -30,8 +30,8 @@ pub(crate) enum ErrorKind {
 
     CfgExprParse(crate::cfg_expr::error::ParseError),
 
-    Other(String),
-    WithContext(String, Option<Box<dyn std::error::Error + Send + Sync + 'static>>),
+    Other(Box<str>),
+    WithContext(Box<str>, Option<Box<dyn std::error::Error + Send + Sync>>),
 }
 
 impl Error {
@@ -41,13 +41,13 @@ impl Error {
 
     pub(crate) fn env_not_unicode(name: &str, var: OsString) -> Self {
         Self(ErrorKind::WithContext(
-            format!("failed to parse environment variable `{name}`"),
+            format!("failed to parse environment variable `{name}`").into_boxed_str(),
             Some(Box::new(std::env::VarError::NotUnicode(var))),
         ))
     }
     pub(crate) fn env_not_unicode_redacted(name: &str) -> Self {
         Self(ErrorKind::WithContext(
-            format!("failed to parse environment variable `{name}`"),
+            format!("failed to parse environment variable `{name}`").into_boxed_str(),
             Some("environment variable was not valid unicode: [REDACTED]".into()),
         ))
     }
@@ -81,7 +81,7 @@ impl From<Error> for io::Error {
             ErrorKind::Io(e) => e,
             ErrorKind::CfgExprParse(e) => Self::new(io::ErrorKind::Other, e),
             ErrorKind::Other(e) | ErrorKind::WithContext(e, None) => {
-                Self::new(io::ErrorKind::Other, e)
+                Self::new(io::ErrorKind::Other, e.into_string())
             }
             ErrorKind::WithContext(msg, Some(source)) => {
                 let kind = if let Some(e) = source.downcast_ref::<io::Error>() {
@@ -99,7 +99,7 @@ impl From<Error> for io::Error {
 
 impl From<String> for ErrorKind {
     fn from(s: String) -> Self {
-        Self::Other(s)
+        Self::Other(s.into_boxed_str())
     }
 }
 impl From<crate::cfg_expr::error::ParseError> for ErrorKind {
@@ -122,7 +122,7 @@ impl From<io::Error> for Error {
 // TODO: this is no longer used in our code; remove in the next breaking release
 impl From<std::env::VarError> for Error {
     fn from(e: std::env::VarError) -> Self {
-        Self(ErrorKind::Other(e.to_string()))
+        Self(ErrorKind::Other(e.to_string().into_boxed_str()))
     }
 }
 
@@ -146,7 +146,10 @@ where
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(e) => Err(Error(ErrorKind::WithContext(context.to_string(), Some(Box::new(e))))),
+            Err(e) => Err(Error(ErrorKind::WithContext(
+                context.to_string().into_boxed_str(),
+                Some(Box::new(e)),
+            ))),
         }
     }
     fn with_context<C, F>(self, context: F) -> Result<T, Error>
@@ -156,7 +159,10 @@ where
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(e) => Err(Error(ErrorKind::WithContext(context().to_string(), Some(Box::new(e))))),
+            Err(e) => Err(Error(ErrorKind::WithContext(
+                context().to_string().into_boxed_str(),
+                Some(Box::new(e)),
+            ))),
         }
     }
 }
@@ -167,7 +173,7 @@ impl<T> Context<T, core::convert::Infallible> for Option<T> {
     {
         match self {
             Some(ok) => Ok(ok),
-            None => Err(Error(ErrorKind::WithContext(context.to_string(), None))),
+            None => Err(Error(ErrorKind::WithContext(context.to_string().into_boxed_str(), None))),
         }
     }
     fn with_context<C, F>(self, context: F) -> Result<T, Error>
@@ -177,7 +183,9 @@ impl<T> Context<T, core::convert::Infallible> for Option<T> {
     {
         match self {
             Some(ok) => Ok(ok),
-            None => Err(Error(ErrorKind::WithContext(context().to_string(), None))),
+            None => {
+                Err(Error(ErrorKind::WithContext(context().to_string().into_boxed_str(), None)))
+            }
         }
     }
 }
