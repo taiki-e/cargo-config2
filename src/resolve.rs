@@ -663,7 +663,7 @@ mod tests {
 
     use super::*;
 
-    fn fixtures_path() -> &'static Path {
+    fn fixtures_dir() -> &'static Path {
         Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
     }
 
@@ -714,7 +714,7 @@ mod tests {
         }
         // custom targets
         for spec_path in
-            fs::read_dir(fixtures_path().join("target-specs")).unwrap().map(|e| e.unwrap().path())
+            fs::read_dir(fixtures_dir().join("target-specs")).unwrap().map(|e| e.unwrap().path())
         {
             let _cfg = Cfg::from_rustc(cmd!("rustc"), &spec_path.to_str().unwrap().into()).unwrap();
         }

@@ -285,7 +285,7 @@ fn custom_target() {
                 "#,
         )
         .unwrap();
-        let spec_path = fixtures_path().join(format!("target-specs/{target}.json"));
+        let spec_path = fixtures_dir().join(format!("target-specs/{target}.json"));
         assert_eq!(spec_path.exists(), !is_builtin);
         let cli_target = if spec_path.exists() { spec_path.to_str().unwrap() } else { target };
 
@@ -341,7 +341,7 @@ fn cargo_config_toml() {
         toml::from_str(s).unwrap()
     }
 
-    let _config = de(&fixtures_path().join("reference"));
+    let _config = de(&fixtures_dir().join("reference"));
 }
 
 #[rustversion::attr(not(nightly), ignore)]
@@ -359,7 +359,7 @@ fn cargo_config_json() {
         serde_json::from_str(s).unwrap()
     }
 
-    let _config = de(&fixtures_path().join("reference"));
+    let _config = de(&fixtures_dir().join("reference"));
 }
 
 #[test]

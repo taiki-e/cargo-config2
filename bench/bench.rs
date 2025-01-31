@@ -5,7 +5,7 @@ use std::{collections::HashMap, hint::black_box, path::Path};
 use cargo_config2::{PathAndArgs, ResolveOptions};
 use criterion::{criterion_group, criterion_main, Criterion};
 
-fn fixtures_path() -> &'static Path {
+fn fixtures_dir() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../tests/fixtures"))
 }
 
@@ -18,7 +18,7 @@ fn test_options() -> ResolveOptions {
 
 fn reference(c: &mut Criterion) {
     let mut g = c.benchmark_group("reference");
-    let dir = &fixtures_path().join("reference");
+    let dir = &fixtures_dir().join("reference");
     g.bench_function("load_config_easy", |b| {
         b.iter(|| {
             let config = cargo_config2::Config::load_with_options(dir, test_options()).unwrap();
