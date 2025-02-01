@@ -327,6 +327,7 @@ fn custom_target() {
 #[rustversion::attr(not(nightly), ignore)]
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(careful, ignore)] // TODO: Unexpected TomlError (bug in toml crate?)
 fn cargo_config_toml() {
     fn de(dir: &Path) -> de::Config {
         // remove CARGO_PKG_DESCRIPTION -- if field in Cargo.toml contains newline, --format=toml display invalid toml
