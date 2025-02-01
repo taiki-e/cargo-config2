@@ -655,9 +655,13 @@ fn rustc_path(cargo: &OsStr) -> PathBuf {
     }
 }
 
+#[allow(clippy::std_instead_of_alloc, clippy::std_instead_of_core)]
 #[cfg(test)]
 mod tests {
-    use std::io::{self, Write as _};
+    use std::{
+        fmt::Write as _,
+        io::{self, Write as _},
+    };
 
     use fs_err as fs;
 
@@ -674,12 +678,16 @@ mod tests {
         let cargo_vv = &verbose_version(cmd!("cargo")).unwrap();
         let rustc_version = rustc_version(rustc_vv).unwrap();
         let cargo_version = cargo_version(cargo_vv).unwrap();
-        let mut stderr = io::stdout().lock();
-        let _ = writeln!(stderr, "rustc version: {rustc_version:?}");
-        let _ = writeln!(stderr, "rustc host: {:?}", host_triple(rustc_vv).unwrap());
-        let _ = writeln!(stderr, "cargo version: {cargo_version:?}");
-        let _ = writeln!(stderr, "cargo host: {:?}", host_triple(cargo_vv).unwrap());
-        let _ = stderr.flush();
+        {
+            let mut out = String::new();
+            let _ = writeln!(out, "rustc version: {rustc_version:?}");
+            let _ = writeln!(out, "rustc host: {:?}", host_triple(rustc_vv).unwrap());
+            let _ = writeln!(out, "cargo version: {cargo_version:?}");
+            let _ = writeln!(out, "cargo host: {:?}", host_triple(cargo_vv).unwrap());
+            let mut stderr = io::stderr().lock(); // Not buffered because it is written at once.
+            let _ = stderr.write_all(out.as_bytes());
+            let _ = stderr.flush();
+        }
 
         assert_eq!(rustc_version.major_minor(), (rustc_version.major, rustc_version.minor));
         assert!(rustc_version.major_minor() < (2, 0));
