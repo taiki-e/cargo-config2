@@ -7,10 +7,7 @@ use std::{
     str,
 };
 
-use crate::{
-    error::{Context as _, Result},
-    Error,
-};
+use crate::error::{Context as _, Error, Result};
 
 macro_rules! cmd {
     ($program:expr $(, $arg:expr)* $(,)?) => {{
