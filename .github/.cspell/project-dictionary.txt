@@ -3,6 +3,4 @@ DONT
 FOLDERID
 fxsr
 pijul
-unparse
 USERPROFILE
-wcslen
