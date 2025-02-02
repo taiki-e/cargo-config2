@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 /*!
+<!-- Note: Document from sync-markdown-to-rustdoc:start through sync-markdown-to-rustdoc:end
+     is synchronized from README.md. Any changes to that range are not preserved. -->
+<!-- tidy:sync-markdown-to-rustdoc:start -->
+
 Load and resolve [Cargo configuration](https://doc.rust-lang.org/nightly/cargo/reference/config.html).
 
 This library is intended to accurately emulate the actual behavior of Cargo configuration, for example, this supports the following behaviors:
@@ -11,22 +15,33 @@ This library is intended to accurately emulate the actual behavior of Cargo conf
 
 Supported tables and fields are mainly based on [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)'s use cases, but feel free to submit an issue if you see something missing in your use case.
 
+## Usage
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+cargo-config2 = "0.1"
+```
+
+`cargo-config2` is usually runnable with Cargo versions older than the Rust version required for build. (e.g., a cargo subcommand using `cargo-config2` could work with older versions such as `cargo +1.59 <subcommand>`.)
+
 ## Examples
 
 ```
-# fn main() -> anyhow::Result<()> {
 // Read config files hierarchically from the current directory, merge them,
 // apply environment variables, and resolve relative paths.
-let config = cargo_config2::Config::load()?;
+let config = cargo_config2::Config::load().unwrap();
 let target = "x86_64-unknown-linux-gnu";
 // Resolve target-specific configuration (`target.<triple>` and `target.<cfg>`),
 // and returns the resolved rustflags for `target`.
-let rustflags = config.rustflags(target)?;
+let rustflags = config.rustflags(target).unwrap();
 println!("{rustflags:?}");
-# Ok(()) }
 ```
 
 See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/examples/get.rs) that partial re-implementation of `cargo config get` using cargo-config2.
+
+<!-- tidy:sync-markdown-to-rustdoc:end -->
 */
 
 #![doc(test(

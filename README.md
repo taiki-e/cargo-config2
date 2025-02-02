@@ -6,6 +6,8 @@
 [![msrv](https://img.shields.io/badge/msrv-1.70-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
 [![github actions](https://img.shields.io/github/actions/workflow/status/taiki-e/cargo-config2/ci.yml?branch=main&style=flat-square&logo=github)](https://github.com/taiki-e/cargo-config2/actions)
 
+<!-- tidy:sync-markdown-to-rustdoc:start:src/lib.rs -->
+
 Load and resolve [Cargo configuration](https://doc.rust-lang.org/nightly/cargo/reference/config.html).
 
 This library is intended to accurately emulate the actual behavior of Cargo configuration, for example, this supports the following behaviors:
@@ -32,15 +34,17 @@ cargo-config2 = "0.1"
 ```rust
 // Read config files hierarchically from the current directory, merge them,
 // apply environment variables, and resolve relative paths.
-let config = cargo_config2::Config::load()?;
+let config = cargo_config2::Config::load().unwrap();
 let target = "x86_64-unknown-linux-gnu";
 // Resolve target-specific configuration (`target.<triple>` and `target.<cfg>`),
 // and returns the resolved rustflags for `target`.
-let rustflags = config.rustflags(target)?;
+let rustflags = config.rustflags(target).unwrap();
 println!("{rustflags:?}");
 ```
 
 See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/examples/get.rs) that partial re-implementation of `cargo config get` using cargo-config2.
+
+<!-- tidy:sync-markdown-to-rustdoc:end -->
 
 ## License
 
