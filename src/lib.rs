@@ -75,6 +75,10 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 mod assert_impl;
 #[path = "gen/is_none.rs"]
 mod is_none_impl;
+#[cfg(test)]
+#[cfg(not(windows))] // TODO: size is large for some reason.
+#[path = "gen/tests/track_size.rs"]
+mod track_size;
 
 #[macro_use]
 mod error;

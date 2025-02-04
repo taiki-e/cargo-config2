@@ -4,71 +4,12 @@
 
 mod helper;
 
-use std::{collections::HashMap, mem, path::Path, process::Command, str};
+use std::{collections::HashMap, path::Path, process::Command, str};
 
 use build_context::TARGET;
 use cargo_config2::*;
 
 use self::helper::*;
-
-// Test the size of public types. This is not intended to keep a specific size and
-// is intended to be used only as a help in optimization.
-#[test]
-#[cfg_attr(any(not(target_pointer_width = "64"), miri, careful), ignore)] // We set -Z randomize-layout for Miri/cargo-careful.
-fn size() {
-    if cfg!(windows) {
-        // TODO: size is large for some reason.
-        return;
-    }
-    assert_eq!(mem::size_of::<de::Config>(), 1608);
-    assert_eq!(mem::size_of::<de::BuildConfig>(), 544);
-    assert_eq!(mem::size_of::<de::TargetConfig>(), 208);
-    assert_eq!(mem::size_of::<de::DocConfig>(), 88);
-    assert_eq!(mem::size_of::<de::EnvConfigValue>(), 136);
-    assert_eq!(mem::size_of::<de::FutureIncompatReportConfig>(), 40);
-    assert_eq!(mem::size_of::<de::CargoNewConfig>(), 40);
-    assert_eq!(mem::size_of::<de::VersionControlSoftware>(), 1);
-    assert_eq!(mem::size_of::<de::HttpConfig>(), 368);
-    assert_eq!(mem::size_of::<de::NetConfig>(), 120);
-    assert_eq!(mem::size_of::<de::RegistriesConfigValue>(), 152);
-    assert_eq!(mem::size_of::<de::RegistriesProtocol>(), 1);
-    assert_eq!(mem::size_of::<de::RegistryConfig>(), 112);
-    assert_eq!(mem::size_of::<de::TermConfig>(), 200);
-    assert_eq!(mem::size_of::<de::TermProgress>(), 80);
-    assert_eq!(mem::size_of::<de::Color>(), 1);
-    assert_eq!(mem::size_of::<de::When>(), 1);
-    assert_eq!(mem::size_of::<de::Frequency>(), 1);
-    assert_eq!(mem::size_of::<de::Flags>(), 32);
-    assert_eq!(mem::size_of::<de::ConfigRelativePath>(), 56);
-    assert_eq!(mem::size_of::<de::PathAndArgs>(), 88);
-    assert_eq!(mem::size_of::<de::StringList>(), 32);
-    assert_eq!(mem::size_of::<de::StringOrArray>(), 56);
-    assert_eq!(mem::size_of::<Config>(), 936);
-    assert_eq!(mem::size_of::<BuildConfig>(), 296);
-    assert_eq!(mem::size_of::<TargetConfig>(), 120);
-    assert_eq!(mem::size_of::<DocConfig>(), 48);
-    assert_eq!(mem::size_of::<EnvConfigValue>(), 32);
-    assert_eq!(mem::size_of::<FutureIncompatReportConfig>(), 1);
-    assert_eq!(mem::size_of::<CargoNewConfig>(), 1);
-    assert_eq!(mem::size_of::<HttpConfig>(), 96);
-    assert_eq!(mem::size_of::<NetConfig>(), 12);
-    assert_eq!(mem::size_of::<RegistriesConfigValue>(), 56);
-    assert_eq!(mem::size_of::<RegistryConfig>(), 48);
-    assert_eq!(mem::size_of::<TermConfig>(), 16);
-    assert_eq!(mem::size_of::<TermProgressConfig>(), 12);
-    assert_eq!(mem::size_of::<Flags>(), 24);
-    assert_eq!(mem::size_of::<PathAndArgs>(), 48);
-    assert_eq!(mem::size_of::<StringList>(), 24);
-    assert_eq!(mem::size_of::<Error>(), 64);
-    assert_eq!(mem::size_of::<ResolveOptions>(), 168);
-    assert_eq!(mem::size_of::<TargetTripleRef<'_>>(), 48);
-    assert_eq!(mem::size_of::<TargetTriple>(), 48);
-    assert_eq!(mem::size_of::<RustcVersion>(), 20);
-    assert_eq!(mem::size_of::<CargoVersion>(), 16);
-    assert_eq!(mem::size_of::<de::Value<()>>(), 32);
-    assert_eq!(mem::size_of::<de::Definition>(), 32);
-    assert_eq!(mem::size_of::<Walk<'_>>(), 40);
-}
 
 fn test_options() -> ResolveOptions {
     ResolveOptions::default()
