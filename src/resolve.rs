@@ -730,7 +730,7 @@ mod tests {
 
     #[test]
     fn env_filter() {
-        // NB: sync with bench in bench/benches/bench.rs
+        // NB: sync with bench in bench/bench.rs
         let env_list = [
             ("CARGO_BUILD_JOBS", "-1"),
             ("RUSTC", "rustc"),
