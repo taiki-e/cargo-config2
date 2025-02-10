@@ -47,7 +47,7 @@ fn try_main() -> Result<()> {
                     "the `json` format does not support --merged=no, try the `toml` format instead"
                 );
             }
-            for path in cargo_config2::Walk::new(&std::env::current_dir()?) {
+            for path in cargo_config2::Walk::new(&env::current_dir()?) {
                 let config = Config::load_file(&path)?;
                 writeln!(stdout, "# {}", path.display())?;
                 print_config(&mut stdout, args.format, &config)?;
@@ -61,7 +61,7 @@ fn try_main() -> Result<()> {
     // but may output toml in an invalid format because it does not handle newlines properly.
     let mut stderr = BufWriter::new(io::stderr().lock()); // Buffered because it is written with newline many times.
     writeln!(stderr, "note: The following environment variables may affect the loaded values.")?;
-    for (k, v) in std::env::vars_os() {
+    for (k, v) in env::vars_os() {
         if let (Ok(k), Ok(v)) = (k.into_string(), v.into_string()) {
             if k.starts_with("CARGO_") {
                 writeln!(stderr, "{k}={}", shell_escape::escape(v.into()))?;
