@@ -4,7 +4,7 @@
 
 use std::{
     env,
-    io::{self, Write as _},
+    io::{self, BufWriter, Write as _},
     str::FromStr,
 };
 
@@ -35,7 +35,7 @@ fn main() {
 fn try_main() -> Result<()> {
     let args = Args::parse()?;
 
-    let mut stdout = io::stdout().lock();
+    let mut stdout = BufWriter::new(io::stdout().lock()); // Buffered because it is written with newline many times.
     match args.merged {
         Merged::Yes => {
             let config = Config::load()?;
@@ -59,7 +59,7 @@ fn try_main() -> Result<()> {
 
     // In toml format, `cargo config get` outputs this in the form of a comment,
     // but may output toml in an invalid format because it does not handle newlines properly.
-    let mut stderr = io::stderr().lock();
+    let mut stderr = BufWriter::new(io::stderr().lock()); // Buffered because it is written with newline many times.
     writeln!(stderr, "note: The following environment variables may affect the loaded values.")?;
     for (k, v) in std::env::vars_os() {
         if let (Ok(k), Ok(v)) = (k.into_string(), v.into_string()) {
