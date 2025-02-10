@@ -33,7 +33,7 @@ fn main() {
 }
 
 fn try_main() -> Result<()> {
-    let args = Args::parse()?;
+    let Some(args) = Args::parse()? else { return Ok(()) };
 
     let mut stdout = BufWriter::new(io::stdout().lock()); // Buffered because it is written with newline many times.
     match args.merged {
@@ -153,7 +153,7 @@ impl FromStr for Merged {
 }
 
 impl Args {
-    fn parse() -> Result<Self> {
+    fn parse() -> Result<Option<Self>> {
         let mut format: Option<Format> = None;
         let mut merged: Option<Merged> = None;
 
@@ -164,16 +164,16 @@ impl Args {
                 Long("merged") if merged.is_none() => merged = Some(parser.value()?.parse()?),
                 Short('h') | Long("help") => {
                     print!("{USAGE}");
-                    std::process::exit(0);
+                    return Ok(None);
                 }
                 Short('V') | Long("version") => {
                     println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-                    std::process::exit(0);
+                    return Ok(None);
                 }
                 _ => return Err(arg.unexpected().into()),
             }
         }
 
-        Ok(Self { format: format.unwrap_or_default(), merged: merged.unwrap_or_default() })
+        Ok(Some(Self { format: format.unwrap_or_default(), merged: merged.unwrap_or_default() }))
     }
 }
