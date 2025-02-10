@@ -490,10 +490,14 @@ impl BuildConfig {
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
         let de_rustflags = de.rustflags.clone();
-        let rustflags =
-            de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
-        let rustdocflags =
-            de.rustdocflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+        let rustflags = de.rustflags.map(|v| Flags {
+            flags: v.flags.into_iter().map(|v| v.val).collect(),
+            format: v.deserialized_repr.into(),
+        });
+        let rustdocflags = de.rustdocflags.map(|v| Flags {
+            flags: v.flags.into_iter().map(|v| v.val).collect(),
+            format: v.deserialized_repr.into(),
+        });
         let incremental = de.incremental.map(|v| v.val);
         let dep_info_basedir =
             de.dep_info_basedir.map(|v| v.resolve_as_path(current_dir).into_owned());
@@ -550,8 +554,10 @@ impl TargetConfig {
             }),
             None => None,
         };
-        let rustflags =
-            de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
+        let rustflags = de.rustflags.map(|v| Flags {
+            flags: v.flags.into_iter().map(|v| v.val).collect(),
+            format: v.deserialized_repr.into(),
+        });
         Self { linker, runner, rustflags }
     }
 }
@@ -870,9 +876,28 @@ impl TermProgressConfig {
 /// A representation of rustflags and rustdocflags.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
-#[non_exhaustive]
 pub struct Flags {
     pub flags: Vec<String>,
+    #[serde(skip, default)]
+    format: FlagsFormat,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+enum FlagsFormat {
+    /// Separated with ASCII unit separator ('\x1f')
+    Encoded,
+    /// Separated with space (' ')
+    Space,
+    #[default]
+    Unknown,
+}
+impl From<de::StringListDeserializedRepr> for FlagsFormat {
+    fn from(repr: de::StringListDeserializedRepr) -> Self {
+        match repr {
+            de::StringListDeserializedRepr::Array => FlagsFormat::Encoded,
+            de::StringListDeserializedRepr::String => FlagsFormat::Space,
+        }
+    }
 }
 
 impl Flags {
@@ -885,7 +910,7 @@ impl Flags {
     ///
     /// See also [`encode`](Self::encode).
     pub fn from_encoded(s: &str) -> Self {
-        Self { flags: split_encoded(s).map(str::to_owned).collect() }
+        Self { flags: split_encoded(s).map(str::to_owned).collect(), format: FlagsFormat::Encoded }
     }
 
     /// Creates a rustflags from a string separated with space (' ').
@@ -907,7 +932,10 @@ impl Flags {
     ///
     /// See also [`encode_space_separated`](Self::encode_space_separated).
     pub fn from_space_separated(s: &str) -> Self {
-        Self { flags: split_space_separated(s).map(str::to_owned).collect() }
+        Self {
+            flags: split_space_separated(s).map(str::to_owned).collect(),
+            format: FlagsFormat::Space,
+        }
     }
 
     /// Concatenates this rustflags with ASCII unit separator ('\x1f').
@@ -964,6 +992,35 @@ impl Flags {
         self.encode_internal(' ')
     }
 
+    /// Concatenates this rustflags by respecting the format of the source.
+    ///
+    /// This is a valid format for the following environment variables:
+    ///
+    /// - `CARGO_ENCODED_RUSTFLAGS` (Cargo 1.55+)
+    /// - `CARGO_ENCODED_RUSTDOCFLAGS` (Cargo 1.55+)
+    ///
+    /// # Errors
+    ///
+    /// This returns an error if any of flag contains ASCII unit separator ('\x1f').
+    ///
+    /// This is because even if you do not intend it to be interpreted as a
+    /// separator, Cargo will interpret it as a separator.
+    ///
+    /// Since it is not easy to insert an ASCII unit separator in a toml file or
+    /// Shell environment variable, this usually occurs when this rustflags is
+    /// created in the wrong way ([`from_encoded`](Self::from_encoded) vs
+    /// [`from_space_separated`](Self::from_space_separated)) or when a flag
+    /// containing a separator is written in the rust code ([`push`](Self::push),
+    /// `into`, `from`, etc.).
+    pub fn encode_preserve(&self) -> Result<(&'static str, String)> {
+        match self.format {
+            FlagsFormat::Encoded | FlagsFormat::Unknown => {
+                self.encode_internal('\x1f').map(|f| ("", f))
+            }
+            FlagsFormat::Space => self.encode_internal(' ').map(|f| ("", f)),
+        }
+    }
+
     fn encode_internal(&self, sep: char) -> Result<String> {
         let mut buf = String::with_capacity(
             self.flags.len().saturating_sub(1) + self.flags.iter().map(String::len).sum::<usize>(),
@@ -988,27 +1045,30 @@ impl Flags {
 
 impl From<Vec<String>> for Flags {
     fn from(value: Vec<String>) -> Self {
-        Self { flags: value }
+        Self { flags: value, format: FlagsFormat::Unknown }
     }
 }
 impl From<&[String]> for Flags {
     fn from(value: &[String]) -> Self {
-        Self { flags: value.to_owned() }
+        Self { flags: value.to_owned(), format: FlagsFormat::Unknown }
     }
 }
 impl From<&[&str]> for Flags {
     fn from(value: &[&str]) -> Self {
-        Self { flags: value.iter().map(|&v| v.to_owned()).collect() }
+        Self { flags: value.iter().map(|&v| v.to_owned()).collect(), format: FlagsFormat::Unknown }
     }
 }
 impl<const N: usize> From<[String; N]> for Flags {
     fn from(value: [String; N]) -> Self {
-        Self { flags: value[..].to_owned() }
+        Self { flags: value[..].to_owned(), format: FlagsFormat::Unknown }
     }
 }
 impl<const N: usize> From<[&str; N]> for Flags {
     fn from(value: [&str; N]) -> Self {
-        Self { flags: value[..].iter().map(|&v| v.to_owned()).collect() }
+        Self {
+            flags: value[..].iter().map(|&v| v.to_owned()).collect(),
+            format: FlagsFormat::Unknown,
+        }
     }
 }
 
