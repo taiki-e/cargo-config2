@@ -261,7 +261,11 @@ fn custom_target() {
         let _config = toml::to_string(&config).unwrap();
     }
 
-    t("avr-unknown-gnu-atmega328", IsBuiltin(true));
+    if rustversion::cfg!(since(1.87)) {
+        t("avr-none", IsBuiltin(true));
+    } else {
+        t("avr-unknown-gnu-atmega328", IsBuiltin(true));
+    }
     t("avr-unknown-gnu-atmega2560", IsBuiltin(false));
 }
 
