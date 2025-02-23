@@ -3,8 +3,8 @@
 use crate::cfg_expr::{
     error::{ParseError, Reason},
     expr::{
-        lexer::{Lexer, Token},
         ExprNode, Expression, Func, InnerPredicate,
+        lexer::{Lexer, Token},
     },
 };
 

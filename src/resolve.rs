@@ -21,12 +21,13 @@ use serde::{
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{
+    PathAndArgs,
     cfg_expr::expr::{Expression, Predicate},
     easy,
     error::{Context as _, Error, Result},
     process::ProcessBuilder,
     value::{Definition, Value},
-    walk, PathAndArgs,
+    walk,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -648,11 +649,7 @@ fn rustc_path(cargo: &OsStr) -> PathBuf {
     let mut rustc = PathBuf::from(cargo);
     rustc.pop(); // cargo
     rustc.push(format!("rustc{}", std::env::consts::EXE_SUFFIX));
-    if rustc.exists() {
-        rustc
-    } else {
-        "rustc".into()
-    }
+    if rustc.exists() { rustc } else { "rustc".into() }
 }
 
 #[allow(clippy::std_instead_of_alloc, clippy::std_instead_of_core)]

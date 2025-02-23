@@ -139,26 +139,34 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     // TODO: [target.<triple>.<links>]
 
     // resolved target config cannot be accessed by cfg(...)
-    assert!(config
-        .target("cfg(target_arch = \"x86_64\")")
-        .unwrap_err()
-        .to_string()
-        .contains("not valid target triple"));
-    assert!(config
-        .linker("cfg(target_arch = \"x86_64\")")
-        .unwrap_err()
-        .to_string()
-        .contains("not valid target triple"));
-    assert!(config
-        .runner("cfg(target_arch = \"x86_64\")")
-        .unwrap_err()
-        .to_string()
-        .contains("not valid target triple"));
-    assert!(config
-        .rustflags("cfg(target_arch = \"x86_64\")")
-        .unwrap_err()
-        .to_string()
-        .contains("not valid target triple"));
+    assert!(
+        config
+            .target("cfg(target_arch = \"x86_64\")")
+            .unwrap_err()
+            .to_string()
+            .contains("not valid target triple")
+    );
+    assert!(
+        config
+            .linker("cfg(target_arch = \"x86_64\")")
+            .unwrap_err()
+            .to_string()
+            .contains("not valid target triple")
+    );
+    assert!(
+        config
+            .runner("cfg(target_arch = \"x86_64\")")
+            .unwrap_err()
+            .to_string()
+            .contains("not valid target triple")
+    );
+    assert!(
+        config
+            .rustflags("cfg(target_arch = \"x86_64\")")
+            .unwrap_err()
+            .to_string()
+            .contains("not valid target triple")
+    );
 
     // [term]
     assert_eq!(config.term.quiet, Some(false));

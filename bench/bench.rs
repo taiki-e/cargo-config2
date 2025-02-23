@@ -3,7 +3,7 @@
 use std::{collections::HashMap, hint::black_box, path::Path};
 
 use cargo_config2::{PathAndArgs, ResolveOptions};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 fn fixtures_dir() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../tests/fixtures"))

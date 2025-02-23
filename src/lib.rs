@@ -105,5 +105,5 @@ pub use crate::{
     },
     error::Error,
     resolve::{CargoVersion, ResolveOptions, RustcVersion, TargetTriple, TargetTripleRef},
-    walk::{cargo_home_with_cwd, home_dir, rustup_home_with_cwd, Walk},
+    walk::{Walk, cargo_home_with_cwd, home_dir, rustup_home_with_cwd},
 };

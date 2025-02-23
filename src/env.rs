@@ -391,7 +391,7 @@ impl ApplyEnv for TermProgress {
 #[cfg(test)]
 mod tests {
     use super::ApplyEnv as _;
-    use crate::{value::Value, ResolveOptions};
+    use crate::{ResolveOptions, value::Value};
 
     #[test]
     fn empty_string_wrapper_envs() {

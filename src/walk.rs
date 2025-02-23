@@ -48,7 +48,7 @@ pub fn home_dir() -> Option<PathBuf> {
     // Adapted from https://github.com/rust-lang/cargo/blob/0.83.0/crates/home/src/windows.rs.
     use std::{
         env,
-        ffi::{c_void, OsString},
+        ffi::{OsString, c_void},
         os::windows::ffi::OsStringExt as _,
         ptr, slice,
     };
@@ -56,7 +56,7 @@ pub fn home_dir() -> Option<PathBuf> {
     use windows_sys::Win32::{
         Foundation::S_OK,
         System::Com::CoTaskMemFree,
-        UI::Shell::{FOLDERID_Profile, SHGetKnownFolderPath, KF_FLAG_DONT_VERIFY},
+        UI::Shell::{FOLDERID_Profile, KF_FLAG_DONT_VERIFY, SHGetKnownFolderPath},
     };
 
     #[cfg(not(target_vendor = "uwp"))]

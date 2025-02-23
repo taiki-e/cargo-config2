@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::collections::{btree_map, BTreeMap};
+use std::collections::{BTreeMap, btree_map};
 
 use crate::{
+    Color, Frequency, When,
     de::{self, RegistriesProtocol, VersionControlSoftware},
     error::{Context as _, Result},
     value::Value,
-    Color, Frequency, When,
 };
 
 // https://github.com/rust-lang/cargo/blob/0.74.0/src/cargo/util/config/mod.rs#L2107-L2115

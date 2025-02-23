@@ -14,8 +14,8 @@ use serde_derive::Serialize;
 
 use crate::{
     de::{
-        self, split_encoded, split_space_separated, Color, Frequency, RegistriesProtocol,
-        VersionControlSoftware, When,
+        self, Color, Frequency, RegistriesProtocol, VersionControlSoftware, When, split_encoded,
+        split_space_separated,
     },
     error::{Context as _, Result},
     process::ProcessBuilder,
