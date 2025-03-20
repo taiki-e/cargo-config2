@@ -65,7 +65,7 @@ fn very_specific() {
     .unwrap();
 
     let mut map = CfgMap::default();
-    for target in ["i686-pc-windows-msvc", "i586-pc-windows-msvc"] {
+    for target in ["i686-pc-windows-msvc", "i686-pc-windows-gnu"] {
         let t = map.eval_cfg(&specific, &target.into(), || cmd!("rustc")).unwrap();
         assert_eq!(
             target == "i686-pc-windows-msvc",
