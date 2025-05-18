@@ -4,7 +4,7 @@
 
 mod helper;
 
-use std::{collections::HashMap, path::Path, process::Command, str};
+use std::{collections::HashMap, path::Path, process::Command};
 
 use build_context::TARGET;
 use cargo_config2::*;
