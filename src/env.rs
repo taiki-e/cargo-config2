@@ -44,6 +44,17 @@ impl Config {
                     ),
                 );
             }
+            // https://doc.rust-lang.org/nightly/cargo/reference/config.html#credential-alias
+            else if let Some(k) = k.strip_prefix("CARGO_CREDENTIAL_ALIAS_") {
+                self.credential_alias.insert(
+                    k.to_owned(),
+                    PathAndArgs::from_string(
+                        v.to_str().ok_or_else(error_env_not_unicode)?,
+                        definition(),
+                    )
+                    .context("invalid length 0, expected at least one element")?,
+                );
+            }
             // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registries
             else if let Some(k) = k.strip_prefix("CARGO_REGISTRIES_") {
                 if let Some(k) = k.strip_suffix("_INDEX") {
@@ -55,6 +66,7 @@ impl Config {
                         self.registries.insert(k.to_owned(), RegistriesConfigValue {
                             index,
                             token: None,
+                            credential_provider: None,
                             protocol: None,
                         });
                     }
@@ -67,6 +79,22 @@ impl Config {
                         self.registries.insert(k.to_owned(), RegistriesConfigValue {
                             index: None,
                             token,
+                            credential_provider: None,
+                            protocol: None,
+                        });
+                    }
+                } else if let Some(k) = k.strip_suffix("_CREDENTIAL_PROVIDER") {
+                    let credential_provider = Some(
+                        PathAndArgs::from_string(k, definition())
+                            .context("invalid length 0, expected at least one element")?,
+                    );
+                    if let Some(registries_config_value) = self.registries.get_mut(k) {
+                        registries_config_value.credential_provider = credential_provider;
+                    } else {
+                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
+                            index: None,
+                            token: None,
+                            credential_provider,
                             protocol: None,
                         });
                     }
@@ -81,6 +109,7 @@ impl Config {
                         self.registries.insert(k.to_owned(), RegistriesConfigValue {
                             index: None,
                             token: None,
+                            credential_provider: None,
                             protocol,
                         });
                     }
@@ -347,9 +376,25 @@ impl ApplyEnv for RegistryConfig {
         if let Some(default) = cx.env("CARGO_REGISTRY_DEFAULT")? {
             self.default = Some(default);
         }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrycredential-provider
+        if let Some(credential_provider) = cx.env("CARGO_REGISTRY_CREDENTIAL_PROVIDER")? {
+            self.credential_provider = Some(
+                PathAndArgs::from_string(&credential_provider.val, credential_provider.definition)
+                    .context("invalid length 0, expected at least one element")?,
+            );
+        }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken
         if let Some(token) = cx.env_redacted("CARGO_REGISTRY_TOKEN")? {
             self.token = Some(token);
+        }
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers
+        if let Some(global_credential_providers) =
+            cx.env("CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS")?
+        {
+            self.global_credential_providers = StringList::from_string(
+                &global_credential_providers.val,
+                global_credential_providers.definition.as_ref(),
+            );
         }
         Ok(())
     }

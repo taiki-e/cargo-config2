@@ -10,6 +10,7 @@ impl Merge for crate::de::Config {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         self.alias.merge(low.alias, force)?;
         self.build.merge(low.build, force)?;
+        self.credential_alias.merge(low.credential_alias, force)?;
         self.doc.merge(low.doc, force)?;
         self.env.merge(low.env, force)?;
         self.future_incompat_report.merge(low.future_incompat_report, force)?;
@@ -27,6 +28,7 @@ impl SetPath for crate::de::Config {
     fn set_path(&mut self, path: &Path) {
         self.alias.set_path(path);
         self.build.set_path(path);
+        self.credential_alias.set_path(path);
         self.doc.set_path(path);
         self.env.set_path(path);
         self.future_incompat_report.set_path(path);
@@ -178,6 +180,7 @@ impl Merge for crate::de::RegistriesConfigValue {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         self.index.merge(low.index, force)?;
         self.token.merge(low.token, force)?;
+        self.credential_provider.merge(low.credential_provider, force)?;
         self.protocol.merge(low.protocol, force)?;
         Ok(())
     }
@@ -186,20 +189,25 @@ impl SetPath for crate::de::RegistriesConfigValue {
     fn set_path(&mut self, path: &Path) {
         self.index.set_path(path);
         self.token.set_path(path);
+        self.credential_provider.set_path(path);
         self.protocol.set_path(path);
     }
 }
 impl Merge for crate::de::RegistryConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         self.default.merge(low.default, force)?;
+        self.credential_provider.merge(low.credential_provider, force)?;
         self.token.merge(low.token, force)?;
+        self.global_credential_providers.merge(low.global_credential_providers, force)?;
         Ok(())
     }
 }
 impl SetPath for crate::de::RegistryConfig {
     fn set_path(&mut self, path: &Path) {
         self.default.set_path(path);
+        self.credential_provider.set_path(path);
         self.token.set_path(path);
+        self.global_credential_providers.set_path(path);
     }
 }
 impl Merge for crate::de::TermConfig {
