@@ -56,6 +56,17 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     for (k, v) in &config.credential_alias {
         match k.as_str() {
             "my-alias" => {
+                // TODO
+                #[cfg(windows)]
+                assert_eq!(
+                    *v,
+                    *PathAndArgs::new("C:/usr/bin/cargo-credential-example").args([
+                        "--argument",
+                        "value",
+                        "--flag"
+                    ])
+                );
+                #[cfg(not(windows))]
                 assert_eq!(
                     *v,
                     *PathAndArgs::new("/usr/bin/cargo-credential-example").args([
