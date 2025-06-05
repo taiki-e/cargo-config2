@@ -907,7 +907,7 @@ pub struct RegistriesConfigValue {
     pub token: Option<String>,
     /// Specifies the credential provider for the given registry.
     ///
-    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriescredential-provider)
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub credential_provider: Option<PathAndArgs>,
     /// Specifies the protocol used to access crates.io.
