@@ -7,7 +7,7 @@ use core::ops::Range;
 
 /// A predicate function, used to combine 1 or more predicates
 /// into a single value
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, Copy)]
 enum Func {
     /// `not()` with a configuration predicate. It is true if its predicate
     /// is false and false if its predicate is true.

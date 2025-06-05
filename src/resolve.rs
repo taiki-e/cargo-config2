@@ -557,7 +557,7 @@ impl<'de> Deserialize<'de> for TargetTripleRef<'static> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct RustcVersion {
     pub major: u32,
@@ -565,7 +565,7 @@ pub struct RustcVersion {
     pub patch: Option<u32>,
     pub nightly: bool,
 }
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct CargoVersion {
     pub major: u32,
