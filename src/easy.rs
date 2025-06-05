@@ -415,7 +415,7 @@ impl Config {
     /// - You will need to know the **rustc** version to determine whether options passed to rustc
     ///   via RUSTFLAGS or RUSTDOCFLAGS like `-C instrument-coverage` are available.
     /// - You will need to know the **cargo** version to determine whether fields in `Cargo.toml`
-    ///   or cargo’s CLI options are available.
+    ///   or cargo's CLI options are available.
     pub fn rustc_version(&self) -> Result<RustcVersion> {
         self.cx.rustc_version(&self.build)
     }
