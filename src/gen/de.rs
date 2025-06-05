@@ -210,6 +210,16 @@ impl SetPath for crate::de::RegistryConfig {
         self.global_credential_providers.set_path(path);
     }
 }
+impl SetPath for crate::de::GlobalCredentialProviders {
+    fn set_path(&mut self, path: &Path) {
+        self.0.set_path(path);
+    }
+}
+impl SetPath for crate::de::CredentialProvider {
+    fn set_path(&mut self, path: &Path) {
+        self.kind.set_path(path);
+    }
+}
 impl Merge for crate::de::TermConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         self.quiet.merge(low.quiet, force)?;

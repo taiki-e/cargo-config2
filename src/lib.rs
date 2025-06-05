@@ -99,9 +99,10 @@ mod walk;
 pub use crate::de::{Color, Frequency, RegistriesProtocol, VersionControlSoftware, When};
 pub use crate::{
     easy::{
-        BuildConfig, CargoNewConfig, Config, DocConfig, EnvConfigValue, Flags,
-        FutureIncompatReportConfig, HttpConfig, NetConfig, PathAndArgs, RegistriesConfigValue,
-        RegistryConfig, StringList, TargetConfig, TermConfig, TermProgressConfig,
+        BuildConfig, CargoNewConfig, Config, CredentialProvider, DocConfig, EnvConfigValue, Flags,
+        FutureIncompatReportConfig, GlobalCredentialProviders, HttpConfig, NetConfig, PathAndArgs,
+        RegistriesConfigValue, RegistryConfig, StringList, TargetConfig, TermConfig,
+        TermProgressConfig,
     },
     error::Error,
     resolve::{CargoVersion, ResolveOptions, RustcVersion, TargetTriple, TargetTripleRef},

@@ -22,8 +22,13 @@ fn main() {
 
 fn gen_de() {
     const FILES: &[&str] = &["src/de.rs"];
-    const MERGE_EXCLUDE: &[&str] =
-        &["de::Flags", "de::EnvConfigValue", "de::StringList", "de::PathAndArgs"];
+    const MERGE_EXCLUDE: &[&str] = &[
+        "de::CredentialProvider",
+        "de::Flags",
+        "de::EnvConfigValue",
+        "de::StringList",
+        "de::PathAndArgs",
+    ];
     const SET_PATH_EXCLUDE: &[&str] = &[];
 
     let workspace_root = &workspace_root();
@@ -199,6 +204,7 @@ fn gen_is_none() {
     const FILES: &[&str] = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
     const EXCLUDE: &[&str] = &[
         "de::Config",
+        "de::CredentialProvider",
         "de::Flags",
         "de::PathAndArgs",
         "de::StringList",

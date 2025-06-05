@@ -95,10 +95,22 @@ offline = true # do not access the network
 # [resolver]
 # incompatible-rust-versions = "allow" # Specifies how resolver reacts to these
 
-[registries.custom] # registries other than crates.io
+[registries.custom-token] # registries other than crates.io
 index = "registry-index" # URL of the registry index
 token = "00000000000000000000000000000000001" # authentication token for the registry
 credential-provider = "cargo:token" # The credential provider for this registry.
+
+[registries.custom-single-word-plugin] # registries other than crates.io
+credential-provider = "cargo-credential-example" # The credential provider for this registry.
+
+[registries.alias] # registries other than crates.io
+credential-provider = "my-alias" # The credential provider for this registry.
+
+[registries.custom-many-words-plugin] # registries other than crates.io
+credential-provider = ["cargo-credential-example", "--some-argument"] # The credential provider for this registry.
+
+[registries.custom-token-from-stdout] # registries other than crates.io
+credential-provider = ["cargo:token-from-stdout", "cargo-credential-example"] # The credential provider for this registry.
 
 [registries.crates-io] # registries other than crates.io
 index = "https://github.com/rust-lang/crates.io-index" # URL of the registry index

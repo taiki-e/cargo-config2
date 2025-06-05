@@ -130,15 +130,33 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     // [resolver]
 
     // [registries.<name>]
-    assert_eq!(config.registries.len(), 2);
-    assert_eq!(config.registries["custom"].index.as_deref(), Some("registry-index"));
+    assert_eq!(config.registries.len(), 6);
+    assert_eq!(config.registries["custom-token"].index.as_deref(), Some("registry-index"));
     assert_eq!(
-        config.registries["custom"].token.as_deref(),
+        config.registries["custom-token"].token.as_deref(),
         Some("00000000000000000000000000000000001")
     );
-    assert_eq!(config.registries["custom"].protocol, None);
-    // TODO:
-    // assert_eq!(config.registries["custom"].credential_provider.as_deref(), Some("cargo:token"));
+    assert_eq!(config.registries["custom-token"].protocol, None);
+    assert_eq!(
+        config.registries["custom-single-word-plugin"].credential_provider,
+        Some(CredentialProvider::Plugin(PathAndArgs::new("cargo-credential-example"))),
+    );
+    assert_eq!(
+        config.registries["alias"].credential_provider,
+        Some(CredentialProvider::Alias("my-alias".into())),
+    );
+    let mut many_word_plugins = PathAndArgs::new("cargo-credential-example");
+    many_word_plugins.arg("--some-argument");
+    assert_eq!(
+        config.registries["custom-many-words-plugin"].credential_provider,
+        Some(CredentialProvider::Plugin(many_word_plugins)),
+    );
+    assert_eq!(
+        config.registries["custom-token-from-stdout"].credential_provider,
+        Some(CredentialProvider::CargoTokenFromStdout(PathAndArgs::new(
+            "cargo-credential-example"
+        ))),
+    );
     assert_eq!(
         config.registries["crates-io"].index.as_deref(),
         Some("https://github.com/rust-lang/crates.io-index")
@@ -153,8 +171,10 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     assert_eq!(config.registry.default.as_deref(), Some("crates-io"));
     assert_eq!(config.registry.token.as_deref(), Some("00000000000000000000000000000000000"));
     // TODO:
-    // assert_eq!(config.registry.credential_provider.as_deref(), Some("cargo:token"));
-    assert_eq!(config.registry.global_credential_providers, vec!["cargo:token".into()].into());
+    assert_eq!(config.registry.credential_provider, Some(CredentialProvider::CargoToken));
+    assert_eq!(config.registry.global_credential_providers.as_ref(), [
+        CredentialProvider::CargoToken
+    ]);
 
     // TODO
     // [source.<name>]
