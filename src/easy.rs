@@ -44,6 +44,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "BuildConfig::is_none")]
     pub build: BuildConfig,
+    /// The `[credential-alias]` table.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credential-alias)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub credential_alias: BTreeMap<String, PathAndArgs>,
     /// The `[doc]` table.
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
@@ -151,6 +157,10 @@ impl Config {
             alias.insert(k, StringList::from_unresolved(v));
         }
         let build = BuildConfig::from_unresolved(de.build, &cx.current_dir);
+        let mut credential_alias = BTreeMap::new();
+        for (k, v) in de.credential_alias {
+            credential_alias.insert(k, PathAndArgs::from_unresolved(v, &cx.current_dir));
+        }
         let doc = DocConfig::from_unresolved(de.doc, &cx.current_dir);
         let mut env = BTreeMap::new();
         for (k, v) in de.env {
@@ -163,14 +173,15 @@ impl Config {
         let net = NetConfig::from_unresolved(de.net);
         let mut registries = BTreeMap::new();
         for (k, v) in de.registries {
-            registries.insert(k, RegistriesConfigValue::from_unresolved(v));
+            registries.insert(k, RegistriesConfigValue::from_unresolved(v, &cx.current_dir));
         }
-        let registry = RegistryConfig::from_unresolved(de.registry);
+        let registry = RegistryConfig::from_unresolved(de.registry, &cx.current_dir);
         let term = TermConfig::from_unresolved(de.term);
 
         Ok(Self {
             alias,
             build,
+            credential_alias,
             doc,
             env,
             future_incompat_report,
@@ -644,10 +655,7 @@ pub struct DocConfig {
 
 impl DocConfig {
     fn from_unresolved(de: de::DocConfig, current_dir: &Path) -> Self {
-        let browser = de.browser.map(|v| PathAndArgs {
-            path: v.path.resolve_program(current_dir).into_owned(),
-            args: v.args.into_iter().map(|v| v.val.into()).collect(),
-        });
+        let browser = de.browser.map(|v| PathAndArgs::from_unresolved(v, current_dir));
         Self { browser }
     }
 }
@@ -897,6 +905,11 @@ pub struct RegistriesConfigValue {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    /// Specifies the credential provider for the given registry.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_provider: Option<PathAndArgs>,
     /// Specifies the protocol used to access crates.io.
     /// Not allowed for any registries besides crates.io.
     ///
@@ -906,24 +919,27 @@ pub struct RegistriesConfigValue {
 }
 
 impl RegistriesConfigValue {
-    fn from_unresolved(de: de::RegistriesConfigValue) -> Self {
+    fn from_unresolved(de: de::RegistriesConfigValue, current_dir: &Path) -> Self {
         let index = de.index.map(|v| v.val);
         let token = de.token.map(|v| v.val);
+        let credential_provider =
+            de.credential_provider.map(|v| PathAndArgs::from_unresolved(v, current_dir));
         let protocol = de.protocol.map(|v| match v.val {
             de::RegistriesProtocol::Git => RegistriesProtocol::Git,
             de::RegistriesProtocol::Sparse => RegistriesProtocol::Sparse,
         });
-        Self { index, token, protocol }
+        Self { index, token, credential_provider, protocol }
     }
 }
 
 impl fmt::Debug for RegistriesConfigValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { index, token, protocol } = self;
+        let Self { index, token, credential_provider, protocol } = self;
         let redacted_token = token.as_ref().map(|_| "[REDACTED]");
         f.debug_struct("RegistriesConfigValue")
             .field("index", &index)
             .field("token", &redacted_token)
+            .field("credential_provider", credential_provider)
             .field("protocol", &protocol)
             .finish_non_exhaustive()
     }
@@ -944,6 +960,13 @@ pub struct RegistryConfig {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
+    /// Specifies the credential provider for crates.io. If not set, the providers in
+    /// [`registry.global-credential-providers`]((https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers))
+    /// will be used.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrycredential-provider)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_provider: Option<PathAndArgs>,
     /// Specifies the authentication token for [crates.io](https://crates.io/).
     ///
     /// Note: This library does not read any values in the
@@ -953,23 +976,39 @@ pub struct RegistryConfig {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    /// Specifies the list of global credential providers.
+    /// If credential provider is not set for a specific registry using
+    /// [`registries.<name>.credential-provider`](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider),
+    /// Cargo will use the credential providers in this list.
+    /// Providers toward the end of the list have precedence.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "StringList::is_none")]
+    pub global_credential_providers: StringList,
 }
 
 impl RegistryConfig {
-    fn from_unresolved(de: de::RegistryConfig) -> Self {
+    fn from_unresolved(de: de::RegistryConfig, current_dir: &Path) -> Self {
         let default = de.default.map(|v| v.val);
+        let credential_provider =
+            de.credential_provider.map(|v| PathAndArgs::from_unresolved(v, current_dir));
         let token = de.token.map(|v| v.val);
-        Self { default, token }
+        let global_credential_providers =
+            StringList::from_unresolved(de.global_credential_providers);
+        Self { default, credential_provider, token, global_credential_providers }
     }
 }
 
 impl fmt::Debug for RegistryConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { default, token } = self;
+        let Self { default, credential_provider, token, global_credential_providers } = self;
         let redacted_token = token.as_ref().map(|_| "[REDACTED]");
         f.debug_struct("RegistryConfig")
             .field("default", &default)
+            .field("credential_provider", credential_provider)
             .field("token", &redacted_token)
+            .field("global_credential_providers", global_credential_providers)
             .finish()
     }
 }
@@ -1209,6 +1248,12 @@ impl PathAndArgs {
         self.args.extend(args.into_iter().map(Into::into));
         self
     }
+    fn from_unresolved(de: de::PathAndArgs, current_dir: &Path) -> Self {
+        Self {
+            path: de.path.resolve_program(current_dir).into_owned(),
+            args: de.args.into_iter().map(|v| v.val.into()).collect(),
+        }
+    }
 }
 
 impl Serialize for PathAndArgs {
@@ -1252,6 +1297,9 @@ pub struct StringList {
 }
 
 impl StringList {
+    pub(crate) fn is_none(&self) -> bool {
+        self.list.is_empty()
+    }
     fn from_string(value: &str) -> Self {
         Self { list: split_space_separated(value).map(str::to_owned).collect() }
     }

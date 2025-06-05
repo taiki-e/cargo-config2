@@ -48,6 +48,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "BuildConfig::is_none")]
     pub build: BuildConfig,
+    /// The `[credential-alias]` table.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#credential-alias)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub credential_alias: BTreeMap<String, PathAndArgs>,
     /// The `[doc]` table.
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#doc)
@@ -656,6 +662,11 @@ pub struct RegistriesConfigValue {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnametoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<Value<String>>,
+    /// Specifies the credential provider for the given registry.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_provider: Option<PathAndArgs>,
     /// Specifies the protocol used to access crates.io.
     /// Not allowed for any registries besides crates.io.
     ///
@@ -666,13 +677,14 @@ pub struct RegistriesConfigValue {
 
 impl fmt::Debug for RegistriesConfigValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { index, token, protocol } = self;
+        let Self { index, credential_provider, token, protocol } = self;
         let redacted_token = token
             .as_ref()
             .map(|token| Value { val: "[REDACTED]", definition: token.definition.clone() });
         f.debug_struct("RegistriesConfigValue")
             .field("index", &index)
             .field("token", &redacted_token)
+            .field("credential_provider", credential_provider)
             .field("protocol", &protocol)
             .finish()
     }
@@ -720,6 +732,13 @@ pub struct RegistryConfig {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrydefault)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Value<String>>,
+    /// Specifies the credential provider for crates.io. If not set, the providers in
+    /// [`registry.global-credential-providers`]((https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers))
+    /// will be used.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrycredential-provider)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_provider: Option<PathAndArgs>,
     /// Specifies the authentication token for [crates.io](https://crates.io/).
     ///
     /// Note: This library does not read any values in the
@@ -729,17 +748,29 @@ pub struct RegistryConfig {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<Value<String>>,
+    /// Specifies the list of global credential providers.
+    /// If credential provider is not set for a specific registry using
+    /// [`registries.<name>.credential-provider`](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider),
+    /// Cargo will use the credential providers in this list.
+    /// Providers toward the end of the list have precedence.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "StringList::is_none")]
+    pub global_credential_providers: StringList,
 }
 
 impl fmt::Debug for RegistryConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { default, token } = self;
+        let Self { default, credential_provider, token, global_credential_providers } = self;
         let redacted_token = token
             .as_ref()
             .map(|token| Value { val: "[REDACTED]", definition: token.definition.clone() });
         f.debug_struct("RegistryConfig")
             .field("default", &default)
+            .field("credential_provider", credential_provider)
             .field("token", &redacted_token)
+            .field("global_credential_providers", global_credential_providers)
             .finish()
     }
 }
@@ -1113,6 +1144,18 @@ pub struct StringList {
 
     // for merge
     pub(crate) deserialized_repr: StringListDeserializedRepr,
+}
+
+impl StringList {
+    pub(crate) fn is_none(&self) -> bool {
+        self.list.is_empty()
+    }
+}
+
+impl Default for StringList {
+    fn default() -> Self {
+        Self { list: vec![], deserialized_repr: StringListDeserializedRepr::Array }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -44,7 +44,8 @@ impl crate::easy::NetConfig {
 }
 impl crate::easy::RegistryConfig {
     pub(crate) fn is_none(&self) -> bool {
-        self.default.is_none() && self.token.is_none()
+        self.default.is_none() && self.credential_provider.is_none()
+            && self.token.is_none() && self.global_credential_providers.is_none()
     }
 }
 impl crate::easy::TermConfig {
@@ -98,7 +99,8 @@ impl crate::de::NetConfig {
 }
 impl crate::de::RegistryConfig {
     pub(crate) fn is_none(&self) -> bool {
-        self.default.is_none() && self.token.is_none()
+        self.default.is_none() && self.credential_provider.is_none()
+            && self.token.is_none() && self.global_credential_providers.is_none()
     }
 }
 impl crate::de::TermConfig {
