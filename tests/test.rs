@@ -52,16 +52,33 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     assert_eq!(config.build.incremental, Some(true));
     assert_eq!(config.build.dep_info_basedir.as_ref().unwrap(), &dir.join("…"));
 
+    // [credential-alias]
+    for (k, v) in &config.credential_alias {
+        match k.as_str() {
+            "my-alias" => {
+                assert_eq!(
+                    *v,
+                    *PathAndArgs::new("/usr/bin/cargo-credential-example").args([
+                        "--argument",
+                        "value",
+                        "--flag"
+                    ])
+                );
+            }
+            _ => panic!("unexpected credential-alias: name={k}, value={v:?}"),
+        }
+    }
+
     // [doc]
     assert_eq!(config.doc.browser.as_ref().unwrap().path.as_os_str(), "chromium");
     assert!(config.doc.browser.as_ref().unwrap().args.is_empty());
 
     // [env]
     assert_eq!(config.env["ENV_VAR_NAME"].value, "value");
-    assert_eq!(config.env["ENV_VAR_NAME"].force, true);
+    assert_eq!(config.env["ENV_VAR_NAME"].force, false);
     assert_eq!(config.env["ENV_VAR_NAME"].relative, false);
     assert_eq!(config.env["ENV_VAR_NAME_2"].value, "value");
-    assert_eq!(config.env["ENV_VAR_NAME_2"].force, false);
+    assert_eq!(config.env["ENV_VAR_NAME_2"].force, true);
     assert_eq!(config.env["ENV_VAR_NAME_2"].relative, false);
     assert_eq!(config.env["ENV_VAR_NAME_3"].value, dir.join("relative/path"));
     assert_eq!(config.env["ENV_VAR_NAME_3"].force, false);
@@ -69,6 +86,9 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
 
     // [future-incompat-report]
     assert_eq!(config.future_incompat_report.frequency, Some(Frequency::Always));
+
+    // TODO:
+    // [cache]
 
     // [cargo-new]
     assert_eq!(config.cargo_new.vcs, Some(VersionControlSoftware::None));
@@ -87,16 +107,27 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     // [install]
 
     // [net]
-    assert_eq!(config.net.retry, Some(2));
+    assert_eq!(config.net.retry, Some(3));
     assert_eq!(config.net.git_fetch_with_cli, Some(true));
     assert_eq!(config.net.offline, Some(true));
+    // TODO
+    // [net.ssh]
 
     // TODO
     // [patch.<registry>]
     // [profile.<name>]
+    // [resolver]
 
     // [registries.<name>]
-    assert_eq!(config.registries.len(), 1);
+    assert_eq!(config.registries.len(), 2);
+    assert_eq!(config.registries["custom"].index.as_deref(), Some("registry-index"));
+    assert_eq!(
+        config.registries["custom"].token.as_deref(),
+        Some("00000000000000000000000000000000001")
+    );
+    assert_eq!(config.registries["custom"].protocol, None);
+    // TODO:
+    // assert_eq!(config.registries["custom"].credential_provider.as_deref(), Some("cargo:token"));
     assert_eq!(
         config.registries["crates-io"].index.as_deref(),
         Some("https://github.com/rust-lang/crates.io-index")
@@ -106,9 +137,13 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
         Some("00000000000000000000000000000000000")
     );
     assert_eq!(config.registries["crates-io"].protocol, Some(RegistriesProtocol::Git));
+    assert_eq!(config.registries["crates-io"].credential_provider, None);
     // [registry]
     assert_eq!(config.registry.default.as_deref(), Some("crates-io"));
     assert_eq!(config.registry.token.as_deref(), Some("00000000000000000000000000000000000"));
+    // TODO:
+    // assert_eq!(config.registry.credential_provider.as_deref(), Some("cargo:token"));
+    assert_eq!(config.registry.global_credential_providers, vec!["cargo:token".into()].into());
 
     // TODO
     // [source.<name>]
@@ -172,8 +207,10 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     assert_eq!(config.term.quiet, Some(false));
     assert_eq!(config.term.verbose, Some(false));
     assert_eq!(config.term.color, Some(Color::Auto));
+    // TODO: hyperlinks, unicode
     assert_eq!(config.term.progress.when, Some(When::Auto));
     assert_eq!(config.term.progress.width, Some(80));
+    // TODO: progress.term-integration
 
     let _config = toml::to_string(&config).unwrap();
 }

@@ -24,19 +24,27 @@ rustdocflags = ["…", "…"] # custom flags to pass to rustdoc
 incremental = true # whether or not to enable incremental compilation
 dep-info-basedir = "…" # path for the base directory for targets in depfiles
 
+[credential-alias]
+# Provides a way to define aliases for credential providers.
+my-alias = ["/usr/bin/cargo-credential-example", "--argument", "value", "--flag"]
+
 [doc]
-browser = "chromium" # browser to use with `cargo doc --open`, overrides the `BROWSER` environment variable
+browser = "chromium" # browser to use with `cargo doc --open`,
+# overrides the `BROWSER` environment variable
 
 [env]
 # Set ENV_VAR_NAME=value for any process run by Cargo
-ENV_VAR_NAME = { value = "value", force = true }
+ENV_VAR_NAME = "value"
 # Set even if already present in environment
-ENV_VAR_NAME_2 = "value"
-# Value is relative to .cargo directory containing `config.toml`, make absolute
+ENV_VAR_NAME_2 = { value = "value", force = true }
+# `value` is relative to the parent of `.cargo/config.toml`, env var will be the full absolute path
 ENV_VAR_NAME_3 = { value = "relative/path", relative = true }
 
 [future-incompat-report]
 frequency = 'always' # when to display a notification about a future incompat report
+
+# [cache]
+# auto-clean-frequency = "1 day" # How often to perform automatic cache cleaning
 
 [cargo-new]
 vcs = "none" # VCS to use ('git', 'hg', 'pijul', 'fossil', 'none')
@@ -44,7 +52,7 @@ vcs = "none" # VCS to use ('git', 'hg', 'pijul', 'fossil', 'none')
 [http]
 debug = false # HTTP debugging
 proxy = "host:port" # HTTP proxy in libcurl format
-# ssl-version = "tlsv1.3"     # TLS version to use
+# ssl-version = "tlsv1.3" # TLS version to use
 # ssl-version.max = "tlsv1.3" # maximum TLS version
 # ssl-version.min = "tlsv1.1" # minimum TLS version
 timeout = 30 # timeout for each HTTP request, in seconds
@@ -55,20 +63,25 @@ multiplexing = true # HTTP/2 multiplexing
 user-agent = "foo-usr-agt" # the user-agent header
 
 # [install]
-# root = "/some/path"         # `cargo install` destination directory
+# root = "/some/path" # `cargo install` destination directory
 
 [net]
-retry = 2 # network retries
+retry = 3 # network retries
 git-fetch-with-cli = true # use the `git` executable for git operations
 offline = true # do not access the network
+
+# [net.ssh]
+# known-hosts = ["..."] # known SSH host keys
 
 # [patch.<registry>]
 # # Same keys as for [patch] in Cargo.toml
 
 # [profile.<name>]         # Modify profile settings via config.
+# [profile.<name>.build-override]  # Overrides build-script settings.inherits = "dev" # Inherits settings from [profile.dev].
 # opt-level = 0            # Optimization level.
 # debug = true             # Include debug info.
 # split-debuginfo = '...'  # Debug info splitting behavior.
+# strip = "none"           # Removes symbols or debuginfo.
 # debug-assertions = true  # Enables debug assertions.
 # overflow-checks = true   # Enables runtime integer overflow checks.
 # lto = false              # Sets link-time optimization.
@@ -76,10 +89,16 @@ offline = true # do not access the network
 # incremental = true       # Incremental compilation.
 # codegen-units = 16       # Number of code generation units.
 # rpath = false            # Sets the rpath linking option.
-# [profile.<name>.build-override]  # Overrides build-script settings.
-# # Same keys for a normal profile.
-# [profile.<name>.package.<name>]  # Override profile for a package.
+# [profile.<name>.package.<name>]  # Override profile for a package.# Same keys for a normal profile.
 # # Same keys for a normal profile (minus `panic`, `lto`, and `rpath`).
+
+# [resolver]
+# incompatible-rust-versions = "allow" # Specifies how resolver reacts to these
+
+[registries.custom] # registries other than crates.io
+index = "registry-index" # URL of the registry index
+token = "00000000000000000000000000000000001" # authentication token for the registry
+credential-provider = "cargo:token" # The credential provider for this registry.
 
 [registries.crates-io] # registries other than crates.io
 index = "https://github.com/rust-lang/crates.io-index" # URL of the registry index
@@ -89,6 +108,8 @@ protocol = "git"
 [registry]
 default = "crates-io" # name of the default registry
 token = "00000000000000000000000000000000000" # authentication token for crates.io
+credential-provider = "cargo:token" # The credential provider for crates.io.
+global-credential-providers = ["cargo:token"] # The credential providers to use by default.
 
 # [source.<name>]      # source definition and replacement
 # replace-with = "…"   # replace this source with the given named source
@@ -104,7 +125,7 @@ token = "00000000000000000000000000000000000" # authentication token for crates.
 linker = "b" # linker to use
 runner = "b" # wrapper to run executables
 rustflags = ["b", "bb"] # custom flags for `rustc`
-rustdocflags = ["d", "dd"] # custom flags for `rustc`
+rustdocflags = ["d", "dd"] # custom flags for `rustdoc`
 
 [target.'cfg(target_arch = "x86_64")']
 runner = "c" # wrapper to run executables
@@ -113,9 +134,9 @@ rustflags = ["c", "cc"] # custom flags for `rustc`
 # [target.<triple>.<links>] # `links` build script override
 # rustc-link-lib = ["foo"]
 # rustc-link-search = ["/path/to/foo"]
-# rustc-flags = ["-L", "/some/path"]
+# rustc-flags = "-L /some/path"
 # rustc-cfg = ['key="value"']
-# rustc-env = {key = "value"}
+# rustc-env = { key = "value" }
 # rustc-cdylib-link-arg = ["…"]
 # metadata_key1 = "value"
 # metadata_key2 = "value"
@@ -124,5 +145,8 @@ rustflags = ["c", "cc"] # custom flags for `rustc`
 quiet = false # whether cargo output is quiet
 verbose = false # whether cargo provides verbose output
 color = 'auto' # whether cargo colorizes output
+# hyperlinks = true # whether cargo inserts links into output
+# unicode = true # whether cargo can render output using non-ASCII unicode characters
 progress.when = 'auto' # whether cargo shows progress bar
 progress.width = 80 # width of progress bar
+# progress.term-integration = true # whether cargo reports progress to terminal emulator
