@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, btree_map};
 use crate::{
     Color, Frequency, When,
     de::{
-        self, CredentialProvider, GlobalCredentialProviders, RegistriesProtocol,
+        self, CredentialProvider, GlobalCredentialProviders, PathAndArgs, RegistriesProtocol,
         VersionControlSoftware,
     },
     error::{Context as _, Result},
@@ -58,6 +58,7 @@ merge_non_container!(Frequency);
 merge_non_container!(When);
 merge_non_container!(RegistriesProtocol);
 merge_non_container!(CredentialProvider);
+merge_non_container!(PathAndArgs); // https://github.com/taiki-e/cargo-config2/issues/26
 
 impl Merge for GlobalCredentialProviders {
     fn merge(&mut self, mut low: Self, _force: bool) -> Result<()> {
@@ -96,35 +97,6 @@ impl Merge for de::StringOrArray {
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.kind(), actual.kind());
-            }
-        }
-        Ok(())
-    }
-}
-impl Merge for de::PathAndArgs {
-    fn merge(&mut self, mut low: Self, force: bool) -> Result<()> {
-        match (self.deserialized_repr, low.deserialized_repr) {
-            (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
-                if force {
-                    *self = low;
-                }
-            }
-            (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
-                // This is a bit non-intuitive, but e.g., "echo a <doc-path>/index.html"
-                // is called in the following case because they are arrays.
-                //
-                // # a/b/.cargo/config
-                // [doc]
-                // browser = ["echo"]
-                //
-                // # a/.cargo/config
-                // [doc]
-                // browser = ["a"]
-                self.args.push(low.path.0);
-                self.args.append(&mut low.args);
-            }
-            (expected, actual) => {
-                bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
             }
         }
         Ok(())
