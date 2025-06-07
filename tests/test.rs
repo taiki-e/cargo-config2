@@ -170,7 +170,6 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     // [registry]
     assert_eq!(config.registry.default.as_deref(), Some("crates-io"));
     assert_eq!(config.registry.token.as_deref(), Some("00000000000000000000000000000000000"));
-    // TODO:
     assert_eq!(config.registry.credential_provider, Some(CredentialProvider::CargoToken));
     assert_eq!(config.registry.global_credential_providers.as_ref(), [
         CredentialProvider::CargoToken
