@@ -5,9 +5,10 @@
 
 use crate::{
     de::{
-        BuildConfig, CargoNewConfig, Config, DocConfig, Flags, FutureIncompatReportConfig,
-        HttpConfig, NetConfig, PathAndArgs, RegistriesConfigValue, RegistryConfig, StringList,
-        StringOrArray, TermConfig, TermProgress,
+        BuildConfig, CargoNewConfig, Config, CredentialProvider, DocConfig, Flags,
+        FutureIncompatReportConfig, GlobalCredentialProviders, HttpConfig, NetConfig, PathAndArgs,
+        RegistriesConfigValue, RegistryConfig, StringList, StringOrArray, TermConfig, TermProgress,
+        split_space_separated,
     },
     error::{Context as _, Error, Result},
     resolve::ResolveContext,
@@ -50,7 +51,7 @@ impl Config {
                     k.to_owned(),
                     PathAndArgs::from_string(
                         v.to_str().ok_or_else(error_env_not_unicode)?,
-                        definition(),
+                        definition().as_ref(),
                     )
                     .context("invalid length 0, expected at least one element")?,
                 );
@@ -85,7 +86,7 @@ impl Config {
                     }
                 } else if let Some(k) = k.strip_suffix("_CREDENTIAL_PROVIDER") {
                     let credential_provider = Some(
-                        PathAndArgs::from_string(k, definition())
+                        CredentialProvider::from_string(k, definition().as_ref())
                             .context("invalid length 0, expected at least one element")?,
                     );
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
@@ -281,7 +282,7 @@ impl ApplyEnv for DocConfig {
         if self.browser.is_none() {
             if let Some(browser) = cx.env("BROWSER")? {
                 self.browser = Some(
-                    PathAndArgs::from_string(&browser.val, browser.definition)
+                    PathAndArgs::from_string(&browser.val, browser.definition.as_ref())
                         .context("invalid length 0, expected at least one element")?,
                 );
             }
@@ -378,10 +379,10 @@ impl ApplyEnv for RegistryConfig {
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrycredential-provider
         if let Some(credential_provider) = cx.env("CARGO_REGISTRY_CREDENTIAL_PROVIDER")? {
-            self.credential_provider = Some(
-                PathAndArgs::from_string(&credential_provider.val, credential_provider.definition)
-                    .context("invalid length 0, expected at least one element")?,
-            );
+            self.credential_provider = Some(CredentialProvider::from_string(
+                &credential_provider.val,
+                credential_provider.definition.as_ref(),
+            )?);
         }
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrytoken
         if let Some(token) = cx.env_redacted("CARGO_REGISTRY_TOKEN")? {
@@ -391,10 +392,10 @@ impl ApplyEnv for RegistryConfig {
         if let Some(global_credential_providers) =
             cx.env("CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS")?
         {
-            self.global_credential_providers = StringList::from_string(
-                &global_credential_providers.val,
+            self.global_credential_providers = GlobalCredentialProviders::from_list(
+                split_space_separated(&global_credential_providers.val),
                 global_credential_providers.definition.as_ref(),
-            );
+            )?;
         }
         Ok(())
     }

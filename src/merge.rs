@@ -4,7 +4,10 @@ use std::collections::{BTreeMap, btree_map};
 
 use crate::{
     Color, Frequency, When,
-    de::{self, RegistriesProtocol, VersionControlSoftware},
+    de::{
+        self, CredentialProvider, GlobalCredentialProviders, RegistriesProtocol,
+        VersionControlSoftware,
+    },
     error::{Context as _, Result},
     value::Value,
 };
@@ -54,6 +57,18 @@ merge_non_container!(VersionControlSoftware);
 merge_non_container!(Frequency);
 merge_non_container!(When);
 merge_non_container!(RegistriesProtocol);
+merge_non_container!(CredentialProvider);
+
+impl Merge for GlobalCredentialProviders {
+    fn merge(&mut self, mut low: Self, _force: bool) -> Result<()> {
+        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
+        // > Arrays will be joined together with higher precedence items being placed later in the merged array.
+        low.0.append(&mut self.0);
+        self.0 = low.0;
+
+        Ok(())
+    }
+}
 
 impl<T: Merge> Merge for Option<T> {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {

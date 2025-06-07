@@ -173,9 +173,13 @@ impl Config {
         let net = NetConfig::from_unresolved(de.net);
         let mut registries = BTreeMap::new();
         for (k, v) in de.registries {
-            registries.insert(k, RegistriesConfigValue::from_unresolved(v, &cx.current_dir));
+            registries.insert(
+                k,
+                RegistriesConfigValue::from_unresolved(v, &credential_alias, &cx.current_dir),
+            );
         }
-        let registry = RegistryConfig::from_unresolved(de.registry, &cx.current_dir);
+        let registry =
+            RegistryConfig::from_unresolved(de.registry, &credential_alias, &cx.current_dir);
         let term = TermConfig::from_unresolved(de.term);
 
         Ok(Self {
@@ -909,7 +913,7 @@ pub struct RegistriesConfigValue {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub credential_provider: Option<PathAndArgs>,
+    pub credential_provider: Option<CredentialProvider>,
     /// Specifies the protocol used to access crates.io.
     /// Not allowed for any registries besides crates.io.
     ///
@@ -919,11 +923,16 @@ pub struct RegistriesConfigValue {
 }
 
 impl RegistriesConfigValue {
-    fn from_unresolved(de: de::RegistriesConfigValue, current_dir: &Path) -> Self {
+    fn from_unresolved(
+        de: de::RegistriesConfigValue,
+        credential_alias: &BTreeMap<String, PathAndArgs>,
+        current_dir: &Path,
+    ) -> Self {
         let index = de.index.map(|v| v.val);
         let token = de.token.map(|v| v.val);
-        let credential_provider =
-            de.credential_provider.map(|v| PathAndArgs::from_unresolved(v, current_dir));
+        let credential_provider = de
+            .credential_provider
+            .map(|v| CredentialProvider::from_unresolved(v, credential_alias, current_dir));
         let protocol = de.protocol.map(|v| match v.val {
             de::RegistriesProtocol::Git => RegistriesProtocol::Git,
             de::RegistriesProtocol::Sparse => RegistriesProtocol::Sparse,
@@ -966,7 +975,7 @@ pub struct RegistryConfig {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrycredential-provider)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub credential_provider: Option<PathAndArgs>,
+    pub credential_provider: Option<CredentialProvider>,
     /// Specifies the authentication token for [crates.io](https://crates.io/).
     ///
     /// Note: This library does not read any values in the
@@ -984,18 +993,30 @@ pub struct RegistryConfig {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers)
     #[serde(default)]
-    #[serde(skip_serializing_if = "StringList::is_none")]
-    pub global_credential_providers: StringList,
+    #[serde(skip_serializing_if = "GlobalCredentialProviders::is_none")]
+    pub global_credential_providers: GlobalCredentialProviders,
 }
 
 impl RegistryConfig {
-    fn from_unresolved(de: de::RegistryConfig, current_dir: &Path) -> Self {
+    fn from_unresolved(
+        de: de::RegistryConfig,
+        credential_alias: &BTreeMap<String, PathAndArgs>,
+        current_dir: &Path,
+    ) -> Self {
         let default = de.default.map(|v| v.val);
-        let credential_provider =
-            de.credential_provider.map(|v| PathAndArgs::from_unresolved(v, current_dir));
+        let credential_provider = de
+            .credential_provider
+            .map(|v| CredentialProvider::from_unresolved(v, credential_alias, current_dir));
         let token = de.token.map(|v| v.val);
-        let global_credential_providers =
-            StringList::from_unresolved(de.global_credential_providers);
+        let global_credential_providers = GlobalCredentialProviders(
+            de.global_credential_providers
+                .0
+                .into_iter()
+                .map(|provider| {
+                    CredentialProvider::from_unresolved(provider, credential_alias, current_dir)
+                })
+                .collect(),
+        );
         Self { default, credential_provider, token, global_credential_providers }
     }
 }
@@ -1008,8 +1029,130 @@ impl fmt::Debug for RegistryConfig {
             .field("default", &default)
             .field("credential_provider", credential_provider)
             .field("token", &redacted_token)
-            .field("global_credential_providers", global_credential_providers)
+            .field("global_credential_providers", &global_credential_providers.0)
             .finish()
+    }
+}
+
+/// List of global credential providers.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GlobalCredentialProviders(Vec<CredentialProvider>);
+
+impl GlobalCredentialProviders {
+    pub(crate) fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Serialize for GlobalCredentialProviders {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+impl AsRef<[CredentialProvider]> for GlobalCredentialProviders {
+    fn as_ref(&self) -> &[CredentialProvider] {
+        &self.0
+    }
+}
+
+impl From<Vec<CredentialProvider>> for GlobalCredentialProviders {
+    fn from(list: Vec<CredentialProvider>) -> Self {
+        Self(list)
+    }
+}
+
+/// The kind of a registry's credential provider.
+#[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
+pub enum CredentialProvider {
+    /// Uses Cargo’s credentials file to store tokens unencrypted in plain text.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargotoken)
+    CargoToken,
+    /// Uses the Windows Credential Manager to store tokens.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargowincred)
+    CargoWincred,
+    /// Uses the macOS Keychain to store tokens.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargomacos-keychain)
+    CargoMacosKeychain,
+    /// Uses libsecret to store tokens.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargolibsecret)
+    CargoLibsecret,
+    /// Launch a subprocess that returns a token on stdout. Newlines will be trimmed.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargotoken-from-stdout-command-args)
+    CargoTokenFromStdout(PathAndArgs),
+    /// For credential provider plugins that follow Cargo’s credential provider protocol,
+    /// the configuration value should be a string with the path to the executable (or the executable name if on the PATH).
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#credential-plugins)
+    Plugin(PathAndArgs),
+    /// An alias, to be looked up in the `[credential-alias]` table.
+    Alias(String),
+}
+
+impl Serialize for CredentialProvider {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut v = vec![];
+
+        let command = match self {
+            Self::CargoToken => return ["cargo:token"].serialize(serializer),
+            Self::CargoWincred => return ["cargo:wincred"].serialize(serializer),
+            Self::CargoMacosKeychain => return ["cargo:macos-keychain"].serialize(serializer),
+            Self::CargoLibsecret => return ["cargo:libsecret"].serialize(serializer),
+            Self::CargoTokenFromStdout(command) => {
+                v.push("cargo:token-from-stdout".to_owned());
+
+                command
+            }
+            Self::Plugin(command) => command,
+            Self::Alias(alias) => return [alias].serialize(serializer),
+        };
+
+        command.serialize_to_array(&mut v);
+        v.serialize(serializer)
+    }
+}
+
+impl CredentialProvider {
+    fn from_unresolved(
+        de: de::CredentialProvider,
+        credential_alias: &BTreeMap<String, PathAndArgs>,
+        current_dir: &Path,
+    ) -> Self {
+        match de.kind {
+            de::CredentialProviderKind::CargoToken => Self::CargoToken,
+            de::CredentialProviderKind::CargoWincred => Self::CargoWincred,
+            de::CredentialProviderKind::CargoMacosKeychain => Self::CargoMacosKeychain,
+            de::CredentialProviderKind::CargoLibsecret => Self::CargoLibsecret,
+            de::CredentialProviderKind::CargoTokenFromStdout(command) => {
+                Self::CargoTokenFromStdout(PathAndArgs::from_unresolved(command, current_dir))
+            }
+            de::CredentialProviderKind::Plugin(command) => {
+                Self::Plugin(PathAndArgs::from_unresolved(command, current_dir))
+            }
+            de::CredentialProviderKind::MaybeAlias(value) => {
+                if credential_alias.contains_key(&value.val) {
+                    Self::Alias(value.val)
+                } else {
+                    Self::Plugin(PathAndArgs::from_unresolved(
+                        de::PathAndArgs::from_string(&value.val, value.definition.as_ref())
+                            .unwrap(),
+                        current_dir,
+                    ))
+                }
+            }
+        }
     }
 }
 
@@ -1254,6 +1397,14 @@ impl PathAndArgs {
             args: de.args.into_iter().map(|v| v.val.into()).collect(),
         }
     }
+
+    fn serialize_to_array(&self, v: &mut Vec<String>) {
+        v.push(self.path.to_string_lossy().into_owned());
+
+        for arg in &self.args {
+            v.push(arg.to_string_lossy().into_owned());
+        }
+    }
 }
 
 impl Serialize for PathAndArgs {
@@ -1297,9 +1448,6 @@ pub struct StringList {
 }
 
 impl StringList {
-    pub(crate) fn is_none(&self) -> bool {
-        self.list.is_empty()
-    }
     fn from_string(value: &str) -> Self {
         Self { list: split_space_separated(value).map(str::to_owned).collect() }
     }

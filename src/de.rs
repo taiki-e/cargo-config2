@@ -11,7 +11,7 @@ use std::{
     borrow::Cow,
     collections::BTreeMap,
     ffi::OsStr,
-    fs,
+    fs, iter,
     path::{Path, PathBuf},
 };
 
@@ -26,6 +26,7 @@ use crate::{
     easy,
     error::{Context as _, Error, Result},
     resolve::{ResolveContext, TargetTripleRef},
+    value::SetPath,
     walk,
 };
 
@@ -221,7 +222,7 @@ impl Config {
         }
         if let Some(runner) = cx.env_dyn(&format!("CARGO_TARGET_{target_u_upper}_RUNNER"))? {
             target_runner = Some(
-                PathAndArgs::from_string(&runner.val, runner.definition)
+                PathAndArgs::from_string(&runner.val, runner.definition.as_ref())
                     .context("invalid length 0, expected at least one element")?,
             );
         }
@@ -666,7 +667,7 @@ pub struct RegistriesConfigValue {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registriesnamecredential-provider)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub credential_provider: Option<PathAndArgs>,
+    pub credential_provider: Option<CredentialProvider>,
     /// Specifies the protocol used to access crates.io.
     /// Not allowed for any registries besides crates.io.
     ///
@@ -738,7 +739,7 @@ pub struct RegistryConfig {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registrycredential-provider)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub credential_provider: Option<PathAndArgs>,
+    pub credential_provider: Option<CredentialProvider>,
     /// Specifies the authentication token for [crates.io](https://crates.io/).
     ///
     /// Note: This library does not read any values in the
@@ -756,8 +757,8 @@ pub struct RegistryConfig {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#registryglobal-credential-providers)
     #[serde(default)]
-    #[serde(skip_serializing_if = "StringList::is_none")]
-    pub global_credential_providers: StringList,
+    #[serde(skip_serializing_if = "GlobalCredentialProviders::is_none")]
+    pub global_credential_providers: GlobalCredentialProviders,
 }
 
 impl fmt::Debug for RegistryConfig {
@@ -772,6 +773,279 @@ impl fmt::Debug for RegistryConfig {
             .field("token", &redacted_token)
             .field("global_credential_providers", global_credential_providers)
             .finish()
+    }
+}
+
+/// Global credential providers.
+///
+/// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/config.html#registryglobal-credential-providers)
+#[derive(Clone, Debug, Default)]
+pub struct GlobalCredentialProviders(pub(crate) Vec<CredentialProvider>);
+
+impl GlobalCredentialProviders {
+    pub(crate) fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl GlobalCredentialProviders {
+    pub(crate) fn from_list<T>(
+        list: impl IntoIterator<Item = T>,
+        definition: Option<&Definition>,
+    ) -> Result<Self, Error>
+    where
+        T: AsRef<str>,
+    {
+        Ok(Self(
+            list.into_iter()
+                .map(|v| CredentialProvider::from_string(v.as_ref(), definition))
+                .collect::<Result<_, _>>()?,
+        ))
+    }
+}
+
+impl AsRef<[CredentialProvider]> for GlobalCredentialProviders {
+    fn as_ref(&self) -> &[CredentialProvider] {
+        &self.0
+    }
+}
+
+impl Serialize for GlobalCredentialProviders {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for GlobalCredentialProviders {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // TODO: use visitor?
+        Ok(Self(
+            <Vec<String>>::deserialize(deserializer)?
+                .iter()
+                .map(|s| CredentialProvider::from_string(s, None))
+                .collect::<Result<_, _>>()
+                .map_err(de::Error::custom)?,
+        ))
+    }
+}
+
+/// A registry's credential provider.
+///
+/// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html)
+#[derive(Clone, Debug)]
+pub struct CredentialProvider {
+    pub kind: CredentialProviderKind,
+    deserialized_repr: StringListDeserializedRepr,
+}
+
+/// The kind of a registry's credential provider.
+#[derive(Clone, Debug)]
+#[non_exhaustive]
+pub enum CredentialProviderKind {
+    /// Uses Cargo’s credentials file to store tokens unencrypted in plain text.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargotoken)
+    CargoToken,
+    /// Uses the Windows Credential Manager to store tokens.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargowincred)
+    CargoWincred,
+    /// Uses the macOS Keychain to store tokens.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargomacos-keychain)
+    CargoMacosKeychain,
+    /// Uses libsecret to store tokens.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargolibsecret)
+    CargoLibsecret,
+    /// Launch a subprocess that returns a token on stdout. Newlines will be trimmed.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargotoken-from-stdout-command-args)
+    CargoTokenFromStdout(PathAndArgs),
+    /// For credential provider plugins that follow Cargo’s credential provider protocol,
+    /// the configuration value should be a string with the path to the executable (or the executable name if on the PATH).
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#credential-plugins)
+    Plugin(PathAndArgs),
+    /// Maybe an alias, otherwise a plugin command.
+    MaybeAlias(Value<String>),
+}
+
+impl CredentialProvider {
+    pub(crate) fn from_string(value: &str, definition: Option<&Definition>) -> Result<Self, Error> {
+        Ok(Self {
+            kind: CredentialProviderKind::from_list(
+                split_space_separated(value)
+                    .map(|v| Value { val: v.to_owned(), definition: definition.cloned() }),
+                StringListDeserializedRepr::String,
+            )?,
+            deserialized_repr: StringListDeserializedRepr::String,
+        })
+    }
+
+    pub(crate) fn from_array(list: Vec<Value<String>>) -> Result<Self, Error> {
+        Ok(Self {
+            kind: CredentialProviderKind::from_list(list, StringListDeserializedRepr::Array)?,
+            deserialized_repr: StringListDeserializedRepr::Array,
+        })
+    }
+}
+
+impl SetPath for CredentialProviderKind {
+    fn set_path(&mut self, path: &Path) {
+        match self {
+            Self::CargoToken
+            | Self::CargoWincred
+            | Self::CargoMacosKeychain
+            | Self::CargoLibsecret => {}
+            Self::CargoTokenFromStdout(command) | Self::Plugin(command) => command.set_path(path),
+            Self::MaybeAlias(s) => s.set_path(path),
+        }
+    }
+}
+
+impl Serialize for CredentialProvider {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self.deserialized_repr {
+            StringListDeserializedRepr::String => {
+                let mut s = String::new();
+
+                let command = match &self.kind {
+                    CredentialProviderKind::CargoToken => {
+                        return "cargo:token".serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoWincred => {
+                        return "cargo:wincred".serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoMacosKeychain => {
+                        return "cargo:macos-keychain".serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoLibsecret => {
+                        return "cargo:libsecret".serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoTokenFromStdout(command) => {
+                        s.push_str("cargo:token-from-stdout ");
+
+                        command
+                    }
+                    CredentialProviderKind::Plugin(command) => command,
+                    CredentialProviderKind::MaybeAlias(value) => {
+                        return value.serialize(serializer);
+                    }
+                };
+
+                command.serialize_to_string(&mut s);
+
+                s.serialize(serializer)
+            }
+            StringListDeserializedRepr::Array => {
+                let mut array = vec![];
+
+                let command = match &self.kind {
+                    CredentialProviderKind::CargoToken => {
+                        return ["cargo:token"].serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoWincred => {
+                        return ["cargo:wincred"].serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoMacosKeychain => {
+                        return ["cargo:macos-keychain"].serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoLibsecret => {
+                        return ["cargo:libsecret"].serialize(serializer);
+                    }
+                    CredentialProviderKind::CargoTokenFromStdout(command) => {
+                        array.push("cargo:token-from-stdout");
+
+                        command
+                    }
+                    CredentialProviderKind::Plugin(command) => command,
+                    CredentialProviderKind::MaybeAlias(value) => {
+                        return [value].serialize(serializer);
+                    }
+                };
+
+                command.serialize_to_array(&mut array);
+
+                array.serialize(serializer)
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for CredentialProvider {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // TODO: use visitor?
+        match StringOrArray::deserialize(deserializer)? {
+            StringOrArray::String(s) => Self::from_string(&s.val, s.definition.as_ref()),
+            StringOrArray::Array(v) => Self::from_array(v),
+        }
+        .map_err(de::Error::custom)
+    }
+}
+
+impl CredentialProviderKind {
+    fn from_list<T>(list: T, deserialized_repr: StringListDeserializedRepr) -> Result<Self, Error>
+    where
+        T: IntoIterator<Item = Value<String>>,
+    {
+        let mut iter = list.into_iter().peekable();
+        let first = iter
+            .next()
+            .ok_or_else(|| format_err!("invalid length 0, expected at least one element"))?;
+
+        let empty_args = |kind: Self, mut iter: iter::Peekable<T::IntoIter>| {
+            if iter.next().is_some() {
+                bail!(
+                    "args should be empty for credential provider of kind {:?}",
+                    kind.builtin_kind().unwrap(),
+                );
+            }
+
+            Ok(kind)
+        };
+
+        match &*first.val {
+            "cargo:token" => empty_args(Self::CargoToken, iter),
+            "cargo:wincred" => empty_args(Self::CargoWincred, iter),
+            "cargo:macos-keychain" => empty_args(Self::CargoMacosKeychain, iter),
+            "cargo:libsecret" => empty_args(Self::CargoLibsecret, iter),
+            "cargo:token-from-stdout" => {
+                let command = PathAndArgs::from_list(
+                    iter,
+                    deserialized_repr,
+                ).ok_or_else(|| format_err!(r#"invalid length 1, expected at least two elements for registry of kind "cargo:token-from-stdout""#))?;
+
+                Ok(Self::CargoTokenFromStdout(command))
+            }
+            _ if iter.peek().is_none() => Ok(Self::MaybeAlias(first)),
+            _ => Ok(Self::Plugin(
+                PathAndArgs::from_list(iter::once(first).chain(iter), deserialized_repr).unwrap(),
+            )),
+        }
+    }
+
+    fn builtin_kind(&self) -> Option<&'static str> {
+        Some(match self {
+            Self::CargoToken => "cargo:token",
+            Self::CargoWincred => "cargo:wincred",
+            Self::CargoMacosKeychain => "cargo:macos-keychain",
+            Self::CargoLibsecret => "cargo:libsecret",
+            Self::CargoTokenFromStdout(_) => "cargo:token-from-stdout",
+            Self::Plugin(_) | Self::MaybeAlias(_) => return None,
+        })
     }
 }
 
@@ -1066,25 +1340,50 @@ pub struct PathAndArgs {
 }
 
 impl PathAndArgs {
-    pub(crate) fn from_string(value: &str, definition: Option<Definition>) -> Option<Self> {
-        let mut s = split_space_separated(value);
-        let path = s.next()?;
+    pub(crate) fn from_string(value: &str, definition: Option<&Definition>) -> Option<Self> {
+        Self::from_list(
+            split_space_separated(value)
+                .map(|v| Value { val: v.to_owned(), definition: definition.cloned() }),
+            StringListDeserializedRepr::String,
+        )
+    }
+
+    pub(crate) fn from_array(list: Vec<Value<String>>) -> Option<Self> {
+        Self::from_list(list, StringListDeserializedRepr::Array)
+    }
+
+    fn from_list(
+        list: impl IntoIterator<Item = Value<String>>,
+        deserialized_repr: StringListDeserializedRepr,
+    ) -> Option<Self> {
+        let mut iter = list.into_iter();
+
         Some(Self {
-            args: s.map(|v| Value { val: v.to_owned(), definition: definition.clone() }).collect(),
-            path: ConfigRelativePath(Value { val: path.to_owned(), definition }),
-            deserialized_repr: StringListDeserializedRepr::String,
+            path: ConfigRelativePath(iter.next()?),
+            args: iter.collect(),
+            deserialized_repr,
         })
     }
-    pub(crate) fn from_array(mut list: Vec<Value<String>>) -> Option<Self> {
-        if list.is_empty() {
-            return None;
+
+    fn serialize_to_string(&self, s: &mut String) {
+        s.push_str(self.path.raw_value());
+
+        for arg in &self.args {
+            s.push(' ');
+            s.push_str(&arg.val);
         }
-        let path = list.remove(0);
-        Some(Self {
-            path: ConfigRelativePath(path),
-            args: list,
-            deserialized_repr: StringListDeserializedRepr::Array,
-        })
+    }
+
+    fn array_len(&self) -> usize {
+        1 + self.args.len()
+    }
+
+    fn serialize_to_array<'a>(&'a self, v: &mut Vec<&'a str>) {
+        v.push(self.path.raw_value());
+
+        for arg in &self.args {
+            v.push(&arg.val);
+        }
     }
 }
 
@@ -1095,19 +1394,15 @@ impl Serialize for PathAndArgs {
     {
         match self.deserialized_repr {
             StringListDeserializedRepr::String => {
-                let mut s = self.path.raw_value().to_owned();
-                for arg in &self.args {
-                    s.push(' ');
-                    s.push_str(&arg.val);
-                }
+                let mut s = String::new();
+
+                self.serialize_to_string(&mut s);
                 s.serialize(serializer)
             }
             StringListDeserializedRepr::Array => {
-                let mut v = Vec::with_capacity(1 + self.args.len());
-                v.push(&self.path.0.val);
-                for arg in &self.args {
-                    v.push(&arg.val);
-                }
+                let mut v = Vec::with_capacity(self.array_len());
+
+                self.serialize_to_array(&mut v);
                 v.serialize(serializer)
             }
         }
@@ -1118,22 +1413,12 @@ impl<'de> Deserialize<'de> for PathAndArgs {
     where
         D: Deserializer<'de>,
     {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum StringOrArray {
-            String(String),
-            Array(Vec<Value<String>>),
-        }
         // TODO: use visitor?
-        let v: StringOrArray = Deserialize::deserialize(deserializer)?;
-        let res = match v {
-            StringOrArray::String(s) => Self::from_string(&s, None),
+        match StringOrArray::deserialize(deserializer)? {
+            StringOrArray::String(s) => Self::from_string(&s.val, s.definition.as_ref()),
             StringOrArray::Array(v) => Self::from_array(v),
-        };
-        match res {
-            Some(path) => Ok(path),
-            None => Err(de::Error::invalid_length(0, &"at least one element")),
         }
+        .ok_or_else(|| de::Error::invalid_length(0, &"at least one element"))
     }
 }
 
@@ -1144,12 +1429,6 @@ pub struct StringList {
 
     // for merge
     pub(crate) deserialized_repr: StringListDeserializedRepr,
-}
-
-impl StringList {
-    pub(crate) fn is_none(&self) -> bool {
-        self.list.is_empty()
-    }
 }
 
 impl Default for StringList {

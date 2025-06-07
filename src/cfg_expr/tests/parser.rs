@@ -128,7 +128,7 @@ fn ensures_not_has_one_predicate() {
     assert_eq!(Expression::parse("not()").unwrap_err(), ParseError {
         original: "not()".to_owned(),
         span: 0..5,
-        reason: Reason::InvalidNot(0),
+        reason: Reason::InvalidNot(0)
     });
 
     assert_eq!(Expression::parse("not(key_one, key_two)").unwrap_err(), ParseError {
