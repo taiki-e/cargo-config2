@@ -12,6 +12,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Add structs and fields for credential providers. ([#25](https://github.com/taiki-e/cargo-config2/pull/25), [#27](https://github.com/taiki-e/cargo-config2/pull/27), thanks @nox)
+
+- Change merge behavior of `PathAndArgs` to align Cargo 1.86's behavior change. ([#26](https://github.com/taiki-e/cargo-config2/issues/26))
+
 ## [0.1.32] - 2025-01-06
 
 - Expose `CargoNewConfig` and `HttpConfig`. ([69ecb94](https://github.com/taiki-e/cargo-config2/commit/69ecb94d6eb30702d0150043533146df489723cd))
