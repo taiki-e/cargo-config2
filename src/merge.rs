@@ -60,13 +60,16 @@ merge_non_container!(RegistriesProtocol);
 merge_non_container!(CredentialProvider);
 merge_non_container!(PathAndArgs); // https://github.com/taiki-e/cargo-config2/issues/26
 
-impl Merge for GlobalCredentialProviders {
-    fn merge(&mut self, mut low: Self, _force: bool) -> Result<()> {
-        // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
-        // > Arrays will be joined together with higher precedence items being placed later in the merged array.
-        low.0.append(&mut self.0);
-        self.0 = low.0;
+fn merge_array<T>(this: &mut Vec<T>, mut low: Vec<T>) {
+    // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
+    // > Arrays will be joined together with higher precedence items being placed later in the merged array.
+    low.append(this);
+    *this = low;
+}
 
+impl Merge for GlobalCredentialProviders {
+    fn merge(&mut self, low: Self, _force: bool) -> Result<()> {
+        merge_array(&mut self.0, low.0);
         Ok(())
     }
 }
@@ -89,11 +92,8 @@ impl Merge for de::StringOrArray {
                     *this = low;
                 }
             }
-            (de::StringOrArray::Array(this), de::StringOrArray::Array(mut low)) => {
-                // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
-                // > Arrays will be joined together with higher precedence items being placed later in the merged array.
-                low.append(this);
-                *this = low;
+            (de::StringOrArray::Array(this), de::StringOrArray::Array(low)) => {
+                merge_array(this, low);
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.kind(), actual.kind());
@@ -103,7 +103,7 @@ impl Merge for de::StringOrArray {
     }
 }
 impl Merge for de::StringList {
-    fn merge(&mut self, mut low: Self, force: bool) -> Result<()> {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, low.deserialized_repr) {
             (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
                 if force {
@@ -111,10 +111,7 @@ impl Merge for de::StringList {
                 }
             }
             (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
-                // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
-                // > Arrays will be joined together with higher precedence items being placed later in the merged array.
-                low.list.append(&mut self.list);
-                self.list = low.list;
+                merge_array(&mut self.list, low.list);
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
@@ -147,7 +144,7 @@ impl Merge for de::EnvConfigValue {
     }
 }
 impl Merge for de::Flags {
-    fn merge(&mut self, mut low: Self, force: bool) -> Result<()> {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         match (self.deserialized_repr, low.deserialized_repr) {
             (de::StringListDeserializedRepr::String, de::StringListDeserializedRepr::String) => {
                 if force {
@@ -155,10 +152,7 @@ impl Merge for de::Flags {
                 }
             }
             (de::StringListDeserializedRepr::Array, de::StringListDeserializedRepr::Array) => {
-                // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
-                // > Arrays will be joined together with higher precedence items being placed later in the merged array.
-                low.flags.append(&mut self.flags);
-                self.flags = low.flags;
+                merge_array(&mut self.flags, low.flags);
             }
             (expected, actual) => {
                 bail!("expected {}, but found {}", expected.as_str(), actual.as_str());
