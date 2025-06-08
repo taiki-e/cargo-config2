@@ -514,6 +514,7 @@ pub struct BuildConfig {
     /// specified is the value of build.target-dir
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-dir)
+    #[cfg(feature = "unstable")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub build_dir: Option<PathBuf>,
     /// Extra command-line flags to pass to rustc. The value may be an array
@@ -580,6 +581,7 @@ impl BuildConfig {
                 .collect()
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
+        #[cfg(feature = "unstable")]
         let build_dir = de.build_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
         let de_rustflags = de.rustflags.clone();
         let rustflags =
@@ -600,6 +602,7 @@ impl BuildConfig {
             rustdoc,
             target,
             target_dir,
+            #[cfg(feature = "unstable")]
             build_dir,
             rustflags,
             rustdocflags,

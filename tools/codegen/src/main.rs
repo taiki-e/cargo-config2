@@ -71,8 +71,16 @@ fn gen_de() {
                                     && f.ident.as_ref().unwrap() != "serialized_repr"
                                     && f.ident.as_ref().unwrap() != "deserialized_repr"
                             })
-                            .map(|syn::Field { ident, .. }| {
-                                quote! { self.#ident.merge(low.#ident, force)?; }
+                            .map(|syn::Field { ident, attrs, .. }| {
+                                let cfg_attr = if has_unstable_cfg(attrs) {
+                                    Some(quote! { #[cfg(feature = "unstable")] })
+                                } else {
+                                    None
+                                };
+                                quote! {
+                                    #cfg_attr
+                                    self.#ident.merge(low.#ident, force)?;
+                                }
                             });
                         tokens.extend(quote! {
                             impl Merge for crate:: #(#module::)* #ident {
@@ -104,8 +112,16 @@ fn gen_de() {
                                             && f.ident.as_ref().unwrap() != "serialized_repr"
                                             && f.ident.as_ref().unwrap() != "deserialized_repr"
                                     })
-                                    .map(|syn::Field { ident, .. }| {
-                                        quote! { self.#ident.set_path(path); }
+                                    .map(|syn::Field { ident, attrs, .. }| {
+                                        let cfg_attr = if has_unstable_cfg(attrs) {
+                                            Some(quote! { #[cfg(feature = "unstable")] })
+                                        } else {
+                                            None
+                                        };
+                                        quote! {
+                                            #cfg_attr
+                                            self.#ident.set_path(path);
+                                        }
                                     });
                                 tokens.extend(quote! {
                                     impl SetPath for crate:: #(#module::)* #ident {
@@ -200,6 +216,19 @@ fn gen_de() {
     write(function_name!(), workspace_root.join("src/gen/de.rs"), tokens).unwrap();
 }
 
+/// Checks the attributes contains `#[cfg(feature = "unstable")]`
+fn has_unstable_cfg(attrs: &[syn::Attribute]) -> bool {
+    attrs.iter().any(|attr| {
+        if attr.path().is_ident("cfg") {
+            if let Meta::List(MetaList { tokens, .. }) = &attr.meta {
+                let tokens_str = tokens.to_string();
+                return tokens_str.contains("feature") && tokens_str.contains("unstable");
+            }
+        }
+        false
+    })
+}
+
 fn gen_is_none() {
     const FILES: &[&str] = &["src/lib.rs", "src/easy.rs", "src/de.rs"];
     const EXCLUDE: &[&str] = &[
@@ -245,14 +274,34 @@ fn gen_is_none() {
                 let path_string = quote! { #(#module::)* #ident }.to_string().replace(' ', "");
                 visited_types.insert(path_string.clone());
                 if !EXCLUDE.contains(&path_string.as_str()) {
+                    let unstable_fields_declarations = fields
+                        .iter()
+                        .filter(|f| !serde_skip(&f.attrs) && has_unstable_cfg(&f.attrs))
+                        .map(|syn::Field { ident, .. }| {
+                            let var_name = format_ident!("{}_is_none", ident.as_ref().unwrap());
+                            quote! {
+                                #[cfg(feature = "unstable")]
+                                let #var_name = self.#ident.is_none();
+                                #[cfg(not(feature = "unstable"))]
+                                let #var_name = true;
+                            }
+                        });
+
                     let fields = fields.iter().filter(|f| !serde_skip(&f.attrs)).map(
-                        |syn::Field { ident, .. }| {
-                            quote! { self.#ident.is_none() }
+                        |syn::Field { ident, attrs, .. }| {
+                            if has_unstable_cfg(attrs) {
+                                let var_name = format_ident!("{}_is_none", ident.as_ref().unwrap());
+                                quote! { #var_name }
+                            } else {
+                                quote! { self.#ident.is_none() }
+                            }
                         },
                     );
                     tokens.extend(quote! {
                         impl crate:: #(#module::)* #ident {
                             pub(crate) fn is_none(&self) -> bool {
+                                #(#unstable_fields_declarations)*
+
                                 #(#fields) &&*
                             }
                         }

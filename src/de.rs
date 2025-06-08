@@ -373,6 +373,7 @@ pub struct BuildConfig {
     /// specified is the value of build.target-dir
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-dir)
+    #[cfg(feature = "unstable")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub build_dir: Option<Value<String>>,
     /// Extra command-line flags to pass to rustc. The value may be an array

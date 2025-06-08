@@ -47,6 +47,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     assert_eq!(config.build.rustdoc.as_ref().unwrap().as_os_str(), "rustdoc");
     assert_eq!(config.build.target.as_ref().unwrap(), &vec!["triple".into()]);
     assert_eq!(config.build.target_dir.as_ref().unwrap(), &dir.join("target"));
+    #[cfg(feature = "unstable")]
     assert_eq!(config.build.build_dir.as_ref().unwrap(), &dir.join("target"));
     assert_eq!(config.build.rustflags, Some(["…", "…"].into()));
     assert_eq!(config.build.rustdocflags, Some(["…", "…"].into()));

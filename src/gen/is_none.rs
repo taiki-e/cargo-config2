@@ -6,12 +6,15 @@
 #![cfg_attr(rustfmt, rustfmt::skip)]
 impl crate::easy::BuildConfig {
     pub(crate) fn is_none(&self) -> bool {
+        #[cfg(feature = "unstable")]
+        let build_dir_is_none = self.build_dir.is_none();
+        #[cfg(not(feature = "unstable"))]
+        let build_dir_is_none = true;
         self.jobs.is_none() && self.rustc.is_none() && self.rustc_wrapper.is_none()
             && self.rustc_workspace_wrapper.is_none() && self.rustdoc.is_none()
-            && self.target.is_none() && self.target_dir.is_none()
-            && self.build_dir.is_none() && self.rustflags.is_none()
-            && self.rustdocflags.is_none() && self.incremental.is_none()
-            && self.dep_info_basedir.is_none()
+            && self.target.is_none() && self.target_dir.is_none() && build_dir_is_none
+            && self.rustflags.is_none() && self.rustdocflags.is_none()
+            && self.incremental.is_none() && self.dep_info_basedir.is_none()
     }
 }
 impl crate::easy::DocConfig {
@@ -62,12 +65,15 @@ impl crate::easy::TermProgressConfig {
 }
 impl crate::de::BuildConfig {
     pub(crate) fn is_none(&self) -> bool {
+        #[cfg(feature = "unstable")]
+        let build_dir_is_none = self.build_dir.is_none();
+        #[cfg(not(feature = "unstable"))]
+        let build_dir_is_none = true;
         self.jobs.is_none() && self.rustc.is_none() && self.rustc_wrapper.is_none()
             && self.rustc_workspace_wrapper.is_none() && self.rustdoc.is_none()
-            && self.target.is_none() && self.target_dir.is_none()
-            && self.build_dir.is_none() && self.rustflags.is_none()
-            && self.rustdocflags.is_none() && self.incremental.is_none()
-            && self.dep_info_basedir.is_none()
+            && self.target.is_none() && self.target_dir.is_none() && build_dir_is_none
+            && self.rustflags.is_none() && self.rustdocflags.is_none()
+            && self.incremental.is_none() && self.dep_info_basedir.is_none()
     }
 }
 impl crate::de::DocConfig {
