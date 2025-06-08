@@ -1,4 +1,4 @@
-cargo_config2::de::Config: 1760
+cargo_config2::de::Config: 1784
 cargo_config2::de::BuildConfig: 544
 cargo_config2::de::TargetConfig: 208
 cargo_config2::de::DocConfig: 88
@@ -24,7 +24,7 @@ cargo_config2::de::ConfigRelativePath: 56
 cargo_config2::de::PathAndArgs: 88
 cargo_config2::de::StringList: 32
 cargo_config2::de::StringOrArray: 56
-cargo_config2::easy::Config: 1040
+cargo_config2::easy::Config: 1064
 cargo_config2::easy::BuildConfig: 296
 cargo_config2::easy::TargetConfig: 120
 cargo_config2::easy::DocConfig: 48

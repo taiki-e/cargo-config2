@@ -171,12 +171,28 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     assert_eq!(config.registry.default.as_deref(), Some("crates-io"));
     assert_eq!(config.registry.token.as_deref(), Some("00000000000000000000000000000000000"));
     assert_eq!(config.registry.credential_provider, Some(CredentialProvider::CargoToken));
-    assert_eq!(config.registry.global_credential_providers.as_ref(), [
-        CredentialProvider::CargoToken
-    ]);
+    assert_eq!(
+        config.registry.global_credential_providers.as_ref(),
+        [CredentialProvider::CargoToken]
+    );
 
-    // TODO
     // [source.<name>]
+    assert_eq!(config.source["vendored-sources"].directory.as_deref(), Some(Path::new("vendor")));
+    assert_eq!(config.source["crates-io"].replace_with.as_deref(), Some("vendored-sources"));
+    assert_eq!(
+        config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"].git.as_deref(),
+        Some("https://github.com/taiki-e/test-helper.git"),
+    );
+    assert_eq!(
+        config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"].rev.as_deref(),
+        Some("f38a7f5"),
+    );
+    assert_eq!(
+        config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"]
+            .replace_with
+            .as_deref(),
+        Some("vendored-sources")
+    );
 
     // [target.<triple>] and [target.<cfg>]
     assert_eq!(config.target("x86_64-unknown-linux-gnu").unwrap().linker.unwrap().as_os_str(), "b");
@@ -329,9 +345,10 @@ fn custom_target() {
                 .as_os_str(),
             spec_file_name
         );
-        assert_eq!(config.build_target_for_cli([spec_file_name]).unwrap(), vec![
-            spec_file_name.to_owned()
-        ]);
+        assert_eq!(
+            config.build_target_for_cli([spec_file_name]).unwrap(),
+            vec![spec_file_name.to_owned()]
+        );
 
         let _config = toml::to_string(&config).unwrap();
     }
