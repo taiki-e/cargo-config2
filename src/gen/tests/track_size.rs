@@ -42,6 +42,9 @@ fn track_size() {
     write_size::<crate::de::When>(&mut out);
     write_size::<crate::de::Frequency>(&mut out);
     write_size::<crate::de::Flags>(&mut out);
+    write_size::<crate::de::Credentials>(&mut out);
+    write_size::<crate::de::CredentialsRegistry>(&mut out);
+    write_size::<crate::de::CredentialsRegistriesConfigValue>(&mut out);
     write_size::<crate::de::ConfigRelativePath>(&mut out);
     write_size::<crate::de::PathAndArgs>(&mut out);
     write_size::<crate::de::StringList>(&mut out);
@@ -62,6 +65,9 @@ fn track_size() {
     write_size::<crate::easy::TermConfig>(&mut out);
     write_size::<crate::easy::TermProgressConfig>(&mut out);
     write_size::<crate::easy::Flags>(&mut out);
+    write_size::<crate::easy::Credentials>(&mut out);
+    write_size::<crate::easy::CredentialsRegistry>(&mut out);
+    write_size::<crate::easy::CredentialsRegistriesConfigValue>(&mut out);
     write_size::<crate::easy::PathAndArgs>(&mut out);
     write_size::<crate::easy::StringList>(&mut out);
     write_size::<crate::error::Error>(&mut out);

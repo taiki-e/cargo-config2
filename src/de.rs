@@ -145,7 +145,7 @@ impl Config {
         cargo_home: Option<&Path>,
     ) -> Result<Config> {
         let mut base = None;
-        for path in crate::walk::WalkInner::with_cargo_home(current_dir, cargo_home) {
+        for path in crate::walk::WalkInner::with_cargo_home(current_dir, cargo_home, "config") {
             let config = Self::_load_file(&path)?;
             match &mut base {
                 None => base = Some((path, config)),
@@ -1288,6 +1288,97 @@ impl<'de> Deserialize<'de> for Flags {
             }
             StringOrArray::Array(v) => Ok(Self::from_array(v)),
         }
+    }
+}
+
+/// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/config.html#credentials)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct Credentials {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "CredentialsRegistry::is_none")]
+    pub registry: CredentialsRegistry,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub registries: BTreeMap<String, CredentialsRegistriesConfigValue>,
+}
+
+impl Credentials {
+    /// Reads credentials file from the current directory.
+    pub fn load() -> Result<Self> {
+        Self::load_with_cwd(std::env::current_dir().context("failed to get current directory")?)
+    }
+
+    /// Reads credentials file from the given directory.
+    pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
+        let cwd = cwd.as_ref();
+        Self::_load_with_cargo_home(
+            &walk::cargo_home_with_cwd(cwd).context("failed to get cargo home path")?,
+        )
+    }
+
+    /// Reads credentials file from the given cargo home.
+    pub fn load_with_cargo_home<P: AsRef<Path>>(cargo_home: P) -> Result<Self> {
+        Self::_load_with_cargo_home(cargo_home.as_ref())
+    }
+    pub(crate) fn _load_with_cargo_home(cargo_home: &Path) -> Result<Self> {
+        if let Some(path) =
+            crate::walk::WalkInner::with_cargo_home(cargo_home, None::<&Path>, "credentials").next()
+        {
+            return Self::_load_file(&path);
+        }
+        Ok(Self::default())
+    }
+
+    /// Reads credentials file at the given path.
+    pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+        Self::_load_file(path.as_ref())
+    }
+    fn _load_file(path: &Path) -> Result<Self> {
+        let buf = fs::read_to_string(path)
+            .with_context(|| format!("failed to read `{}`", path.display()))?;
+        let mut credentials = toml_edit::de::from_str::<Credentials>(&buf).with_context(|| {
+            format!("failed to parse `{}` as cargo configuration", path.display())
+        })?;
+        crate::value::SetPath::set_path(&mut credentials, path);
+        Ok(credentials)
+    }
+}
+
+#[derive(Clone, Default, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct CredentialsRegistry {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Value<String>>,
+}
+
+impl fmt::Debug for CredentialsRegistry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Self { token } = self;
+        let redacted_token = token
+            .as_ref()
+            .map(|token| Value { val: "[REDACTED]", definition: token.definition.clone() });
+        f.debug_struct("CredentialsRegistry").field("token", &redacted_token).finish()
+    }
+}
+
+#[derive(Clone, Default, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct CredentialsRegistriesConfigValue {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Value<String>>,
+}
+
+impl fmt::Debug for CredentialsRegistriesConfigValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Self { token } = self;
+        let redacted_token = token
+            .as_ref()
+            .map(|token| Value { val: "[REDACTED]", definition: token.definition.clone() });
+        f.debug_struct("CredentialsRegistry").field("token", &redacted_token).finish()
     }
 }
 
