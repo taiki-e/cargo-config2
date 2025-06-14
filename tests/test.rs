@@ -176,7 +176,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     ]);
 
     // [source.<name>]
-    assert_eq!(config.source["vendored-sources"].directory.as_deref(), Some(Path::new("vendor")));
+    assert_eq!(config.source["vendored-sources"].directory, Some(dir.join("vendor")));
     assert_eq!(config.source["crates-io"].replace_with.as_deref(), Some("vendored-sources"));
     assert_eq!(
         config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"].git.as_deref(),
