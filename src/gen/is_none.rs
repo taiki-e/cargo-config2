@@ -48,6 +48,14 @@ impl crate::easy::RegistryConfig {
             && self.token.is_none() && self.global_credential_providers.is_none()
     }
 }
+impl crate::easy::SourceConfigValue {
+    pub(crate) fn is_none(&self) -> bool {
+        self.replace_with.is_none() && self.directory.is_none()
+            && self.registry.is_none() && self.local_registry.is_none()
+            && self.git.is_none() && self.branch.is_none() && self.tag.is_none()
+            && self.rev.is_none()
+    }
+}
 impl crate::easy::TermConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.quiet.is_none() && self.verbose.is_none() && self.color.is_none()
@@ -101,6 +109,14 @@ impl crate::de::RegistryConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.default.is_none() && self.credential_provider.is_none()
             && self.token.is_none() && self.global_credential_providers.is_none()
+    }
+}
+impl crate::de::SourceConfigValue {
+    pub(crate) fn is_none(&self) -> bool {
+        self.replace_with.is_none() && self.directory.is_none()
+            && self.registry.is_none() && self.local_registry.is_none()
+            && self.git.is_none() && self.branch.is_none() && self.tag.is_none()
+            && self.rev.is_none()
     }
 }
 impl crate::de::TermConfig {

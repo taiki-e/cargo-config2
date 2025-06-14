@@ -19,6 +19,7 @@ impl Merge for crate::de::Config {
         self.net.merge(low.net, force)?;
         self.registries.merge(low.registries, force)?;
         self.registry.merge(low.registry, force)?;
+        self.source.merge(low.source, force)?;
         self.target.merge(low.target, force)?;
         self.term.merge(low.term, force)?;
         Ok(())
@@ -37,6 +38,7 @@ impl SetPath for crate::de::Config {
         self.net.set_path(path);
         self.registries.set_path(path);
         self.registry.set_path(path);
+        self.source.set_path(path);
         self.target.set_path(path);
         self.term.set_path(path);
     }
@@ -208,6 +210,31 @@ impl SetPath for crate::de::RegistryConfig {
         self.credential_provider.set_path(path);
         self.token.set_path(path);
         self.global_credential_providers.set_path(path);
+    }
+}
+impl Merge for crate::de::SourceConfigValue {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        self.replace_with.merge(low.replace_with, force)?;
+        self.directory.merge(low.directory, force)?;
+        self.registry.merge(low.registry, force)?;
+        self.local_registry.merge(low.local_registry, force)?;
+        self.git.merge(low.git, force)?;
+        self.branch.merge(low.branch, force)?;
+        self.tag.merge(low.tag, force)?;
+        self.rev.merge(low.rev, force)?;
+        Ok(())
+    }
+}
+impl SetPath for crate::de::SourceConfigValue {
+    fn set_path(&mut self, path: &Path) {
+        self.replace_with.set_path(path);
+        self.directory.set_path(path);
+        self.registry.set_path(path);
+        self.local_registry.set_path(path);
+        self.git.set_path(path);
+        self.branch.set_path(path);
+        self.tag.set_path(path);
+        self.rev.set_path(path);
     }
 }
 impl SetPath for crate::de::GlobalCredentialProviders {
