@@ -101,8 +101,8 @@ pub use crate::{
     easy::{
         BuildConfig, CargoNewConfig, Config, CredentialProvider, DocConfig, EnvConfigValue, Flags,
         FutureIncompatReportConfig, GlobalCredentialProviders, HttpConfig, NetConfig, PathAndArgs,
-        RegistriesConfigValue, RegistryConfig, StringList, TargetConfig, TermConfig,
-        TermProgressConfig,
+        RegistriesConfigValue, RegistryConfig, SourceConfigValue, StringList, TargetConfig,
+        TermConfig, TermProgressConfig,
     },
     error::Error,
     resolve::{CargoVersion, ResolveOptions, RustcVersion, TargetTriple, TargetTripleRef},

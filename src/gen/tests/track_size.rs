@@ -33,6 +33,7 @@ fn track_size() {
     write_size::<crate::de::RegistriesConfigValue>(&mut out);
     write_size::<crate::de::RegistriesProtocol>(&mut out);
     write_size::<crate::de::RegistryConfig>(&mut out);
+    write_size::<crate::de::SourceConfigValue>(&mut out);
     write_size::<crate::de::GlobalCredentialProviders>(&mut out);
     write_size::<crate::de::CredentialProvider>(&mut out);
     write_size::<crate::de::CredentialProviderKind>(&mut out);
@@ -57,6 +58,7 @@ fn track_size() {
     write_size::<crate::easy::NetConfig>(&mut out);
     write_size::<crate::easy::RegistriesConfigValue>(&mut out);
     write_size::<crate::easy::RegistryConfig>(&mut out);
+    write_size::<crate::easy::SourceConfigValue>(&mut out);
     write_size::<crate::easy::GlobalCredentialProviders>(&mut out);
     write_size::<crate::easy::CredentialProvider>(&mut out);
     write_size::<crate::easy::TermConfig>(&mut out);

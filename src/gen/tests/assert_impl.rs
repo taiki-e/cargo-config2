@@ -118,6 +118,11 @@ const _: fn() = || {
     assert_unpin::<crate::de::RegistryConfig>();
     assert_unwind_safe::<crate::de::RegistryConfig>();
     assert_ref_unwind_safe::<crate::de::RegistryConfig>();
+    assert_send::<crate::de::SourceConfigValue>();
+    assert_sync::<crate::de::SourceConfigValue>();
+    assert_unpin::<crate::de::SourceConfigValue>();
+    assert_unwind_safe::<crate::de::SourceConfigValue>();
+    assert_ref_unwind_safe::<crate::de::SourceConfigValue>();
     assert_send::<crate::de::GlobalCredentialProviders>();
     assert_sync::<crate::de::GlobalCredentialProviders>();
     assert_unpin::<crate::de::GlobalCredentialProviders>();
@@ -238,6 +243,11 @@ const _: fn() = || {
     assert_unpin::<crate::easy::RegistryConfig>();
     assert_unwind_safe::<crate::easy::RegistryConfig>();
     assert_ref_unwind_safe::<crate::easy::RegistryConfig>();
+    assert_send::<crate::easy::SourceConfigValue>();
+    assert_sync::<crate::easy::SourceConfigValue>();
+    assert_unpin::<crate::easy::SourceConfigValue>();
+    assert_unwind_safe::<crate::easy::SourceConfigValue>();
+    assert_ref_unwind_safe::<crate::easy::SourceConfigValue>();
     assert_send::<crate::easy::GlobalCredentialProviders>();
     assert_sync::<crate::easy::GlobalCredentialProviders>();
     assert_unpin::<crate::easy::GlobalCredentialProviders>();

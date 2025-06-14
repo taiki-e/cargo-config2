@@ -210,6 +210,7 @@ fn gen_is_none() {
         "de::StringList",
         "de::TargetConfig",
         "de::RegistriesConfigValue",
+        "de::SourceConfigValue",
         "easy::Config",
         "easy::EnvConfigValue",
         "easy::Flags",
@@ -217,6 +218,7 @@ fn gen_is_none() {
         "easy::StringList",
         "easy::TargetConfig",
         "easy::RegistriesConfigValue",
+        "easy::SourceConfigValue",
     ];
 
     let workspace_root = &workspace_root();

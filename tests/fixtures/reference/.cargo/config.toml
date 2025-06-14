@@ -123,15 +123,16 @@ token = "00000000000000000000000000000000000" # authentication token for crates.
 credential-provider = "cargo:token" # The credential provider for crates.io.
 global-credential-providers = ["cargo:token"] # The credential providers to use by default.
 
-# [source.<name>]      # source definition and replacement
-# replace-with = "…"   # replace this source with the given named source
-# directory = "…"      # path to a directory source
-# registry = "…"       # URL to a registry source
-# local-registry = "…" # path to a local registry source
-# git = "…"            # URL of a git repository source
-# branch = "…"         # branch name for the git repository
-# tag = "…"            # tag name for the git repository
-# rev = "…"            # revision for the git repository
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"]
+git = "https://github.com/taiki-e/test-helper.git"
+rev = "f38a7f5"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
 
 [target.x86_64-unknown-linux-gnu]
 linker = "b" # linker to use
