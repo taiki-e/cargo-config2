@@ -109,6 +109,8 @@ pub struct Config {
     /// The `[source]` table.
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#source)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub source: BTreeMap<String, SourceConfigValue>,
     /// The `[target]` table.
     ///
