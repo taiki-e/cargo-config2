@@ -101,7 +101,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "RegistryConfig::is_none")]
     pub registry: RegistryConfig,
-    // TODO: source
+    /// The `[source]` table.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#source)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub source: BTreeMap<String, SourceConfigValue>,
     /// The resolved `[target]` table.
     #[serde(skip_deserializing)]
     #[serde(skip_serializing_if = "ref_cell_bree_map_is_empty")]
@@ -178,6 +183,10 @@ impl Config {
                 RegistriesConfigValue::from_unresolved(v, &credential_alias, &cx.current_dir),
             );
         }
+        let mut source = BTreeMap::new();
+        for (k, v) in de.source {
+            source.insert(k, SourceConfigValue::from_unresolved(v, &cx.current_dir));
+        }
         let registry =
             RegistryConfig::from_unresolved(de.registry, &credential_alias, &cx.current_dir);
         let term = TermConfig::from_unresolved(de.term);
@@ -193,6 +202,7 @@ impl Config {
             http,
             net,
             registries,
+            source,
             registry,
             target: RefCell::new(BTreeMap::new()),
             de_target: de.target,
@@ -1030,6 +1040,90 @@ impl fmt::Debug for RegistryConfig {
             .field("credential_provider", credential_provider)
             .field("token", &redacted_token)
             .field("global_credential_providers", &global_credential_providers.0)
+            .finish()
+    }
+}
+
+/// A value of the `[source]` table.
+///
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#source)
+#[derive(Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct SourceConfigValue {
+    /// If set, replace this source with the given named source or named registry.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamereplace-with)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replace_with: Option<String>,
+    /// Sets the path to a directory to use as a directory source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamedirectory)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub directory: Option<PathBuf>,
+    /// Sets the URL to use for a registry source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenameregistry)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    /// Sets the path to a directory to use as a local registry source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamelocal-registry)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub local_registry: Option<PathBuf>,
+    /// Sets the URL to use for a git source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamegit)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub git: Option<String>,
+    /// Sets the branch name to use for a git repository.
+    /// If none of branch, tag, or rev is set, defaults to the master branch.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamebranch)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
+    /// Sets the tag name to use for a git repository.
+    /// If none of branch, tag, or rev is set, defaults to the master branch.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenametag)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    /// Sets the revision to use for a git repository.
+    /// If none of branch, tag, or rev is set, defaults to the master branch.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamerev)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rev: Option<String>,
+}
+
+impl SourceConfigValue {
+    fn from_unresolved(de: de::SourceConfigValue, current_dir: &Path) -> Self {
+        let replace_with = de.replace_with.map(|v| v.val);
+        let directory = de.directory.map(|v| v.resolve_as_path(current_dir).into_owned());
+        let registry = de.registry.map(|v| v.val);
+        let local_registry = de.local_registry.map(|v| v.resolve_as_path(current_dir).into_owned());
+        let git = de.git.map(|v| v.val);
+        let branch = de.branch.map(|v| v.val);
+        let tag = de.tag.map(|v| v.val);
+        let rev = de.rev.map(|v| v.val);
+
+        Self { replace_with, directory, registry, local_registry, git, branch, tag, rev }
+    }
+}
+
+impl fmt::Debug for SourceConfigValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Self { replace_with, directory, registry, local_registry, git, branch, tag, rev } =
+            self;
+        f.debug_struct("SourceConfigValue")
+            .field("replace_with", &replace_with)
+            .field("directory", &directory)
+            .field("registry", &registry)
+            .field("local_registry", &local_registry)
+            .field("git", &git)
+            .field("branch", &branch)
+            .field("tag", &tag)
+            .field("rev", &rev)
             .finish()
     }
 }

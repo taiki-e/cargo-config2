@@ -106,7 +106,12 @@ pub struct Config {
     #[serde(default)]
     #[serde(skip_serializing_if = "RegistryConfig::is_none")]
     pub registry: RegistryConfig,
-    // TODO: source
+    /// The `[source]` table.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#source)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub source: BTreeMap<String, SourceConfigValue>,
     /// The `[target]` table.
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#target)
@@ -774,6 +779,58 @@ impl fmt::Debug for RegistryConfig {
             .field("global_credential_providers", global_credential_providers)
             .finish()
     }
+}
+
+/// A value of the `[source]` table.
+///
+/// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#source)
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct SourceConfigValue {
+    /// If set, replace this source with the given named source or named registry.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamereplace-with)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replace_with: Option<Value<String>>,
+    /// Sets the path to a directory to use as a directory source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamedirectory)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub directory: Option<Value<String>>,
+    /// Sets the URL to use for a registry source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenameregistry)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registry: Option<Value<String>>,
+    /// Sets the path to a directory to use as a local registry source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamelocal-registry)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub local_registry: Option<Value<String>>,
+    /// Sets the URL to use for a git source.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamegit)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub git: Option<Value<String>>,
+    /// Sets the branch name to use for a git repository.
+    /// If none of branch, tag, or rev is set, defaults to the master branch.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamebranch)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch: Option<Value<String>>,
+    /// Sets the tag name to use for a git repository.
+    /// If none of branch, tag, or rev is set, defaults to the master branch.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenametag)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<Value<String>>,
+    /// Sets the revision to use for a git repository.
+    /// If none of branch, tag, or rev is set, defaults to the master branch.
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#sourcenamerev)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rev: Option<Value<String>>,
 }
 
 /// Global credential providers.

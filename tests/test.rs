@@ -175,8 +175,23 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
         CredentialProvider::CargoToken
     ]);
 
-    // TODO
     // [source.<name>]
+    assert_eq!(config.source["vendored-sources"].directory, Some(dir.join("vendor")));
+    assert_eq!(config.source["crates-io"].replace_with.as_deref(), Some("vendored-sources"));
+    assert_eq!(
+        config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"].git.as_deref(),
+        Some("https://github.com/taiki-e/test-helper.git"),
+    );
+    assert_eq!(
+        config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"].rev.as_deref(),
+        Some("f38a7f5"),
+    );
+    assert_eq!(
+        config.source["git+https://github.com/taiki-e/test-helper.git?rev=f38a7f5"]
+            .replace_with
+            .as_deref(),
+        Some("vendored-sources")
+    );
 
     // [target.<triple>] and [target.<cfg>]
     assert_eq!(config.target("x86_64-unknown-linux-gnu").unwrap().linker.unwrap().as_os_str(), "b");
