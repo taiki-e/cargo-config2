@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.34] - 2025-06-22
+
 - Support the `[sources]` table. ([#31](https://github.com/taiki-e/cargo-config2/pull/31), thanks @Altair-Bueno)
 
 - Update `windows-sys` to 0.60.
@@ -167,7 +169,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.33...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.34...HEAD
+[0.1.34]: https://github.com/taiki-e/cargo-config2/compare/v0.1.33...v0.1.34
 [0.1.33]: https://github.com/taiki-e/cargo-config2/compare/v0.1.32...v0.1.33
 [0.1.32]: https://github.com/taiki-e/cargo-config2/compare/v0.1.31...v0.1.32
 [0.1.31]: https://github.com/taiki-e/cargo-config2/compare/v0.1.30...v0.1.31
