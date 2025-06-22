@@ -282,6 +282,22 @@ impl SetPath for crate::de::Flags {
         self.flags.set_path(path);
     }
 }
+impl SetPath for crate::de::Credentials {
+    fn set_path(&mut self, path: &Path) {
+        self.registry.set_path(path);
+        self.registries.set_path(path);
+    }
+}
+impl SetPath for crate::de::CredentialsRegistry {
+    fn set_path(&mut self, path: &Path) {
+        self.token.set_path(path);
+    }
+}
+impl SetPath for crate::de::CredentialsRegistriesConfigValue {
+    fn set_path(&mut self, path: &Path) {
+        self.token.set_path(path);
+    }
+}
 impl SetPath for crate::de::ConfigRelativePath {
     fn set_path(&mut self, path: &Path) {
         self.0.set_path(path);

@@ -24,6 +24,9 @@ fn gen_de() {
     const FILES: &[&str] = &["src/de.rs"];
     const MERGE_EXCLUDE: &[&str] = &[
         "de::CredentialProvider",
+        "de::Credentials",
+        "de::CredentialsRegistry",
+        "de::CredentialsRegistriesConfigValue",
         "de::Flags",
         "de::EnvConfigValue",
         "de::StringList",
@@ -205,6 +208,8 @@ fn gen_is_none() {
     const EXCLUDE: &[&str] = &[
         "de::Config",
         "de::CredentialProvider",
+        "de::Credentials",
+        "de::CredentialsRegistriesConfigValue",
         "de::Flags",
         "de::PathAndArgs",
         "de::StringList",
@@ -212,6 +217,8 @@ fn gen_is_none() {
         "de::RegistriesConfigValue",
         "de::SourceConfigValue",
         "easy::Config",
+        "easy::Credentials",
+        "easy::CredentialsRegistriesConfigValue",
         "easy::EnvConfigValue",
         "easy::Flags",
         "easy::PathAndArgs",
