@@ -12,6 +12,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Support the `[sources]` table. ([#31](https://github.com/taiki-e/cargo-config2/pull/31), thanks @Altair-Bueno)
+
+- Update `windows-sys` to 0.60.
+
 ## [0.1.33] - 2025-06-07
 
 - Add structs and fields for credential providers. ([#25](https://github.com/taiki-e/cargo-config2/pull/25), [#27](https://github.com/taiki-e/cargo-config2/pull/27), thanks @nox)
