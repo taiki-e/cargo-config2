@@ -1047,7 +1047,7 @@ impl fmt::Debug for RegistryConfig {
 /// A value of the `[source]` table.
 ///
 /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#source)
-#[derive(Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
 pub struct SourceConfigValue {
@@ -1108,23 +1108,6 @@ impl SourceConfigValue {
         let rev = de.rev.map(|v| v.val);
 
         Self { replace_with, directory, registry, local_registry, git, branch, tag, rev }
-    }
-}
-
-impl fmt::Debug for SourceConfigValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { replace_with, directory, registry, local_registry, git, branch, tag, rev } =
-            self;
-        f.debug_struct("SourceConfigValue")
-            .field("replace_with", &replace_with)
-            .field("directory", &directory)
-            .field("registry", &registry)
-            .field("local_registry", &local_registry)
-            .field("git", &git)
-            .field("branch", &branch)
-            .field("tag", &tag)
-            .field("rev", &rev)
-            .finish()
     }
 }
 
