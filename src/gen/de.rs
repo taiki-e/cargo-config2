@@ -52,6 +52,7 @@ impl Merge for crate::de::BuildConfig {
         self.rustdoc.merge(low.rustdoc, force)?;
         self.target.merge(low.target, force)?;
         self.target_dir.merge(low.target_dir, force)?;
+        self.build_dir.merge(low.build_dir, force)?;
         self.rustflags.merge(low.rustflags, force)?;
         self.rustdocflags.merge(low.rustdocflags, force)?;
         self.incremental.merge(low.incremental, force)?;
@@ -68,6 +69,7 @@ impl SetPath for crate::de::BuildConfig {
         self.rustdoc.set_path(path);
         self.target.set_path(path);
         self.target_dir.set_path(path);
+        self.build_dir.set_path(path);
         self.rustflags.set_path(path);
         self.rustdocflags.set_path(path);
         self.incremental.set_path(path);

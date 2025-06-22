@@ -1,5 +1,5 @@
-cargo_config2::de::Config: 1784
-cargo_config2::de::BuildConfig: 544
+cargo_config2::de::Config: 1816
+cargo_config2::de::BuildConfig: 600
 cargo_config2::de::TargetConfig: 208
 cargo_config2::de::DocConfig: 88
 cargo_config2::de::EnvConfigValue: 136
