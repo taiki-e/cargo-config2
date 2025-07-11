@@ -212,6 +212,12 @@ impl ApplyEnv for BuildConfig {
             self.target_dir = Some(target_dir);
         }
 
+        // https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-dir
+        #[cfg(feature = "unstable")]
+        if let Some(build_dir) = cx.env("CARGO_BUILD_BUILD_DIR")? {
+            self.build_dir = Some(build_dir);
+        }
+
         // 1. CARGO_ENCODED_RUSTFLAGS
         // 2. RUSTFLAGS
         // 3. target.<triple>.rustflags (CARGO_TARGET_<triple>_RUSTFLAGS) and target.<cfg>.rustflags
