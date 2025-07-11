@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Use `toml` instead of `toml_edit`.
+
 ## [0.1.34] - 2025-06-22
 
 - Support the `[sources]` table. ([#31](https://github.com/taiki-e/cargo-config2/pull/31), thanks @Altair-Bueno)

@@ -28,7 +28,7 @@ doc-scrape-examples = false
 [dependencies]
 serde = "1.0.165"
 serde_derive = "1.0.165"
-toml_edit = { version = "0.23", default-features = false, features = ["parse", "serde"] }
+toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.60", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_System_Com"] }
