@@ -66,7 +66,7 @@ pub fn home_dir() -> Option<PathBuf> {
             match SHGetKnownFolderPath(
                 &FOLDERID_Profile,
                 KF_FLAG_DONT_VERIFY as u32,
-                std::ptr::null_mut(),
+                ptr::null_mut(),
                 &mut path,
             ) {
                 S_OK => {
