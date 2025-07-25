@@ -59,6 +59,11 @@ impl crate::easy::TermProgressConfig {
         self.when.is_none() && self.width.is_none()
     }
 }
+impl crate::easy::CredentialsRegistry {
+    pub(crate) fn is_none(&self) -> bool {
+        self.token.is_none()
+    }
+}
 impl crate::de::BuildConfig {
     pub(crate) fn is_none(&self) -> bool {
         self.jobs.is_none() && self.rustc.is_none() && self.rustc_wrapper.is_none()
@@ -112,5 +117,10 @@ impl crate::de::TermConfig {
 impl crate::de::TermProgress {
     pub(crate) fn is_none(&self) -> bool {
         self.when.is_none() && self.width.is_none()
+    }
+}
+impl crate::de::CredentialsRegistry {
+    pub(crate) fn is_none(&self) -> bool {
+        self.token.is_none()
     }
 }

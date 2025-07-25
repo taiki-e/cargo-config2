@@ -99,7 +99,8 @@ mod walk;
 pub use crate::de::{Color, Frequency, RegistriesProtocol, VersionControlSoftware, When};
 pub use crate::{
     easy::{
-        BuildConfig, CargoNewConfig, Config, CredentialProvider, DocConfig, EnvConfigValue, Flags,
+        BuildConfig, CargoNewConfig, Config, CredentialProvider, Credentials,
+        CredentialsRegistriesConfigValue, CredentialsRegistry, DocConfig, EnvConfigValue, Flags,
         FutureIncompatReportConfig, GlobalCredentialProviders, HttpConfig, NetConfig, PathAndArgs,
         RegistriesConfigValue, RegistryConfig, SourceConfigValue, StringList, TargetConfig,
         TermConfig, TermProgressConfig,

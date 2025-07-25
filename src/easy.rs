@@ -24,6 +24,7 @@ use crate::{
         TargetTripleBorrow, TargetTripleRef,
     },
     value::Value,
+    walk,
 };
 
 /// Cargo configuration.
@@ -150,7 +151,7 @@ impl Config {
         let cwd = cwd.as_ref();
         let cx = options.into_context(cwd.to_owned());
 
-        let de = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home(cwd))?;
+        let de = de::Config::_load_with_options(&cx.current_dir, cx.cargo_home())?;
         Self::from_unresolved(de, cx)
     }
 
@@ -1440,6 +1441,96 @@ impl<const N: usize> From<[String; N]> for Flags {
 impl<const N: usize> From<[&str; N]> for Flags {
     fn from(value: [&str; N]) -> Self {
         Self { flags: value[..].iter().map(|&v| v.to_owned()).collect() }
+    }
+}
+
+/// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/config.html#credentials)
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct Credentials {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "CredentialsRegistry::is_none")]
+    pub registry: CredentialsRegistry,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub registries: BTreeMap<String, CredentialsRegistriesConfigValue>,
+}
+
+impl Credentials {
+    /// Reads credentials file from the current directory.
+    pub fn load() -> Result<Self> {
+        Self::load_with_cwd(std::env::current_dir().context("failed to get current directory")?)
+    }
+
+    /// Reads credentials file from the given directory.
+    pub fn load_with_cwd<P: AsRef<Path>>(cwd: P) -> Result<Self> {
+        let cwd = cwd.as_ref();
+        Self::load_with_cargo_home(
+            walk::cargo_home_with_cwd(cwd).context("failed to get cargo home path")?,
+        )
+    }
+
+    /// Reads credentials file from the given directory and options.
+    pub fn load_with_cargo_home<P: AsRef<Path>>(cargo_home: P) -> Result<Self> {
+        let de = de::Credentials::_load_with_cargo_home(cargo_home.as_ref())?;
+        Ok(Self::from_unresolved(de))
+    }
+
+    fn from_unresolved(de: de::Credentials) -> Self {
+        let registry = CredentialsRegistry::from_unresolved(de.registry);
+        let mut registries = BTreeMap::new();
+        for (k, v) in de.registries {
+            registries.insert(k, CredentialsRegistriesConfigValue::from_unresolved(v));
+        }
+
+        Self { registry, registries }
+    }
+}
+
+#[derive(Clone, Default, Serialize)]
+#[non_exhaustive]
+pub struct CredentialsRegistry {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+impl CredentialsRegistry {
+    fn from_unresolved(de: de::CredentialsRegistry) -> Self {
+        let token = de.token.map(|v| v.val);
+        Self { token }
+    }
+}
+
+impl fmt::Debug for CredentialsRegistry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Self { token } = self;
+        let redacted_token = token.as_ref().map(|_| "[REDACTED]");
+        f.debug_struct("CredentialsRegistry").field("token", &redacted_token).finish()
+    }
+}
+
+#[derive(Clone, Default, Serialize)]
+#[non_exhaustive]
+pub struct CredentialsRegistriesConfigValue {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+impl CredentialsRegistriesConfigValue {
+    fn from_unresolved(de: de::CredentialsRegistriesConfigValue) -> Self {
+        let token = de.token.map(|v| v.val);
+        Self { token }
+    }
+}
+
+impl fmt::Debug for CredentialsRegistriesConfigValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Self { token } = self;
+        let redacted_token = token.as_ref().map(|_| "[REDACTED]");
+        f.debug_struct("CredentialsRegistry").field("token", &redacted_token).finish()
     }
 }
 
