@@ -17,21 +17,20 @@
 // >   - Windows: `%USERPROFILE%\.cargo\config.toml`
 // >   - Unix: `$HOME/.cargo/config.toml`
 
-use core::ops;
 use std::path::{Path, PathBuf};
 
-fn config_path(path: &Path) -> Option<PathBuf> {
+pub(crate) fn config_path(path: &Path, name: &str) -> Option<PathBuf> {
     // https://doc.rust-lang.org/nightly/cargo/reference/config.html#hierarchical-structure
     //
     // > Cargo also reads config files without the `.toml` extension,
     // > such as `.cargo/config`. Support for the `.toml` extension was
     // > added in version 1.39 and is the preferred form. If both files
     // > exist, Cargo will use the file without the extension.
-    let config = path.join("config");
+    let config = path.join(name);
     if config.exists() {
         return Some(config);
     }
-    let config = path.join("config.toml");
+    let config = path.join(name).with_extension("toml");
     if config.exists() {
         return Some(config);
     }
@@ -135,30 +134,35 @@ pub fn rustup_home_with_cwd(cwd: &Path) -> Option<PathBuf> {
 pub(crate) struct WalkInner<'a, P> {
     ancestors: std::path::Ancestors<'a>,
     cargo_home: Option<P>,
+    name: &'a str,
 }
 
-impl<'a, P: ops::Deref<Target = Path>> WalkInner<'a, P> {
+impl<'a, P: AsRef<Path>> WalkInner<'a, P> {
     /// Creates an iterator over Cargo configuration file paths from the given path
     /// and `CARGO_HOME` path.
-    pub(crate) fn with_cargo_home(current_dir: &'a Path, cargo_home: Option<P>) -> Self {
-        Self { ancestors: current_dir.ancestors(), cargo_home }
+    pub(crate) fn with_cargo_home(
+        current_dir: &'a Path,
+        cargo_home: Option<P>,
+        name: &'a str,
+    ) -> Self {
+        Self { ancestors: current_dir.ancestors(), cargo_home, name }
     }
 }
 
-impl<P: ops::Deref<Target = Path>> Iterator for WalkInner<'_, P> {
+impl<P: AsRef<Path>> Iterator for WalkInner<'_, P> {
     type Item = PathBuf;
     fn next(&mut self) -> Option<Self::Item> {
         for p in self.ancestors.by_ref() {
             let p = p.join(".cargo");
             // dedup CARGO_HOME
-            if self.cargo_home.as_deref() == Some(&p) {
+            if self.cargo_home.as_ref().map(AsRef::as_ref) == Some(&p) {
                 self.cargo_home = None;
             }
-            if let Some(p) = config_path(&p) {
+            if let Some(p) = config_path(&p, self.name) {
                 return Some(p);
             }
         }
-        config_path(&self.cargo_home.take()?)
+        config_path(self.cargo_home.take()?.as_ref(), self.name)
     }
 }
 
@@ -177,7 +181,7 @@ impl<'a> Walk<'a> {
     /// Creates an iterator over Cargo configuration file paths from the given path
     /// and `CARGO_HOME` path.
     pub fn with_cargo_home(current_dir: &'a Path, cargo_home: Option<PathBuf>) -> Self {
-        Self(WalkInner::with_cargo_home(current_dir, cargo_home))
+        Self(WalkInner::with_cargo_home(current_dir, cargo_home, "config"))
     }
 }
 

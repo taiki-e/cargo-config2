@@ -21,6 +21,9 @@ cargo_config2::de::Color: 1
 cargo_config2::de::When: 1
 cargo_config2::de::Frequency: 1
 cargo_config2::de::Flags: 32
+cargo_config2::de::Credentials: 80
+cargo_config2::de::CredentialsRegistry: 56
+cargo_config2::de::CredentialsRegistriesConfigValue: 56
 cargo_config2::de::ConfigRelativePath: 56
 cargo_config2::de::PathAndArgs: 88
 cargo_config2::de::StringList: 32
@@ -42,6 +45,9 @@ cargo_config2::easy::CredentialProvider: 56
 cargo_config2::easy::TermConfig: 16
 cargo_config2::easy::TermProgressConfig: 12
 cargo_config2::easy::Flags: 24
+cargo_config2::easy::Credentials: 48
+cargo_config2::easy::CredentialsRegistry: 24
+cargo_config2::easy::CredentialsRegistriesConfigValue: 24
 cargo_config2::easy::PathAndArgs: 48
 cargo_config2::easy::StringList: 24
 cargo_config2::error::Error: 64
@@ -52,4 +58,4 @@ cargo_config2::resolve::RustcVersion: 20
 cargo_config2::resolve::CargoVersion: 16
 cargo_config2::value::Value<()>: 32
 cargo_config2::value::Definition: 32
-cargo_config2::walk::Walk: 40
+cargo_config2::walk::Walk: 56
