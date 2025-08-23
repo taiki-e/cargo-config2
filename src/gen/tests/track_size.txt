@@ -47,9 +47,9 @@ cargo_config2::easy::StringList: 24
 cargo_config2::error::Error: 64
 cargo_config2::resolve::ResolveOptions: 168
 cargo_config2::resolve::ResolveContext: 288
-cargo_config2::resolve::TargetTripleRef: 48
+cargo_config2::resolve::TargetTripleRef<'_>: 48
 cargo_config2::resolve::RustcVersion: 20
 cargo_config2::resolve::CargoVersion: 16
 cargo_config2::value::Value<()>: 32
 cargo_config2::value::Definition: 32
-cargo_config2::walk::Walk: 40
+cargo_config2::walk::Walk<'_>: 40

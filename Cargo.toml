@@ -48,7 +48,7 @@ serde_json = "1"
 shell-escape = "0.1"
 static_assertions = "1"
 tempfile = { version = "3", default-features = false }
-test-helper = { features = ["git"], git = "https://github.com/taiki-e/test-helper.git", rev = "f38a7f5" }
+test-helper = { features = ["git"], git = "https://github.com/taiki-e/test-helper.git", rev = "c5eac31" }
 toml = "0.9"
 
 [lints]
