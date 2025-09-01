@@ -356,7 +356,10 @@ fn custom_target() {
     } else {
         t("avr-unknown-gnu-atmega328", IsBuiltin(true));
     }
-    t("avr-unknown-gnu-atmega2560", IsBuiltin(false));
+    // Skip pre-1.91 because target-pointer-width change
+    if rustversion::cfg!(since(1.91)) {
+        t("avr-unknown-gnu-atmega2560", IsBuiltin(false));
+    }
 }
 
 #[rustversion::attr(not(nightly), ignore)]
