@@ -12,6 +12,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Update `windows-sys` to 0.61.
+
+  This increases the minimum supported Rust version (MSRV) from Rust 1.70 to Rust 1.71.
+
 ## [0.1.35] - 2025-07-11
 
 - Use `toml` instead of `toml_edit`.
