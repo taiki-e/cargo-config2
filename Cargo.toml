@@ -2,7 +2,7 @@
 name = "cargo-config2"
 version = "0.1.35" #publish:version
 edition = "2021"
-rust-version = "1.70" # For OnceCell
+rust-version = "1.71" # For windows-sys
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/taiki-e/cargo-config2"
 keywords = ["cargo", "config"]
@@ -31,7 +31,7 @@ serde_derive = "1.0.165"
 toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.60", features = [
+windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_System_Com", # CoTaskMemFree
     "Win32_UI_Shell", # SHGetKnownFolderPath
