@@ -1150,10 +1150,11 @@ pub struct TermProgress {
 }
 
 #[allow(clippy::exhaustive_enums)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Color {
     /// (default) Automatically detect if color support is available on the terminal.
+    #[default]
     Auto,
     /// Always display colors.
     Always,
@@ -1171,12 +1172,6 @@ impl Color {
     }
 }
 
-impl Default for Color {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
-
 impl FromStr for Color {
     type Err = Error;
 
@@ -1191,10 +1186,11 @@ impl FromStr for Color {
 }
 
 #[allow(clippy::exhaustive_enums)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
     /// (default) Intelligently guess whether to show progress bar.
+    #[default]
     Auto,
     /// Always show progress bar.
     Always,
@@ -1212,12 +1208,6 @@ impl When {
     }
 }
 
-impl Default for When {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
-
 impl FromStr for When {
     type Err = Error;
 
@@ -1232,11 +1222,12 @@ impl FromStr for When {
 }
 
 #[allow(clippy::exhaustive_enums)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Frequency {
     /// (default) Always display a notification when a command (e.g. `cargo build`)
     /// produces a future incompat report.
+    #[default]
     Always,
     /// Never display a notification.
     Never,
@@ -1248,12 +1239,6 @@ impl Frequency {
             Self::Always => "always",
             Self::Never => "never",
         }
-    }
-}
-
-impl Default for Frequency {
-    fn default() -> Self {
-        Self::Always
     }
 }
 
