@@ -2,7 +2,8 @@
 name = "cargo-config2"
 version = "0.1.36" #publish:version
 edition = "2021"
-rust-version = "1.71" # For windows-sys
+# NB: Sync with msrv badge in README.md
+rust-version = "1.76" # For toml
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/taiki-e/cargo-config2"
 keywords = ["cargo", "config"]
