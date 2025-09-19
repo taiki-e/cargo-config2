@@ -79,10 +79,8 @@ impl From<Error> for io::Error {
     fn from(e: Error) -> Self {
         match e.0 {
             ErrorKind::Io(e) => e,
-            ErrorKind::CfgExprParse(e) => Self::new(io::ErrorKind::Other, e),
-            ErrorKind::Other(e) | ErrorKind::WithContext(e, None) => {
-                Self::new(io::ErrorKind::Other, e.into_string())
-            }
+            ErrorKind::CfgExprParse(e) => Self::other(e),
+            ErrorKind::Other(e) | ErrorKind::WithContext(e, None) => Self::other(e.into_string()),
             ErrorKind::WithContext(msg, Some(source)) => {
                 let kind = if let Some(e) = source.downcast_ref::<io::Error>() {
                     e.kind()
