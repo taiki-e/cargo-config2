@@ -172,10 +172,9 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     assert_eq!(config.registry.default.as_deref(), Some("crates-io"));
     assert_eq!(config.registry.token.as_deref(), Some("00000000000000000000000000000000000"));
     assert_eq!(config.registry.credential_provider, Some(CredentialProvider::CargoToken));
-    assert_eq!(
-        config.registry.global_credential_providers.as_ref(),
-        [CredentialProvider::CargoToken]
-    );
+    assert_eq!(config.registry.global_credential_providers.as_ref(), [
+        CredentialProvider::CargoToken
+    ]);
 
     // [source.<name>]
     assert_eq!(config.source["vendored-sources"].directory, Some(dir.join("vendor")));
@@ -346,10 +345,9 @@ fn custom_target() {
                 .as_os_str(),
             spec_file_name
         );
-        assert_eq!(
-            config.build_target_for_cli([spec_file_name]).unwrap(),
-            vec![spec_file_name.to_owned()]
-        );
+        assert_eq!(config.build_target_for_cli([spec_file_name]).unwrap(), vec![
+            spec_file_name.to_owned()
+        ]);
 
         let _config = toml::to_string(&config).unwrap();
     }
