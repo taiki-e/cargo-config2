@@ -64,12 +64,15 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.index = index;
                     } else {
-                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
-                            index,
-                            token: None,
-                            credential_provider: None,
-                            protocol: None,
-                        });
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue {
+                                index,
+                                token: None,
+                                credential_provider: None,
+                                protocol: None,
+                            },
+                        );
                     }
                 } else if let Some(k) = k.strip_suffix("_TOKEN") {
                     let v = v.to_str().ok_or_else(error_env_not_unicode_redacted)?;
@@ -77,12 +80,15 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.token = token;
                     } else {
-                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
-                            index: None,
-                            token,
-                            credential_provider: None,
-                            protocol: None,
-                        });
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue {
+                                index: None,
+                                token,
+                                credential_provider: None,
+                                protocol: None,
+                            },
+                        );
                     }
                 } else if let Some(k) = k.strip_suffix("_CREDENTIAL_PROVIDER") {
                     let credential_provider = Some(
@@ -92,12 +98,15 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.credential_provider = credential_provider;
                     } else {
-                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
-                            index: None,
-                            token: None,
-                            credential_provider,
-                            protocol: None,
-                        });
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue {
+                                index: None,
+                                token: None,
+                                credential_provider,
+                                protocol: None,
+                            },
+                        );
                     }
                 } else if k == "CRATES_IO_PROTOCOL" {
                     let k = "crates-io";
@@ -107,12 +116,15 @@ impl Config {
                     if let Some(registries_config_value) = self.registries.get_mut(k) {
                         registries_config_value.protocol = protocol;
                     } else {
-                        self.registries.insert(k.to_owned(), RegistriesConfigValue {
-                            index: None,
-                            token: None,
-                            credential_provider: None,
-                            protocol,
-                        });
+                        self.registries.insert(
+                            k.to_owned(),
+                            RegistriesConfigValue {
+                                index: None,
+                                token: None,
+                                credential_provider: None,
+                                protocol,
+                            },
+                        );
                     }
                 }
             }
@@ -213,7 +225,6 @@ impl ApplyEnv for BuildConfig {
         }
 
         // https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-dir
-        #[cfg(feature = "unstable")]
         if let Some(build_dir) = cx.env("CARGO_BUILD_BUILD_DIR")? {
             self.build_dir = Some(build_dir);
         }

@@ -517,7 +517,6 @@ pub struct BuildConfig {
     ///
     /// **Note:** If a template variable is used the path will be unresolved. For available template
     /// variables see the Cargo reference.
-    #[cfg(feature = "unstable")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub build_dir: Option<PathBuf>,
     /// Extra command-line flags to pass to rustc. The value may be an array
@@ -584,7 +583,6 @@ impl BuildConfig {
                 .collect()
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
-        #[cfg(feature = "unstable")]
         let build_dir = de.build_dir.map(|v| {
             if v.val.starts_with("{workspace-root}") || v.val.starts_with("{cargo-cache-home}") {
                 return PathBuf::from(v.val);
@@ -611,7 +609,6 @@ impl BuildConfig {
             rustdoc,
             target,
             target_dir,
-            #[cfg(feature = "unstable")]
             build_dir,
             rustflags,
             rustdocflags,
