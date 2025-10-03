@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Support `build.build-dir` [that stabilized in Cargo 1.91](https://github.com/rust-lang/cargo/pull/15833). ([#29](https://github.com/taiki-e/cargo-config2/pull/29), thanks @ranger-ross)
+
 ## [0.1.36] - 2025-09-05
 
 - Update `windows-sys` to 0.61.
