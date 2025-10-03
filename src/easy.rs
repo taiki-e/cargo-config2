@@ -510,6 +510,15 @@ pub struct BuildConfig {
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildtarget)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_dir: Option<PathBuf>,
+    /// The path to where all compiler intermediate artifacts are placed. The default if not
+    /// specified is the value of build.target-dir
+    ///
+    /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-dir)
+    ///
+    /// **Note:** If a template variable is used the path will be unresolved. For available template
+    /// variables see the Cargo reference.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build_dir: Option<PathBuf>,
     /// Extra command-line flags to pass to rustc. The value may be an array
     /// of strings or a space-separated string.
     ///
@@ -574,6 +583,13 @@ impl BuildConfig {
                 .collect()
         });
         let target_dir = de.target_dir.map(|v| v.resolve_as_path(current_dir).into_owned());
+        let build_dir = de.build_dir.map(|v| {
+            if v.val.starts_with("{workspace-root}") || v.val.starts_with("{cargo-cache-home}") {
+                return PathBuf::from(v.val);
+            }
+
+            v.resolve_as_path(current_dir).into_owned()
+        });
         let de_rustflags = de.rustflags.clone();
         let rustflags =
             de.rustflags.map(|v| Flags { flags: v.flags.into_iter().map(|v| v.val).collect() });
@@ -593,6 +609,7 @@ impl BuildConfig {
             rustdoc,
             target,
             target_dir,
+            build_dir,
             rustflags,
             rustdocflags,
             incremental,

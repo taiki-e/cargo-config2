@@ -25,6 +25,10 @@ allowed_external_types = [
 [lib]
 doc-scrape-examples = false
 
+[features]
+# Enables unstable Cargo config fields.
+unstable = []
+
 # Note: serde is public dependencies.
 [dependencies]
 serde = "1.0.165"

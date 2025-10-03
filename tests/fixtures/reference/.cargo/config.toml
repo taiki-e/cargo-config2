@@ -19,6 +19,7 @@ rustc-workspace-wrapper = "…" # run this wrapper instead of `rustc` for worksp
 rustdoc = "rustdoc" # the doc generator tool
 target = "triple" # build for the target triple (ignored by `cargo install`)
 target-dir = "target" # path of where to place all generated artifacts
+build-dir = "target" # path of where intermediate build artifacts will be stored
 rustflags = ["…", "…"] # custom flags to pass to all compiler invocations
 rustdocflags = ["…", "…"] # custom flags to pass to rustdoc
 incremental = true # whether or not to enable incremental compilation
