@@ -1,6 +1,6 @@
 cargo_config2::de::Config: 1840
 cargo_config2::de::BuildConfig: 600
-cargo_config2::de::TargetConfig: 208
+cargo_config2::de::TargetConfig: 232
 cargo_config2::de::DocConfig: 88
 cargo_config2::de::EnvConfigValue: 136
 cargo_config2::de::FutureIncompatReportConfig: 40

@@ -217,6 +217,14 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
         Some(["b", "bb", "c", "cc"].into())
     );
     assert_eq!(config.rustdocflags("x86_64-unknown-linux-gnu").unwrap(), Some(["d", "dd"].into()));
+    assert_eq!(
+        config.rustflags("thumbv8m.main-none-eabi").unwrap(),
+        Some(["-Z", "panic-abort-tests"].into())
+    );
+    assert_eq!(
+        config.rustflags("thumbv8m.base-none-eabi").unwrap(),
+        Some(["-Z", "panic-abort-tests"].into())
+    );
     // TODO: [target.<triple>.<links>]
 
     // resolved target config cannot be accessed by cfg(...)

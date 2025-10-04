@@ -145,6 +145,12 @@ rustdocflags = ["d", "dd"] # custom flags for `rustdoc`
 runner = "c" # wrapper to run executables
 rustflags = ["c", "cc"] # custom flags for `rustc`
 
+# https://github.com/taiki-e/cargo-llvm-cov/issues/446
+[target.thumbv8m.main-none-eabi]
+rustflags = ["-Z", "panic-abort-tests"]
+[target.'thumbv8m.base-none-eabi']
+rustflags = ["-Z", "panic-abort-tests"]
+
 # [target.<triple>.<links>] # `links` build script override
 # rustc-link-lib = ["foo"]
 # rustc-link-search = ["/path/to/foo"]
