@@ -213,7 +213,23 @@ impl Config {
         if target.starts_with("cfg(") {
             bail!("'{target}' is not valid target triple");
         }
-        let mut target_config = target_configs.get(target).cloned();
+        let mut target_config = None;
+        let mut rest_target_configs = target_configs;
+        let mut rest_target = target;
+        loop {
+            if let Some(config) = rest_target_configs.get(rest_target) {
+                target_config = Some(config.clone());
+                break;
+            }
+            if let Some((before, rest)) = rest_target.split_once('.') {
+                if let Some(config) = rest_target_configs.get(before) {
+                    rest_target_configs = &config.rest;
+                    rest_target = rest;
+                    continue;
+                }
+            }
+            break;
+        }
 
         let target_u_upper = target_u_upper(target);
         let mut target_linker = target_config.as_mut().and_then(|c| c.linker.take());
@@ -432,6 +448,8 @@ pub struct TargetConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rustdocflags: Option<Flags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
+    #[serde(flatten)]
+    pub(crate) rest: BTreeMap<String, TargetConfig>,
 }
 
 /// The `[doc]` table.
