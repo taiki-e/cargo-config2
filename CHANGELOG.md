@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Improve support for target names that contain ".". ([#38](https://github.com/taiki-e/cargo-config2/pull/38))
+
 ## [0.1.37] - 2025-10-03
 
 - Support `build.build-dir` [that stabilized in Cargo 1.91](https://github.com/rust-lang/cargo/pull/15833). ([#29](https://github.com/taiki-e/cargo-config2/pull/29), thanks @ranger-ross)
