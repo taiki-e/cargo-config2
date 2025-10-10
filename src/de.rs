@@ -25,6 +25,7 @@ pub use crate::value::{Definition, Value};
 use crate::{
     easy,
     error::{Context as _, Error, Result},
+    merge::Merge,
     resolve::{ResolveContext, TargetTripleRef},
     value::SetPath,
     walk,
@@ -214,21 +215,44 @@ impl Config {
             bail!("'{target}' is not valid target triple");
         }
         let mut target_config = None;
-        let mut rest_target_configs = target_configs;
-        let mut rest_target = target;
-        loop {
-            if let Some(config) = rest_target_configs.get(rest_target) {
-                target_config = Some(config.clone());
-                break;
-            }
-            if let Some((before, rest)) = rest_target.split_once('.') {
-                if let Some(config) = rest_target_configs.get(before) {
-                    rest_target_configs = &config.rest;
-                    rest_target = rest;
-                    continue;
+
+        if let Some(config) = target_configs.get(target) {
+            target_config = Some(TargetConfig {
+                linker: config.linker.clone(),
+                runner: config.runner.clone(),
+                rustflags: config.rustflags.clone(),
+                rustdocflags: config.rustdocflags.clone(),
+                rest: BTreeMap::new(), // skip cloning rest
+            });
+        } else if let Some((before, rest)) = target.split_once('.') {
+            if let Some(config) = target_configs.get(before) {
+                let mut rest_target_configs = &config.rest;
+                let mut rest_target = rest;
+                loop {
+                    if let Some(config) = rest_target_configs.get(rest_target) {
+                        if let TargetConfigRestValue::Config(config) = config {
+                            target_config = Some(TargetConfig {
+                                linker: config.linker.clone(),
+                                runner: config.runner.clone(),
+                                rustflags: config.rustflags.clone(),
+                                rustdocflags: config.rustdocflags.clone(),
+                                rest: BTreeMap::new(), // skip cloning rest
+                            });
+                        }
+                        break;
+                    }
+                    if let Some((before, rest)) = rest_target.split_once('.') {
+                        if let Some(TargetConfigRestValue::Config(config)) =
+                            rest_target_configs.get(before)
+                        {
+                            rest_target_configs = &config.rest;
+                            rest_target = rest;
+                            continue;
+                        }
+                    }
+                    break;
                 }
             }
-            break;
         }
 
         let target_u_upper = target_u_upper(target);
@@ -449,7 +473,34 @@ pub struct TargetConfig {
     pub rustdocflags: Option<Flags>,
     // TODO: links: https://doc.rust-lang.org/nightly/cargo/reference/config.html#targettriplelinks
     #[serde(flatten)]
-    pub(crate) rest: BTreeMap<String, TargetConfig>,
+    pub(crate) rest: BTreeMap<String, TargetConfigRestValue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum TargetConfigRestValue {
+    Config(TargetConfig),
+    Other(toml::Value),
+}
+
+impl Merge for TargetConfigRestValue {
+    fn merge(&mut self, low: Self, force: bool) -> Result<()> {
+        match (self, low) {
+            (Self::Config(this), Self::Config(low)) => this.merge(low, force),
+            // TODO
+            _ => Ok(()),
+        }
+    }
+}
+impl SetPath for TargetConfigRestValue {
+    fn set_path(&mut self, path: &Path) {
+        match self {
+            Self::Config(v) => {
+                v.set_path(path);
+            }
+            Self::Other(_) => {}
+        }
+    }
 }
 
 /// The `[doc]` table.

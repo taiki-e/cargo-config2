@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix ["invalid type: ../, expected struct TargetConfig" error when a custom field used in `target.<triple>` config](https://github.com/taiki-e/cargo-llvm-cov/issues/454).
+
 ## [0.1.38] - 2025-10-04
 
 - Improve support for target names that contain ".". ([#38](https://github.com/taiki-e/cargo-config2/pull/38))
