@@ -487,8 +487,11 @@ impl Merge for TargetConfigRestValue {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
         match (self, low) {
             (Self::Config(this), Self::Config(low)) => this.merge(low, force),
-            // TODO
-            _ => Ok(()),
+            (this @ Self::Other(_), low @ Self::Config(_)) => {
+                *this = low;
+                Ok(())
+            }
+            (_, Self::Other(_)) => Ok(()),
         }
     }
 }
