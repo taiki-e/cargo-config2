@@ -227,7 +227,7 @@ impl Config {
     ///
     /// ## Multi-target support
     ///
-    /// [Cargo 1.64+ supports multi-target builds](https://blog.rust-lang.org/2022/09/22/Rust-1.64.0.html#cargo-improvements-workspace-inheritance-and-multi-target-builds).
+    /// [Cargo 1.64+ supports multi-target builds](https://blog.rust-lang.org/2022/09/22/Rust-1.64.0#cargo-improvements-workspace-inheritance-and-multi-target-builds).
     ///
     /// Therefore, this function may return multiple targets if multiple targets
     /// are specified in `targets` or `build.target` config.

@@ -416,7 +416,7 @@ impl Hash for TargetTripleRef<'_> {
 }
 
 // This wrapper is needed to support pre-1.63 Rust.
-// In pre-1.63 Rust you can't use TargetTripleRef<'non_static> as an index of
+// In pre-1.63 Rust we cannot use TargetTripleRef<'non_static> as an index of
 // HashMap<TargetTripleRef<'static>, _> without this trick.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]

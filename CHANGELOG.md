@@ -14,7 +14,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.1.39] - 2025-10-10
 
-- Fix ["invalid type: ../, expected struct TargetConfig" error when a custom field used in `target.<triple>` config](https://github.com/taiki-e/cargo-llvm-cov/issues/454).
+- Fix ["invalid type: .., expected struct TargetConfig" error when a custom field used in `target.<triple>` config](https://github.com/taiki-e/cargo-llvm-cov/issues/454).
 
 ## [0.1.38] - 2025-10-04
 
