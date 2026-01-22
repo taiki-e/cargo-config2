@@ -62,13 +62,15 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::exhaustive_structs,
     clippy::impl_trait_in_params,
     // clippy::missing_inline_in_public_items,
-    // clippy::std_instead_of_alloc,
+    clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
 )]
 #![allow(clippy::must_use_candidate)]
 
 // Refs:
 // - https://doc.rust-lang.org/nightly/cargo/reference/config.html
+
+extern crate alloc;
 
 #[cfg(test)]
 #[path = "gen/tests/assert_impl.rs"]

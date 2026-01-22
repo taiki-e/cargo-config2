@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use alloc::borrow::Cow;
 use core::{
     cell::{OnceCell, RefCell},
     cmp,
@@ -8,7 +9,6 @@ use core::{
     str::FromStr,
 };
 use std::{
-    borrow::Cow,
     collections::{HashMap, HashSet},
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},

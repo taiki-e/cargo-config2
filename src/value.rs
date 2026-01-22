@@ -2,12 +2,9 @@
 
 // Based on https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/value.rs.
 
+use alloc::{borrow::Cow, collections::BTreeMap};
 use core::{fmt, mem, str::FromStr};
-use std::{
-    borrow::Cow,
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use serde_derive::{Deserialize, Serialize};
 

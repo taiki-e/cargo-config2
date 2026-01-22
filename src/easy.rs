@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use alloc::{borrow::Cow, collections::BTreeMap};
 use core::{cell::RefCell, fmt, ops};
 use std::{
-    borrow::Cow,
-    collections::BTreeMap,
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
     process::Command,

@@ -6,10 +6,9 @@
 #[path = "gen/de.rs"]
 mod generated;
 
+use alloc::{borrow::Cow, collections::BTreeMap};
 use core::{fmt, iter, slice, str::FromStr};
 use std::{
-    borrow::Cow,
-    collections::BTreeMap,
     ffi::OsStr,
     fs,
     path::{Path, PathBuf},

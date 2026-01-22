@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::collections::{BTreeMap, btree_map};
+use alloc::collections::{BTreeMap, btree_map};
 
 use crate::{
     Color, Frequency, When,

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use core::{fmt, str};
 use std::{
     ffi::OsStr,
-    fmt,
     process::{Command, ExitStatus, Output},
-    str,
 };
 
 use crate::error::{Context as _, Error, Result};

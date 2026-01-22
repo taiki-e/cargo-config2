@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::{ffi::OsString, fmt, io};
+use core::fmt;
+use std::{ffi::OsString, io};
 
 macro_rules! format_err {
     ($($tt:tt)*) => {
