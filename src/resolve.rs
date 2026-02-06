@@ -341,8 +341,13 @@ struct Cfg {
 
 impl Cfg {
     fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
-        let list =
-            rustc.args(["--print", "cfg", "--target", &*target.cli_target_string()]).read()?;
+        let target = &*target.cli_target_string();
+        if target.contains(['/', '\\'])
+            || Path::new(target).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+        {
+            rustc.args(["-Z", "unstable-options"]);
+        }
+        let list = rustc.args(["--print", "cfg", "--target", target]).read()?;
         Ok(Self::parse(&list))
     }
 

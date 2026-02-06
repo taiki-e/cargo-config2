@@ -308,6 +308,7 @@ fn de() {
     assert_eq!("", toml::to_string(&de::Config::default()).unwrap());
 }
 
+#[rustversion::attr(not(nightly), ignore)]
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
 fn custom_target() {
