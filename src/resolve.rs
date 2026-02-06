@@ -719,7 +719,6 @@ mod tests {
         assert!(t.spec_path.is_none());
     }
 
-    #[rustversion::attr(not(nightly), ignore)]
     #[test]
     #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
     fn parse_cfg_list() {
@@ -731,7 +730,12 @@ mod tests {
         for spec_path in
             fs::read_dir(fixtures_dir().join("target-specs")).unwrap().map(|e| e.unwrap().path())
         {
-            let _cfg = Cfg::from_rustc(cmd!("rustc"), &spec_path.to_str().unwrap().into()).unwrap();
+            let res = Cfg::from_rustc(cmd!("rustc"), &spec_path.to_str().unwrap().into());
+            if rustversion::cfg!(nightly) {
+                let _cfg = res.unwrap();
+            } else {
+                let _e = res.unwrap_err();
+            }
         }
     }
 
