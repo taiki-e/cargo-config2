@@ -14,6 +14,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 - Fix error with custom targets in [recent nightly](https://github.com/rust-lang/rust/pull/150151).
 
+- Enable [release immutability](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases).
+
 ## [0.1.39] - 2025-10-10
 
 - Fix ["invalid type: .., expected struct TargetConfig" error when a custom field used in `target.<triple>` config](https://github.com/taiki-e/cargo-llvm-cov/issues/454).
