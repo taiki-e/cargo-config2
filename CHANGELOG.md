@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.40] - 2026-02-06
+
 - Fix error with custom targets in [recent nightly](https://github.com/rust-lang/rust/pull/150151).
 
 - Enable [release immutability](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases).
@@ -195,7 +197,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.39...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.40...HEAD
+[0.1.40]: https://github.com/taiki-e/cargo-config2/compare/v0.1.39...v0.1.40
 [0.1.39]: https://github.com/taiki-e/cargo-config2/compare/v0.1.38...v0.1.39
 [0.1.38]: https://github.com/taiki-e/cargo-config2/compare/v0.1.37...v0.1.38
 [0.1.37]: https://github.com/taiki-e/cargo-config2/compare/v0.1.36...v0.1.37
