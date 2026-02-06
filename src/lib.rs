@@ -47,10 +47,12 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 #![no_std]
 #![doc(test(
     no_crate_inject,
-    attr(
-        deny(warnings, rust_2018_idioms, single_use_lifetimes),
-        allow(dead_code, unused_variables)
-    )
+    attr(allow(
+        dead_code,
+        unused_variables,
+        clippy::undocumented_unsafe_blocks,
+        clippy::unused_trait_names,
+    ))
 ))]
 // Windows needs unsafe code until MSRV become Rust 1.85: https://github.com/rust-lang/rust/pull/132515
 #![cfg_attr(not(windows), forbid(unsafe_code))]
