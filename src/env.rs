@@ -3,6 +3,8 @@
 // Environment variables are prefer over config values.
 // https://doc.rust-lang.org/nightly/cargo/reference/config.html#environment-variables
 
+use alloc::borrow::ToOwned as _;
+
 use crate::{
     de::{
         BuildConfig, CargoNewConfig, Config, CredentialProvider, DocConfig, Flags,
@@ -441,6 +443,8 @@ impl ApplyEnv for TermProgress {
 
 #[cfg(test)]
 mod tests {
+    use alloc::borrow::ToOwned as _;
+
     use super::ApplyEnv as _;
     use crate::{ResolveOptions, value::Value};
 

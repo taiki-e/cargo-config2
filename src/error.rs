@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use alloc::{
+    boxed::Box,
+    format,
+    string::{String, ToString as _},
+};
 use core::fmt;
 use std::{ffi::OsString, io};
 
 macro_rules! format_err {
     ($($tt:tt)*) => {
-        crate::Error::new(format!($($tt)*))
+        crate::Error::new(alloc::format!($($tt)*))
     };
 }
 

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use alloc::borrow::ToOwned as _;
+
 use crate::cfg_expr::{
     error::{ParseError, Reason},
     expr::{Expression, Predicate as P},

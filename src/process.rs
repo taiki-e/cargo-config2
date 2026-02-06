@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use alloc::{
+    format,
+    string::{String, ToString as _},
+};
 use core::{fmt, str};
 use std::{
     ffi::OsStr,

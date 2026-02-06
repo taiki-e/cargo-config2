@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::collections::{BTreeMap, btree_map};
+use alloc::{
+    collections::{BTreeMap, btree_map},
+    format,
+    string::String,
+    vec::Vec,
+};
 
 use crate::{
     Color, Frequency, When,

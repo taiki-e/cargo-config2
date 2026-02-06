@@ -3,6 +3,7 @@
 pub(crate) mod lexer;
 mod parser;
 
+use alloc::{string::String, vec::Vec};
 use core::ops::Range;
 
 /// A predicate function, used to combine 1 or more predicates

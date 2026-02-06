@@ -2,7 +2,12 @@
 
 // Based on https://github.com/rust-lang/cargo/blob/0.80.0/src/cargo/util/context/value.rs.
 
-use alloc::{borrow::Cow, collections::BTreeMap};
+use alloc::{
+    borrow::{Cow, ToOwned as _},
+    collections::BTreeMap,
+    string::String,
+    vec::Vec,
+};
 use core::{fmt, mem, str::FromStr};
 use std::path::{Path, PathBuf};
 

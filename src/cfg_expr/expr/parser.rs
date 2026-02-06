@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use alloc::{borrow::ToOwned as _, vec, vec::Vec};
+
 use crate::cfg_expr::{
     error::{ParseError, Reason},
     expr::{

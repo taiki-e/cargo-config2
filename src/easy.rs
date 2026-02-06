@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::{borrow::Cow, collections::BTreeMap};
+use alloc::{
+    borrow::{Cow, ToOwned as _},
+    collections::BTreeMap,
+    string::String,
+    vec,
+    vec::Vec,
+};
 use core::{cell::RefCell, fmt, ops};
 use std::{
     ffi::{OsStr, OsString},

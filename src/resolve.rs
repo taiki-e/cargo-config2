@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::borrow::Cow;
+use alloc::{
+    borrow::{Cow, ToOwned as _},
+    format,
+    string::String,
+};
 use core::{
     cell::{OnceCell, RefCell},
     cmp,
@@ -663,6 +667,7 @@ mod tests {
     use std::{
         fmt::Write as _,
         io::{self, Write as _},
+        vec,
     };
 
     use fs_err as fs;
@@ -910,7 +915,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn env_non_utf8() {
-        use std::{ffi::OsStr, os::unix::prelude::OsStrExt as _};
+        use std::{ffi::OsStr, os::unix::prelude::OsStrExt as _, string::ToString as _};
 
         let cx = &ResolveOptions::default()
             .env([("CARGO_ALIAS_a", OsStr::from_bytes(&[b'f', b'o', 0x80, b'o']))])

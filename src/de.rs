@@ -6,7 +6,14 @@
 #[path = "gen/de.rs"]
 mod generated;
 
-use alloc::{borrow::Cow, collections::BTreeMap};
+use alloc::{
+    borrow::{Cow, ToOwned as _},
+    collections::BTreeMap,
+    format,
+    string::String,
+    vec,
+    vec::Vec,
+};
 use core::{fmt, iter, slice, str::FromStr};
 use std::{
     ffi::OsStr,

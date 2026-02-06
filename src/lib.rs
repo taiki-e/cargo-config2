@@ -44,6 +44,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 <!-- tidy:sync-markdown-to-rustdoc:end -->
 */
 
+#![no_std]
 #![doc(test(
     no_crate_inject,
     attr(
@@ -71,6 +72,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
 // - https://doc.rust-lang.org/nightly/cargo/reference/config.html
 
 extern crate alloc;
+extern crate std;
 
 #[cfg(test)]
 #[path = "gen/tests/assert_impl.rs"]
