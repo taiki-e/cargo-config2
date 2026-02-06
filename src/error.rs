@@ -123,7 +123,7 @@ impl From<io::Error> for Error {
         Self(ErrorKind::Io(e))
     }
 }
-// TODO: this is no longer used in our code; remove in the next breaking release
+// TODO(semver): this is no longer used in our code; remove in the next breaking release
 impl From<std::env::VarError> for Error {
     fn from(e: std::env::VarError) -> Self {
         Self(ErrorKind::Other(e.to_string().into_boxed_str()))

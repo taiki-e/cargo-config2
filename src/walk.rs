@@ -162,7 +162,7 @@ impl<P: ops::Deref<Target = Path>> Iterator for WalkInner<'_, P> {
     }
 }
 
-// TODO: Remove in next breaking release? (if no one using this)
+// TODO(semver): Remove in next breaking release? (if no one using this)
 /// An iterator over Cargo configuration file paths.
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
