@@ -56,7 +56,7 @@ impl Expression {
                 };
 
                 return Err(ParseError {
-                    original: original.to_owned(),
+                    original: original.into(),
                     span: $span,
                     reason: Reason::Unexpected(&expected),
                 });
@@ -153,7 +153,7 @@ impl Expression {
                                 // so ensure we have exactly 1
                                 if num_predicates != 1 {
                                     return Err(ParseError {
-                                        original: original.to_owned(),
+                                        original: original.into(),
                                         span: top.span.start..lt.span.end,
                                         reason: Reason::InvalidNot(num_predicates),
                                     });
@@ -182,7 +182,7 @@ impl Expression {
 
                     // We didn't have an opening parentheses if we get here
                     return Err(ParseError {
-                        original: original.to_owned(),
+                        original: original.into(),
                         span: lt.span,
                         reason: Reason::UnopenedParens,
                     });
@@ -220,7 +220,7 @@ impl Expression {
 
         if let Some(Token::Equals) = last_token {
             return Err(ParseError {
-                original: original.to_owned(),
+                original: original.into(),
                 span: original.len()..original.len(),
                 reason: Reason::Unexpected(&["\"<value>\""]),
             });
@@ -230,13 +230,13 @@ impl Expression {
         if let Some(top) = func_stack.pop() {
             if top.parens_index == 0 {
                 Err(ParseError {
-                    original: original.to_owned(),
+                    original: original.into(),
                     span: top.span,
                     reason: Reason::Unexpected(&["("]),
                 })
             } else {
                 Err(ParseError {
-                    original: original.to_owned(),
+                    original: original.into(),
                     span: top.parens_index..original.len(),
                     reason: Reason::UnclosedParens,
                 })
@@ -252,13 +252,13 @@ impl Expression {
 
             if expr_queue.is_empty() {
                 Err(ParseError {
-                    original: original.to_owned(),
+                    original: original.into(),
                     span: 0..original.len(),
                     reason: Reason::Empty,
                 })
             } else if root_predicate_count > 1 {
                 Err(ParseError {
-                    original: original.to_owned(),
+                    original: original.into(),
                     span: 0..original.len(),
                     reason: Reason::MultipleRootPredicates,
                 })

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::borrow::ToOwned as _;
 use core::fmt;
 
 use crate::cfg_expr::error::{ParseError, Reason};
@@ -115,7 +114,7 @@ impl<'a> Iterator for Lexer<'a> {
                     match self.inner[1..].find('"') {
                         Some(ind) => Some(Ok(Token::Value(&self.inner[1..=ind]))),
                         None => Some(Err(ParseError {
-                            original: self.original.to_owned(),
+                            original: self.original.into(),
                             span: self.offset..self.original.len(),
                             reason: Reason::UnclosedQuotes,
                         })),
@@ -134,7 +133,7 @@ impl<'a> Iterator for Lexer<'a> {
                     }
                 } else {
                     Some(Err(ParseError {
-                        original: self.original.to_owned(),
+                        original: self.original.into(),
                         span: self.offset..self.offset + 1,
                         reason: Reason::Unexpected(&["<key>", "all", "any", "not"]),
                     }))

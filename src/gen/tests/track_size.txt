@@ -44,7 +44,7 @@ cargo_config2::easy::TermProgressConfig: 12
 cargo_config2::easy::Flags: 24
 cargo_config2::easy::PathAndArgs: 48
 cargo_config2::easy::StringList: 24
-cargo_config2::error::Error: 64
+cargo_config2::error::Error: 56
 cargo_config2::resolve::ResolveOptions: 168
 cargo_config2::resolve::ResolveContext: 288
 cargo_config2::resolve::TargetTripleRef<'_>: 48

@@ -117,7 +117,7 @@ impl From<crate::cfg_expr::error::ParseError> for ErrorKind {
 // Implementing `From<StdErrorType>` should also be avoided whenever possible,
 // as it would be a breaking change to remove the implementation if the
 // conversion is no longer needed due to changes in the internal implementation.
-// TODO: consider removing them in the next breaking release
+// TODO(semver): consider removing them in the next breaking release
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
         Self(ErrorKind::Io(e))

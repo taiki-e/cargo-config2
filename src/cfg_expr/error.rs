@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::string::String;
+use alloc::boxed::Box;
 use core::fmt;
 
 /// An error related to parsing of a cfg expression
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct ParseError {
     /// The string that was parsed
-    pub(crate) original: String,
+    pub(crate) original: Box<str>,
     /// The range of characters in the original string that result
     /// in this error
     pub(crate) span: core::ops::Range<usize>,

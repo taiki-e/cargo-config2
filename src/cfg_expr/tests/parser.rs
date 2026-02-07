@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use alloc::borrow::ToOwned as _;
-
 use crate::cfg_expr::{
     error::{ParseError, Reason},
     expr::{Expression, Predicate as P},
@@ -30,8 +28,7 @@ macro_rules! err {
     ($text:expr => $reason:ident @ $range:expr) => {
         let act_err = Expression::parse($text).unwrap_err();
 
-        let expected =
-            ParseError { original: $text.to_owned(), span: $range, reason: Reason::$reason };
+        let expected = ParseError { original: $text.into(), span: $range, reason: Reason::$reason };
 
         assert_eq!(expected, act_err);
     };
@@ -40,7 +37,7 @@ macro_rules! err {
         let act_err = Expression::parse($text).unwrap_err();
 
         let expected = ParseError {
-            original: $text.to_owned(),
+            original: $text.into(),
             span: $range,
             reason: Reason::Unexpected($unexpected),
         };
@@ -128,19 +125,19 @@ fn fails_invalid_fns() {
 #[test]
 fn ensures_not_has_one_predicate() {
     assert_eq!(Expression::parse("not()").unwrap_err(), ParseError {
-        original: "not()".to_owned(),
+        original: "not()".into(),
         span: 0..5,
         reason: Reason::InvalidNot(0)
     });
 
     assert_eq!(Expression::parse("not(key_one, key_two)").unwrap_err(), ParseError {
-        original: "not(key_one, key_two)".to_owned(),
+        original: "not(key_one, key_two)".into(),
         span: 0..21,
         reason: Reason::InvalidNot(2),
     });
 
     assert_eq!(Expression::parse("any(not(not(key_one, key_two)))").unwrap_err(), ParseError {
-        original: "any(not(not(key_one, key_two)))".to_owned(),
+        original: "any(not(not(key_one, key_two)))".into(),
         span: 8..29,
         reason: Reason::InvalidNot(2),
     });
