@@ -346,9 +346,7 @@ struct Cfg {
 impl Cfg {
     fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
         let target = &*target.cli_target_string();
-        if target.contains(['/', '\\'])
-            || Path::new(target).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
-        {
+        if is_spec_path(target) {
             rustc.args(["-Z", "unstable-options"]);
         }
         let list = rustc.args(["--print", "cfg", "--target", target]).read()?;
@@ -437,9 +435,8 @@ impl core::borrow::Borrow<OsStr> for TargetTripleBorrow<'_> {
 }
 
 fn is_spec_path(triple_or_spec_path: &str) -> bool {
-    Path::new(triple_or_spec_path).extension() == Some(OsStr::new("json"))
-        || triple_or_spec_path.contains('/')
-        || triple_or_spec_path.contains('\\')
+    Path::new(triple_or_spec_path).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+        || triple_or_spec_path.contains(['/', '\\'])
 }
 fn resolve_spec_path(
     spec_path: &str,

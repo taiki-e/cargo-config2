@@ -34,10 +34,7 @@ impl Value<String> {
     // https://doc.rust-lang.org/nightly/cargo/reference/config.html#config-relative-paths
     pub(crate) fn resolve_as_program_path(&self, current_dir: &Path) -> Cow<'_, Path> {
         match &self.definition {
-            Some(def)
-                if !Path::new(&self.val).is_absolute()
-                    && (self.val.contains('/') || self.val.contains('\\')) =>
-            {
+            Some(def) if !Path::new(&self.val).is_absolute() && self.val.contains(['/', '\\']) => {
                 def.root(current_dir).join(&self.val).into()
             }
             _ => Path::new(&self.val).into(),
