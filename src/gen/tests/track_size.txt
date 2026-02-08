@@ -25,7 +25,7 @@ cargo_config2::de::ConfigRelativePath: 56
 cargo_config2::de::PathAndArgs: 88
 cargo_config2::de::StringList: 32
 cargo_config2::de::StringOrArray: 56
-cargo_config2::easy::Config: 1088
+cargo_config2::easy::Config: 1080
 cargo_config2::easy::BuildConfig: 320
 cargo_config2::easy::TargetConfig: 120
 cargo_config2::easy::DocConfig: 48
@@ -45,8 +45,8 @@ cargo_config2::easy::Flags: 24
 cargo_config2::easy::PathAndArgs: 48
 cargo_config2::easy::StringList: 24
 cargo_config2::error::Error: 56
-cargo_config2::resolve::ResolveOptions: 168
-cargo_config2::resolve::ResolveContext: 288
+cargo_config2::resolve::ResolveOptions: 160
+cargo_config2::resolve::ResolveContext: 280
 cargo_config2::resolve::TargetTripleRef<'_>: 48
 cargo_config2::resolve::RustcVersion: 20
 cargo_config2::resolve::CargoVersion: 16

@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Implement `From<&'a Box<str>>` for `TargetTripleRef<'a>`,  `From<Box<str>>` for `TargetTripleRef<'static>`.
+
 ## [0.1.40] - 2026-02-06
 
 - Fix error with custom targets in [recent nightly](https://github.com/rust-lang/rust/pull/150151).

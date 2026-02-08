@@ -2,6 +2,7 @@
 
 use alloc::{
     borrow::{Cow, ToOwned as _},
+    boxed::Box,
     format,
     string::String,
 };
@@ -42,7 +43,7 @@ pub struct ResolveOptions {
     cargo: Option<OsString>,
     #[allow(clippy::option_option)]
     cargo_home: Option<Option<PathBuf>>,
-    host_triple: Option<String>,
+    host_triple: Option<Box<str>>,
 }
 
 impl ResolveOptions {
@@ -83,7 +84,7 @@ impl ResolveOptions {
     ///
     /// Parse the version output of `cargo` specified by [`Self::cargo`].
     pub fn host_triple<S: Into<String>>(mut self, triple: S) -> Self {
-        self.host_triple = Some(triple.into());
+        self.host_triple = Some(triple.into().into_boxed_str());
         self
     }
     /// Sets the specified key-values as environment variables to be read during
@@ -157,7 +158,7 @@ pub struct ResolveContext {
     rustc: OnceCell<easy::PathAndArgs>,
     pub(crate) cargo: OsString,
     cargo_home: OnceCell<Option<PathBuf>>,
-    host_triple: OnceCell<String>,
+    host_triple: OnceCell<Box<str>>,
     rustc_version: OnceCell<RustcVersion>,
     cargo_version: OnceCell<CargoVersion>,
     cfg: RefCell<CfgMap>,
@@ -339,8 +340,8 @@ impl CfgMap {
 
 #[derive(Debug, Clone)]
 struct Cfg {
-    flags: HashSet<String>,
-    key_values: HashMap<String, HashSet<String>>,
+    flags: HashSet<Box<str>>,
+    key_values: HashMap<Box<str>, HashSet<Box<str>>>,
 }
 
 impl Cfg {
@@ -355,7 +356,7 @@ impl Cfg {
 
     fn parse(list: &str) -> Self {
         let mut flags = HashSet::default();
-        let mut key_values = HashMap::<String, HashSet<String>>::default();
+        let mut key_values = HashMap::<Box<str>, HashSet<Box<str>>>::default();
 
         for line in list.lines() {
             let line = line.trim();
@@ -364,7 +365,7 @@ impl Cfg {
             }
             match line.split_once('=') {
                 None => {
-                    flags.insert(line.to_owned());
+                    flags.insert(line.into());
                 }
                 Some((name, value)) => {
                     if value.len() < 2 || !value.starts_with('"') || !value.ends_with('"') {
@@ -378,11 +379,11 @@ impl Cfg {
                         continue;
                     }
                     if let Some(values) = key_values.get_mut(name) {
-                        values.insert(value.to_owned());
+                        values.insert(value.into());
                     } else {
                         let mut values = HashSet::default();
-                        values.insert(value.to_owned());
-                        key_values.insert(name.to_owned(), values);
+                        values.insert(value.into());
+                        key_values.insert(name.into(), values);
                     }
                 }
             }
@@ -540,6 +541,17 @@ impl<'a> From<&'a String> for TargetTripleRef<'a> {
         Self::new(value.into(), None, None)
     }
 }
+impl From<Box<str>> for TargetTripleRef<'static> {
+    fn from(value: Box<str>) -> Self {
+        Self::new(value.into_string().into(), None, None)
+    }
+}
+impl<'a> From<&'a Box<str>> for TargetTripleRef<'a> {
+    fn from(value: &'a Box<str>) -> Self {
+        let value: &str = value;
+        Self::new(value.into(), None, None)
+    }
+}
 impl<'a> From<&'a str> for TargetTripleRef<'a> {
     fn from(value: &'a str) -> Self {
         Self::new(value.into(), None, None)
@@ -638,12 +650,12 @@ fn cargo_version((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<Ca
 }
 
 /// Gets host triple of the given `rustc` or `cargo`.
-fn host_triple((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<String> {
+fn host_triple((verbose_version, cmd): &(String, ProcessBuilder)) -> Result<Box<str>> {
     let host = verbose_version
         .lines()
         .find_map(|line| line.strip_prefix("host: "))
         .ok_or_else(|| format_err!("unexpected version output from {cmd}: {verbose_version}"))?
-        .to_owned();
+        .into();
     Ok(host)
 }
 
