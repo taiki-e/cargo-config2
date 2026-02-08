@@ -48,5 +48,5 @@
       "dictionaries": ["bash", "cpp-refined", "rust"]
     }
   ],
-  "ignorePaths": ["tests/fixtures/*"]
+  "ignorePaths": ["tests/fixtures/*", "tools/gen/cfg/*"]
 }

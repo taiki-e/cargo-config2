@@ -18,6 +18,7 @@ use serde::ser::{Serialize, Serializer};
 use serde_derive::Serialize;
 
 use crate::{
+    cfg,
     de::{
         self, Color, Frequency, RegistriesProtocol, VersionControlSoftware, When, split_encoded,
         split_space_separated,
@@ -396,6 +397,74 @@ impl Config {
         let target = target.into();
         self.init_target_config(&target)?;
         Ok(self.target.borrow()[target.cli_target()].rustdocflags.clone())
+    }
+    /// Returns the value(s) of the given cfg for the given target.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cargo_config2::{Config, cfg};
+    /// # if cfg!(miri) { return Ok(()) } // Miri doesn't support pipe2 (inside std::process::Command::output)
+    ///
+    /// let config = Config::load()?;
+    ///
+    /// let target = "x86_64-unknown-linux-gnu";
+    ///
+    /// // cfg(target_abi)
+    /// let target_abi: Option<cfg::TargetAbi> = config.cfg::<cfg::TargetAbi, _>(target).unwrap();
+    /// assert_eq!(target_abi, Some(cfg::TargetAbi::from("")));
+    /// assert_eq!(target_abi.unwrap(), "");
+    ///
+    /// // cfg(target_arch)
+    /// let target_arch: cfg::TargetArch = config.cfg::<cfg::TargetArch, _>(target).unwrap();
+    /// assert_eq!(target_arch, cfg::TargetArch::x86_64);
+    /// assert_eq!(target_arch, "x86_64");
+    ///
+    /// // cfg(target_endian)
+    /// let target_endian: cfg::TargetEndian = config.cfg::<cfg::TargetEndian, _>(target).unwrap();
+    /// assert_eq!(target_endian, cfg::TargetEndian::little);
+    /// assert_eq!(target_endian, "little");
+    ///
+    /// // cfg(target_env)
+    /// let target_env: Option<cfg::TargetEnv> = config.cfg::<cfg::TargetEnv, _>(target).unwrap();
+    /// assert_eq!(target_env, Some(cfg::TargetEnv::gnu));
+    /// assert_eq!(target_env.unwrap(), "gnu");
+    ///
+    /// // cfg(target_family)
+    /// let target_family: Vec<cfg::TargetFamily> = config.cfg::<cfg::TargetFamily, _>(target).unwrap();
+    /// assert_eq!(target_family, vec![cfg::TargetFamily::unix]);
+    ///
+    /// // cfg(target_has_atomic)
+    /// let target_has_atomic: Vec<cfg::TargetHasAtomic> =
+    ///     config.cfg::<cfg::TargetHasAtomic, _>(target).unwrap();
+    /// assert!(target_has_atomic.iter().any(|v| v == "ptr"));
+    /// assert!(target_has_atomic.iter().any(|v| v == 64));
+    /// assert!(!target_has_atomic.iter().any(|v| v == 128));
+    ///
+    /// // cfg(target_os)
+    /// let target_os: cfg::TargetOs = config.cfg::<cfg::TargetOs, _>(target).unwrap();
+    /// assert_eq!(target_os, cfg::TargetOs::linux);
+    /// assert_eq!(target_os, "linux");
+    ///
+    /// // cfg(target_pointer_width)
+    /// let target_pointer_width: cfg::TargetPointerWidth =
+    ///     config.cfg::<cfg::TargetPointerWidth, _>(target).unwrap();
+    /// assert_eq!(target_pointer_width, 64);
+    ///
+    /// // cfg(target_vendor)
+    /// let target_vendor: Option<cfg::TargetVendor> =
+    ///     config.cfg::<cfg::TargetVendor, _>(target).unwrap();
+    /// assert_eq!(target_vendor, Some(cfg::TargetVendor::unknown));
+    /// assert_eq!(target_vendor.unwrap(), "unknown");
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
+    pub fn cfg<'a, C: cfg::Cfg, T: Into<TargetTripleRef<'a>>>(
+        &self,
+        target: T,
+    ) -> Result<C::Output> {
+        let target = target.into();
+        let mut cfg = self.cx.cfg.borrow_mut();
+        cfg.get_or_init(&target, &|| self.cx.rustc(&self.build).into())?.get::<C>()
     }
 
     /// Returns the path and args that calls `rustc`.

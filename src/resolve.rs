@@ -3,6 +3,7 @@
 use alloc::{
     borrow::{Cow, ToOwned as _},
     boxed::Box,
+    collections::BTreeSet,
     format,
     string::String,
 };
@@ -11,7 +12,7 @@ use core::{
     cmp,
     hash::Hash,
     iter,
-    str::FromStr,
+    str::{self, FromStr},
 };
 use std::{
     collections::{HashMap, HashSet},
@@ -26,7 +27,7 @@ use serde::{
 use serde_derive::{Deserialize, Serialize};
 
 use crate::{
-    PathAndArgs,
+    PathAndArgs, cfg,
     cfg_expr::expr::{Expression, Predicate},
     easy,
     error::{Context as _, Error, Result},
@@ -161,7 +162,7 @@ pub struct ResolveContext {
     host_triple: OnceCell<Box<str>>,
     rustc_version: OnceCell<RustcVersion>,
     cargo_version: OnceCell<CargoVersion>,
-    cfg: RefCell<CfgMap>,
+    pub(crate) cfg: RefCell<CfgMap>,
     pub(crate) current_dir: PathBuf,
 }
 
@@ -305,20 +306,24 @@ pub(crate) struct CfgMap {
 }
 
 impl CfgMap {
+    pub(crate) fn get_or_init<'a>(
+        &'a mut self,
+        target: &TargetTripleRef<'_>,
+        rustc: &dyn Fn() -> ProcessBuilder,
+    ) -> Result<&'a Cfg> {
+        if !self.map.contains_key(target.cli_target()) {
+            let cfg = Cfg::from_rustc(rustc(), target)?;
+            self.map.insert(TargetTripleBorrow(target.clone().into_owned()), cfg);
+        }
+        Ok(&self.map[target.cli_target()])
+    }
     pub(crate) fn eval_cfg(
         &mut self,
         expr: &Expression,
         target: &TargetTripleRef<'_>,
         rustc: &dyn Fn() -> ProcessBuilder,
     ) -> Result<bool> {
-        let cfg = match self.map.get(target.cli_target()) {
-            Some(cfg) => cfg,
-            None => {
-                let cfg = Cfg::from_rustc(rustc(), target)?;
-                self.map.insert(TargetTripleBorrow(target.clone().into_owned()), cfg);
-                &self.map[target.cli_target()]
-            }
-        };
+        let cfg = self.get_or_init(target, rustc)?;
         Ok(expr.eval(|pred| match pred {
             Predicate::Flag(flag) => {
                 match *flag {
@@ -339,24 +344,41 @@ impl CfgMap {
 }
 
 #[derive(Debug, Clone)]
-struct Cfg {
+pub(crate) struct Cfg {
     flags: HashSet<Box<str>>,
-    key_values: HashMap<Box<str>, HashSet<Box<str>>>,
+    pub(crate) key_values: HashMap<Box<str>, BTreeSet<Box<str>>>,
 }
 
 impl Cfg {
+    pub(crate) fn get<C: cfg::Cfg>(&self) -> Result<C::Output> {
+        let Some(values) = self.key_values.get(C::KEY) else {
+            return C::default_output().with_context(|| {
+                format!(
+                    "{} cfg should be always available in cfg list from rustc --print cfg",
+                    C::KEY
+                )
+            });
+        };
+        if values.len() > C::MAX {
+            bail!("too many {} cfg", C::KEY)
+        }
+        C::from_values(values.iter())
+            .with_context(|| format!("failed to parse value of {} cfg", C::KEY))
+    }
+
     fn from_rustc(mut rustc: ProcessBuilder, target: &TargetTripleRef<'_>) -> Result<Self> {
         let target = &*target.cli_target_string();
         if is_spec_path(target) {
             rustc.args(["-Z", "unstable-options"]);
         }
+        // TODO: pass rustflags?
         let list = rustc.args(["--print", "cfg", "--target", target]).read()?;
         Ok(Self::parse(&list))
     }
 
     fn parse(list: &str) -> Self {
         let mut flags = HashSet::default();
-        let mut key_values = HashMap::<Box<str>, HashSet<Box<str>>>::default();
+        let mut key_values = HashMap::<Box<str>, BTreeSet<Box<str>>>::default();
 
         for line in list.lines() {
             let line = line.trim();
@@ -375,13 +397,10 @@ impl Cfg {
                         continue;
                     }
                     let value = &value[1..value.len() - 1];
-                    if value.is_empty() {
-                        continue;
-                    }
                     if let Some(values) = key_values.get_mut(name) {
                         values.insert(value.into());
                     } else {
-                        let mut values = HashSet::default();
+                        let mut values = BTreeSet::default();
                         values.insert(value.into());
                         key_values.insert(name.into(), values);
                     }
@@ -674,14 +693,17 @@ fn rustc_path(cargo: &OsStr) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use std::{
+        eprintln,
         fmt::Write as _,
         io::{self, Write as _},
         vec,
+        vec::Vec,
     };
 
     use fs_err as fs;
 
     use super::*;
+    use crate::cfg;
 
     fn fixtures_dir() -> &'static Path {
         Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures"))
@@ -728,12 +750,113 @@ mod tests {
         assert!(t.spec_path.is_none());
     }
 
+    fn check_cfg(cfg: &Cfg) {
+        let target_abi: Option<cfg::TargetAbi> = cfg.get::<cfg::TargetAbi>().unwrap();
+        if let Some(target_abi) = target_abi {
+            assert_eq!(target_abi, target_abi.as_str());
+            assert_eq!(target_abi.as_str(), target_abi);
+            assert_eq!(target_abi, target_abi.as_str().parse::<cfg::TargetAbi>().unwrap());
+            assert_eq!(target_abi, cfg::TargetAbi::from(target_abi.as_str()));
+            #[allow(deprecated)]
+            let other = cfg::TargetAbi::__Other(target_abi.as_str().into());
+            assert_eq!(target_abi, other);
+            assert_eq!(other, target_abi);
+        }
+        let target_arch: cfg::TargetArch = cfg.get::<cfg::TargetArch>().unwrap();
+        assert_eq!(target_arch, target_arch.as_str());
+        assert_eq!(target_arch.as_str(), target_arch);
+        assert_eq!(target_arch, target_arch.as_str().parse::<cfg::TargetArch>().unwrap());
+        assert_eq!(target_arch, cfg::TargetArch::from(target_arch.as_str()));
+        #[allow(deprecated)]
+        let other = cfg::TargetArch::__Other(target_arch.as_str().into());
+        assert_eq!(target_arch, other);
+        assert_eq!(other, target_arch);
+        let target_endian: cfg::TargetEndian = cfg.get::<cfg::TargetEndian>().unwrap();
+        assert_eq!(target_endian, target_endian.as_str());
+        assert_eq!(target_endian.as_str(), target_endian);
+        assert_eq!(target_endian, target_endian.as_str().parse::<cfg::TargetEndian>().unwrap());
+        let target_env: Option<cfg::TargetEnv> = cfg.get::<cfg::TargetEnv>().unwrap();
+        if let Some(target_env) = target_env {
+            assert_eq!(target_env, target_env.as_str());
+            assert_eq!(target_env.as_str(), target_env);
+            assert_eq!(target_env, target_env.as_str().parse::<cfg::TargetEnv>().unwrap());
+            assert_eq!(target_env, cfg::TargetEnv::from(target_env.as_str()));
+            #[allow(deprecated)]
+            let other = cfg::TargetEnv::__Other(target_env.as_str().into());
+            assert_eq!(target_env, other);
+            assert_eq!(other, target_env);
+        }
+        let target_family: Vec<cfg::TargetFamily> = cfg.get::<cfg::TargetFamily>().unwrap();
+        for target_family in target_family {
+            assert_eq!(target_family, target_family.as_str());
+            assert_eq!(target_family.as_str(), target_family);
+            assert_eq!(target_family, target_family.as_str().parse::<cfg::TargetFamily>().unwrap());
+            assert_eq!(target_family, cfg::TargetFamily::from(target_family.as_str()));
+            #[allow(deprecated)]
+            let other = cfg::TargetFamily::__Other(target_family.as_str().into());
+            assert_eq!(target_family, other);
+            assert_eq!(other, target_family);
+        }
+        let target_has_atomic: Vec<cfg::TargetHasAtomic> =
+            cfg.get::<cfg::TargetHasAtomic>().unwrap();
+        for target_has_atomic in target_has_atomic {
+            assert_eq!(target_has_atomic, target_has_atomic.as_str());
+            assert_eq!(target_has_atomic.as_str(), target_has_atomic);
+            assert_eq!(
+                target_has_atomic,
+                target_has_atomic.as_str().parse::<cfg::TargetHasAtomic>().unwrap()
+            );
+            assert!(
+                target_has_atomic == 8
+                    || target_has_atomic == 16
+                    || target_has_atomic == 32
+                    || target_has_atomic == 64
+                    || target_has_atomic == 128
+                    || target_has_atomic == "ptr",
+                "{target_has_atomic:?}"
+            );
+        }
+        let target_os: cfg::TargetOs = cfg.get::<cfg::TargetOs>().unwrap();
+        assert_eq!(target_os, target_os.as_str());
+        assert_eq!(target_os.as_str(), target_os);
+        assert_eq!(target_os, target_os.as_str().parse::<cfg::TargetOs>().unwrap());
+        assert_eq!(target_os, cfg::TargetOs::from(target_os.as_str()));
+        #[allow(deprecated)]
+        let other = cfg::TargetOs::__Other(target_os.as_str().into());
+        assert_eq!(target_os, other);
+        assert_eq!(other, target_os);
+        let target_pointer_width: cfg::TargetPointerWidth =
+            cfg.get::<cfg::TargetPointerWidth>().unwrap();
+        assert_eq!(target_pointer_width, target_pointer_width.as_str());
+        assert_eq!(target_pointer_width.as_str(), target_pointer_width);
+        assert_eq!(
+            target_pointer_width,
+            target_pointer_width.as_str().parse::<cfg::TargetPointerWidth>().unwrap()
+        );
+        assert!(
+            target_pointer_width == 16 || target_pointer_width == 32 || target_pointer_width == 64,
+            "{target_pointer_width:?}"
+        );
+        let target_vendor: Option<cfg::TargetVendor> = cfg.get::<cfg::TargetVendor>().unwrap();
+        if let Some(target_vendor) = target_vendor {
+            assert_eq!(target_vendor, target_vendor.as_str());
+            assert_eq!(target_vendor.as_str(), target_vendor);
+            assert_eq!(target_vendor, target_vendor.as_str().parse::<cfg::TargetVendor>().unwrap());
+            assert_eq!(target_vendor, cfg::TargetVendor::from(target_vendor.as_str()));
+            #[allow(deprecated)]
+            let other = cfg::TargetVendor::__Other(target_vendor.as_str().into());
+            assert_eq!(target_vendor, other);
+            assert_eq!(other, target_vendor);
+        }
+    }
+
     #[test]
     #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
     fn parse_cfg_list() {
         // builtin targets
         for target in cmd!("rustc", "--print", "target-list").read().unwrap().lines() {
-            let _cfg = Cfg::from_rustc(cmd!("rustc"), &target.into()).unwrap();
+            let cfg = Cfg::from_rustc(cmd!("rustc"), &target.into()).unwrap();
+            check_cfg(&cfg);
         }
         // custom targets
         for spec_path in
@@ -744,6 +867,39 @@ mod tests {
                 let _cfg = res.unwrap();
             } else {
                 let _e = res.unwrap_err();
+            }
+        }
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)] // Miri is too slow
+    fn parse_cfg_list_all() {
+        let mut list = String::new();
+        for e in fs::read_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join("tools/gen/cfg")).unwrap()
+        {
+            let p = e.unwrap().path();
+            eprintln!("{}:", p.display());
+            let text = fs::read_to_string(p).unwrap();
+            let mut lines = text.lines();
+            while let Some(line) = lines.next() {
+                if line.starts_with("1.") {
+                    // alias
+                    let line = lines.next();
+                    assert!(matches!(line, Some("") | None), "{line:?}");
+                    assert!(lines.next().is_none());
+                    break;
+                }
+                let _target = line.strip_suffix(":").context(line).unwrap();
+                for line in lines.by_ref() {
+                    if line.is_empty() {
+                        break;
+                    }
+                    list.push_str(line);
+                    list.push('\n');
+                }
+                let cfg = Cfg::parse(&list);
+                check_cfg(&cfg);
+                list.clear();
             }
         }
     }

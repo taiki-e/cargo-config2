@@ -13,3 +13,5 @@ cd -- "$(dirname -- "$0")"/..
 set -x
 
 cargo run --manifest-path tools/codegen/Cargo.toml
+
+./tools/cfg.sh
