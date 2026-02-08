@@ -12,6 +12,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Add `Config::cfg`. ([#40](https://github.com/taiki-e/cargo-config2/pull/40))
+
+- Fix handling of `cfg(<key> = "")`. ([#40](https://github.com/taiki-e/cargo-config2/pull/40))
+
 - Implement `From<&'a Box<str>>` for `TargetTripleRef<'a>`,  `From<Box<str>>` for `TargetTripleRef<'static>`.
 
 ## [0.1.40] - 2026-02-06

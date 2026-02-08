@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, hint::black_box, path::Path};
 
-use cargo_config2::{PathAndArgs, ResolveOptions};
+use cargo_config2::{PathAndArgs, ResolveOptions, cfg::TargetArch};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn fixtures_dir() -> &'static Path {
@@ -19,10 +19,29 @@ fn test_options() -> ResolveOptions {
 fn reference(c: &mut Criterion) {
     let mut g = c.benchmark_group("reference");
     let dir = &fixtures_dir().join("reference");
-    g.bench_function("load_config_easy", |b| {
+    g.bench_function("load_config", |b| {
         b.iter(|| {
             let config = cargo_config2::Config::load_with_options(dir, test_options()).unwrap();
             black_box(config)
+        });
+    });
+    g.bench_function("clone", |b| {
+        let config = cargo_config2::Config::load_with_options(dir, test_options()).unwrap();
+        b.iter(|| black_box(config.clone()));
+    });
+    g.bench_function("init_target_config", |b| {
+        let config = cargo_config2::Config::load_with_options(dir, test_options()).unwrap();
+        b.iter(|| {
+            let config = black_box(config.clone());
+            black_box(config.cfg::<TargetArch, _>("x86_64-unknown-linux-gnu").unwrap())
+        });
+    });
+    g.bench_function("cfg_re", |b| {
+        let config = cargo_config2::Config::load_with_options(dir, test_options()).unwrap();
+        black_box(config.cfg::<TargetArch, _>("x86_64-unknown-linux-gnu").unwrap());
+        b.iter(|| {
+            let config = black_box(&config);
+            black_box(config.cfg::<TargetArch, _>("x86_64-unknown-linux-gnu").unwrap())
         });
     });
     g.bench_function("apply_env_no_env", |b| {

@@ -45,6 +45,15 @@ cargo_config2::easy::Flags: 24
 cargo_config2::easy::PathAndArgs: 48
 cargo_config2::easy::StringList: 24
 cargo_config2::error::Error: 56
+cargo_config2::cfg::TargetAbi: 24
+cargo_config2::cfg::TargetArch: 24
+cargo_config2::cfg::TargetEndian: 1
+cargo_config2::cfg::TargetEnv: 24
+cargo_config2::cfg::TargetFamily: 24
+cargo_config2::cfg::TargetHasAtomic: 24
+cargo_config2::cfg::TargetOs: 24
+cargo_config2::cfg::TargetPointerWidth: 24
+cargo_config2::cfg::TargetVendor: 24
 cargo_config2::resolve::ResolveOptions: 160
 cargo_config2::resolve::ResolveContext: 280
 cargo_config2::resolve::TargetTripleRef<'_>: 48

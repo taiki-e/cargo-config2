@@ -72,6 +72,15 @@ fn track_size() {
     write_size::<crate::easy::PathAndArgs>(&mut out);
     write_size::<crate::easy::StringList>(&mut out);
     write_size::<crate::error::Error>(&mut out);
+    write_size::<crate::cfg::TargetAbi>(&mut out);
+    write_size::<crate::cfg::TargetArch>(&mut out);
+    write_size::<crate::cfg::TargetEndian>(&mut out);
+    write_size::<crate::cfg::TargetEnv>(&mut out);
+    write_size::<crate::cfg::TargetFamily>(&mut out);
+    write_size::<crate::cfg::TargetHasAtomic>(&mut out);
+    write_size::<crate::cfg::TargetOs>(&mut out);
+    write_size::<crate::cfg::TargetPointerWidth>(&mut out);
+    write_size::<crate::cfg::TargetVendor>(&mut out);
     write_size::<crate::resolve::ResolveOptions>(&mut out);
     write_size::<crate::resolve::ResolveContext>(&mut out);
     write_size::<crate::resolve::TargetTripleRef<'_>>(&mut out);
