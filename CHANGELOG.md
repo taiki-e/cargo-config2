@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.41] - 2026-02-08
+
 - Add `Config::cfg`. ([#40](https://github.com/taiki-e/cargo-config2/pull/40))
 
 - Fix handling of `cfg(<key> = "")`. ([#40](https://github.com/taiki-e/cargo-config2/pull/40))
@@ -203,7 +205,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.40...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.41...HEAD
+[0.1.41]: https://github.com/taiki-e/cargo-config2/compare/v0.1.40...v0.1.41
 [0.1.40]: https://github.com/taiki-e/cargo-config2/compare/v0.1.39...v0.1.40
 [0.1.39]: https://github.com/taiki-e/cargo-config2/compare/v0.1.38...v0.1.39
 [0.1.38]: https://github.com/taiki-e/cargo-config2/compare/v0.1.37...v0.1.38
