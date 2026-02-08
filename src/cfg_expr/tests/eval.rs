@@ -11,19 +11,20 @@ fn target_family() {
     let impossible = Expression::parse("all(windows, target_family = \"unix\")").unwrap();
 
     let mut map = CfgMap::default();
+    let rustc = &|| cmd!("rustc");
     for target in [
         "aarch64-apple-darwin",
         "x86_64-pc-windows-msvc",
         "wasm32-unknown-unknown",
         "thumbv7m-none-eabi",
     ] {
-        let t = map.eval_cfg(&matches_any_family, &target.into(), || cmd!("rustc")).unwrap();
+        let t = map.eval_cfg(&matches_any_family, &target.into(), rustc).unwrap();
         if target.contains("-none") {
             assert!(!t, "{target}");
         } else {
             assert!(t, "{target}");
         }
-        assert!(!map.eval_cfg(&impossible, &target.into(), || cmd!("rustc")).unwrap());
+        assert!(!map.eval_cfg(&impossible, &target.into(), rustc).unwrap());
     }
 }
 
@@ -65,8 +66,9 @@ fn very_specific() {
     .unwrap();
 
     let mut map = CfgMap::default();
+    let rustc = &|| cmd!("rustc");
     for target in ["i686-pc-windows-msvc", "i686-pc-windows-gnu"] {
-        let t = map.eval_cfg(&specific, &target.into(), || cmd!("rustc")).unwrap();
+        let t = map.eval_cfg(&specific, &target.into(), rustc).unwrap();
         assert_eq!(
             target == "i686-pc-windows-msvc",
             t,
@@ -125,40 +127,41 @@ fn complex() {
     let complex = Expression::parse(r#"cfg(all(unix, not(any(target_os="macos", target_os="android", target_os="emscripten"))))"#).unwrap();
 
     let mut map = CfgMap::default();
+    let rustc = &|| cmd!("rustc");
 
     // Should match linuxes
-    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-musl".into(), || cmd!("rustc")).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-musl".into(), rustc).unwrap());
 
     // Should *not* match windows or mac or android
-    assert!(!map.eval_cfg(&complex, &"x86_64-pc-windows-msvc".into(), || cmd!("rustc")).unwrap());
-    assert!(!map.eval_cfg(&complex, &"x86_64-apple-darwin".into(), || cmd!("rustc")).unwrap());
-    assert!(!map.eval_cfg(&complex, &"aarch64-linux-android".into(), || cmd!("rustc")).unwrap());
+    assert!(!map.eval_cfg(&complex, &"x86_64-pc-windows-msvc".into(), rustc).unwrap());
+    assert!(!map.eval_cfg(&complex, &"x86_64-apple-darwin".into(), rustc).unwrap());
+    assert!(!map.eval_cfg(&complex, &"aarch64-linux-android".into(), rustc).unwrap());
 
     let complex =
         Expression::parse(r#"all(not(target_os = "ios"), not(target_os = "android"))"#).unwrap();
 
-    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-musl".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"x86_64-pc-windows-msvc".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"x86_64-apple-darwin".into(), || cmd!("rustc")).unwrap());
-    assert!(!map.eval_cfg(&complex, &"aarch64-linux-android".into(), || cmd!("rustc")).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-musl".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-pc-windows-msvc".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-apple-darwin".into(), rustc).unwrap());
+    assert!(!map.eval_cfg(&complex, &"aarch64-linux-android".into(), rustc).unwrap());
 
     let complex = Expression::parse(r#"all(any(unix, target_arch="x86"), not(any(target_os="android", target_os="emscripten")))"#).unwrap();
 
     // Should match linuxes and mac
-    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-musl".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"x86_64-apple-darwin".into(), || cmd!("rustc")).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-unknown-linux-musl".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"x86_64-apple-darwin".into(), rustc).unwrap());
 
     // Should *not* match x86_64 windows or android
-    assert!(!map.eval_cfg(&complex, &"x86_64-pc-windows-msvc".into(), || cmd!("rustc")).unwrap());
-    assert!(!map.eval_cfg(&complex, &"aarch64-linux-android".into(), || cmd!("rustc")).unwrap());
+    assert!(!map.eval_cfg(&complex, &"x86_64-pc-windows-msvc".into(), rustc).unwrap());
+    assert!(!map.eval_cfg(&complex, &"aarch64-linux-android".into(), rustc).unwrap());
 
     // Ensure that target_os = "none" matches against Os == None.
     let complex = Expression::parse(r#"all(target_os="none")"#).unwrap();
-    assert!(!map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), || cmd!("rustc")).unwrap());
-    assert!(map.eval_cfg(&complex, &"armebv7r-none-eabi".into(), || cmd!("rustc")).unwrap());
+    assert!(!map.eval_cfg(&complex, &"x86_64-unknown-linux-gnu".into(), rustc).unwrap());
+    assert!(map.eval_cfg(&complex, &"armebv7r-none-eabi".into(), rustc).unwrap());
 }
 
 // #[test]
@@ -221,6 +224,7 @@ fn wasm_family() {
     let wasm = Expression::parse(r#"cfg(target_family = "wasm")"#).unwrap();
 
     let mut map = CfgMap::default();
+    let rustc = &|| cmd!("rustc");
 
     // All of the above targets match.
     for target in [
@@ -229,6 +233,6 @@ fn wasm_family() {
         "wasm32-wasip1",
         "wasm64-unknown-unknown",
     ] {
-        assert!(map.eval_cfg(&wasm, &target.into(), || cmd!("rustc")).unwrap(), "{target}");
+        assert!(map.eval_cfg(&wasm, &target.into(), rustc).unwrap(), "{target}");
     }
 }

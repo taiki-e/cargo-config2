@@ -295,7 +295,7 @@ impl ResolveContext {
     ) -> Result<bool> {
         let expr = Expression::parse(expr).map_err(Error::new)?;
         let mut cfg_map = self.cfg.borrow_mut();
-        cfg_map.eval_cfg(&expr, target, || self.rustc(build_config).into())
+        cfg_map.eval_cfg(&expr, target, &|| self.rustc(build_config).into())
     }
 }
 
@@ -309,7 +309,7 @@ impl CfgMap {
         &mut self,
         expr: &Expression,
         target: &TargetTripleRef<'_>,
-        rustc: impl FnOnce() -> ProcessBuilder,
+        rustc: &dyn Fn() -> ProcessBuilder,
     ) -> Result<bool> {
         let cfg = match self.map.get(target.cli_target()) {
             Some(cfg) => cfg,
