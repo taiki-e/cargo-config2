@@ -10,6 +10,7 @@ cd -- "$(dirname -- "$0")"/..
 #
 # USAGE:
 #    ./tools/target_spec.sh
+#    REGENERATE_OLD_VERSIONS=1 ./tools/target_spec.sh
 #
 # This script is intended to be called by gen.sh, but can be called separately.
 
@@ -53,10 +54,12 @@ if [[ "${host}" == 'x86_64-unknown-linux-gnu' ]]; then
   stable="${stable#*.}"
   stable="${stable%%.*}"
   printf '%s\n' "1.${stable}" >|tools/gen/cfg/stable.txt
-  for minor in $(seq "${start}" "$((stable - 1))"); do
-    cfg=$(print_cfg "1.${minor}")
-    printf '%s\n' "${cfg}" >|tools/gen/cfg/"1.${minor}".txt
-  done
+  if [[ -n "${REGENERATE_OLD_VERSIONS:-}" ]]; then
+    for minor in $(seq "${start}" "$((stable - 1))"); do
+      cfg=$(print_cfg "1.${minor}")
+      printf '%s\n' "${cfg}" >|tools/gen/cfg/"1.${minor}".txt
+    done
+  fi
   cfg=$(print_cfg stable)
   printf '%s\n' "${cfg}" >|tools/gen/cfg/"1.${stable}".txt
   cfg=$(print_cfg beta)
