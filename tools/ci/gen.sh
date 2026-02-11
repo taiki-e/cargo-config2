@@ -22,7 +22,7 @@ for path in tools/gen/* src/gen/*; do
   git add -N "${path}"
   if ! git diff --exit-code -- "${path}" &>/dev/null; then
     git add "${path}"
-    git commit -m "codegen: Update ${path#tools/}"
+    git commit -m "codegen: Update ${path}"
     has_update=1
   fi
 done
