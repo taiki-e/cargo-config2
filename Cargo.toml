@@ -34,7 +34,7 @@ doc-scrape-examples = false
 [dependencies]
 serde = "1.0.165"
 serde_derive = "1.0.165"
-toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
+toml = { version = "1.0", default-features = false, features = ["parse", "serde"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
@@ -55,7 +55,7 @@ shell-escape = "0.1"
 static_assertions = "1"
 tempfile = { version = "3", default-features = false }
 test-helper = { features = ["git"], git = "https://github.com/taiki-e/test-helper.git", rev = "c5eac31" }
-toml = "0.9"
+toml = "1.0"
 
 [lints]
 workspace = true
