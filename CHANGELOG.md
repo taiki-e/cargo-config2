@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.42] - 2026-02-13
+
 - Update `toml` to 1.
 
 ## [0.1.41] - 2026-02-08
@@ -207,7 +209,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.41...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.42...HEAD
+[0.1.42]: https://github.com/taiki-e/cargo-config2/compare/v0.1.41...v0.1.42
 [0.1.41]: https://github.com/taiki-e/cargo-config2/compare/v0.1.40...v0.1.41
 [0.1.40]: https://github.com/taiki-e/cargo-config2/compare/v0.1.39...v0.1.40
 [0.1.39]: https://github.com/taiki-e/cargo-config2/compare/v0.1.38...v0.1.39
