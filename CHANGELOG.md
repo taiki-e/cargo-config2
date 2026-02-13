@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Update `toml` to 1.
+
 ## [0.1.41] - 2026-02-08
 
 - Add `Config::cfg`. ([#40](https://github.com/taiki-e/cargo-config2/pull/40))
