@@ -79,7 +79,7 @@ fn gen_de() {
                                 };
                                 quote! {
                                     #cfg_attr
-                                    self.#ident.merge(low.#ident, force)?;
+                                    Merge::merge(&mut self.#ident, low.#ident, force)?;
                                 }
                             });
                         tokens.extend(quote! {

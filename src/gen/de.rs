@@ -8,20 +8,24 @@ use std::path::Path;
 use crate::{error::Result, merge::Merge, value::SetPath};
 impl Merge for crate::de::Config {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.alias.merge(low.alias, force)?;
-        self.build.merge(low.build, force)?;
-        self.credential_alias.merge(low.credential_alias, force)?;
-        self.doc.merge(low.doc, force)?;
-        self.env.merge(low.env, force)?;
-        self.future_incompat_report.merge(low.future_incompat_report, force)?;
-        self.cargo_new.merge(low.cargo_new, force)?;
-        self.http.merge(low.http, force)?;
-        self.net.merge(low.net, force)?;
-        self.registries.merge(low.registries, force)?;
-        self.registry.merge(low.registry, force)?;
-        self.source.merge(low.source, force)?;
-        self.target.merge(low.target, force)?;
-        self.term.merge(low.term, force)?;
+        Merge::merge(&mut self.alias, low.alias, force)?;
+        Merge::merge(&mut self.build, low.build, force)?;
+        Merge::merge(&mut self.credential_alias, low.credential_alias, force)?;
+        Merge::merge(&mut self.doc, low.doc, force)?;
+        Merge::merge(&mut self.env, low.env, force)?;
+        Merge::merge(
+            &mut self.future_incompat_report,
+            low.future_incompat_report,
+            force,
+        )?;
+        Merge::merge(&mut self.cargo_new, low.cargo_new, force)?;
+        Merge::merge(&mut self.http, low.http, force)?;
+        Merge::merge(&mut self.net, low.net, force)?;
+        Merge::merge(&mut self.registries, low.registries, force)?;
+        Merge::merge(&mut self.registry, low.registry, force)?;
+        Merge::merge(&mut self.source, low.source, force)?;
+        Merge::merge(&mut self.target, low.target, force)?;
+        Merge::merge(&mut self.term, low.term, force)?;
         Ok(())
     }
 }
@@ -45,18 +49,22 @@ impl SetPath for crate::de::Config {
 }
 impl Merge for crate::de::BuildConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.jobs.merge(low.jobs, force)?;
-        self.rustc.merge(low.rustc, force)?;
-        self.rustc_wrapper.merge(low.rustc_wrapper, force)?;
-        self.rustc_workspace_wrapper.merge(low.rustc_workspace_wrapper, force)?;
-        self.rustdoc.merge(low.rustdoc, force)?;
-        self.target.merge(low.target, force)?;
-        self.target_dir.merge(low.target_dir, force)?;
-        self.build_dir.merge(low.build_dir, force)?;
-        self.rustflags.merge(low.rustflags, force)?;
-        self.rustdocflags.merge(low.rustdocflags, force)?;
-        self.incremental.merge(low.incremental, force)?;
-        self.dep_info_basedir.merge(low.dep_info_basedir, force)?;
+        Merge::merge(&mut self.jobs, low.jobs, force)?;
+        Merge::merge(&mut self.rustc, low.rustc, force)?;
+        Merge::merge(&mut self.rustc_wrapper, low.rustc_wrapper, force)?;
+        Merge::merge(
+            &mut self.rustc_workspace_wrapper,
+            low.rustc_workspace_wrapper,
+            force,
+        )?;
+        Merge::merge(&mut self.rustdoc, low.rustdoc, force)?;
+        Merge::merge(&mut self.target, low.target, force)?;
+        Merge::merge(&mut self.target_dir, low.target_dir, force)?;
+        Merge::merge(&mut self.build_dir, low.build_dir, force)?;
+        Merge::merge(&mut self.rustflags, low.rustflags, force)?;
+        Merge::merge(&mut self.rustdocflags, low.rustdocflags, force)?;
+        Merge::merge(&mut self.incremental, low.incremental, force)?;
+        Merge::merge(&mut self.dep_info_basedir, low.dep_info_basedir, force)?;
         Ok(())
     }
 }
@@ -78,11 +86,11 @@ impl SetPath for crate::de::BuildConfig {
 }
 impl Merge for crate::de::TargetConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.linker.merge(low.linker, force)?;
-        self.runner.merge(low.runner, force)?;
-        self.rustflags.merge(low.rustflags, force)?;
-        self.rustdocflags.merge(low.rustdocflags, force)?;
-        self.rest.merge(low.rest, force)?;
+        Merge::merge(&mut self.linker, low.linker, force)?;
+        Merge::merge(&mut self.runner, low.runner, force)?;
+        Merge::merge(&mut self.rustflags, low.rustflags, force)?;
+        Merge::merge(&mut self.rustdocflags, low.rustdocflags, force)?;
+        Merge::merge(&mut self.rest, low.rest, force)?;
         Ok(())
     }
 }
@@ -97,7 +105,7 @@ impl SetPath for crate::de::TargetConfig {
 }
 impl Merge for crate::de::DocConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.browser.merge(low.browser, force)?;
+        Merge::merge(&mut self.browser, low.browser, force)?;
         Ok(())
     }
 }
@@ -122,7 +130,7 @@ impl SetPath for crate::de::EnvConfigValue {
 }
 impl Merge for crate::de::FutureIncompatReportConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.frequency.merge(low.frequency, force)?;
+        Merge::merge(&mut self.frequency, low.frequency, force)?;
         Ok(())
     }
 }
@@ -133,7 +141,7 @@ impl SetPath for crate::de::FutureIncompatReportConfig {
 }
 impl Merge for crate::de::CargoNewConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.vcs.merge(low.vcs, force)?;
+        Merge::merge(&mut self.vcs, low.vcs, force)?;
         Ok(())
     }
 }
@@ -144,14 +152,14 @@ impl SetPath for crate::de::CargoNewConfig {
 }
 impl Merge for crate::de::HttpConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.debug.merge(low.debug, force)?;
-        self.proxy.merge(low.proxy, force)?;
-        self.timeout.merge(low.timeout, force)?;
-        self.cainfo.merge(low.cainfo, force)?;
-        self.check_revoke.merge(low.check_revoke, force)?;
-        self.low_speed_limit.merge(low.low_speed_limit, force)?;
-        self.multiplexing.merge(low.multiplexing, force)?;
-        self.user_agent.merge(low.user_agent, force)?;
+        Merge::merge(&mut self.debug, low.debug, force)?;
+        Merge::merge(&mut self.proxy, low.proxy, force)?;
+        Merge::merge(&mut self.timeout, low.timeout, force)?;
+        Merge::merge(&mut self.cainfo, low.cainfo, force)?;
+        Merge::merge(&mut self.check_revoke, low.check_revoke, force)?;
+        Merge::merge(&mut self.low_speed_limit, low.low_speed_limit, force)?;
+        Merge::merge(&mut self.multiplexing, low.multiplexing, force)?;
+        Merge::merge(&mut self.user_agent, low.user_agent, force)?;
         Ok(())
     }
 }
@@ -169,9 +177,9 @@ impl SetPath for crate::de::HttpConfig {
 }
 impl Merge for crate::de::NetConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.retry.merge(low.retry, force)?;
-        self.git_fetch_with_cli.merge(low.git_fetch_with_cli, force)?;
-        self.offline.merge(low.offline, force)?;
+        Merge::merge(&mut self.retry, low.retry, force)?;
+        Merge::merge(&mut self.git_fetch_with_cli, low.git_fetch_with_cli, force)?;
+        Merge::merge(&mut self.offline, low.offline, force)?;
         Ok(())
     }
 }
@@ -184,10 +192,10 @@ impl SetPath for crate::de::NetConfig {
 }
 impl Merge for crate::de::RegistriesConfigValue {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.index.merge(low.index, force)?;
-        self.token.merge(low.token, force)?;
-        self.credential_provider.merge(low.credential_provider, force)?;
-        self.protocol.merge(low.protocol, force)?;
+        Merge::merge(&mut self.index, low.index, force)?;
+        Merge::merge(&mut self.token, low.token, force)?;
+        Merge::merge(&mut self.credential_provider, low.credential_provider, force)?;
+        Merge::merge(&mut self.protocol, low.protocol, force)?;
         Ok(())
     }
 }
@@ -201,10 +209,14 @@ impl SetPath for crate::de::RegistriesConfigValue {
 }
 impl Merge for crate::de::RegistryConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.default.merge(low.default, force)?;
-        self.credential_provider.merge(low.credential_provider, force)?;
-        self.token.merge(low.token, force)?;
-        self.global_credential_providers.merge(low.global_credential_providers, force)?;
+        Merge::merge(&mut self.default, low.default, force)?;
+        Merge::merge(&mut self.credential_provider, low.credential_provider, force)?;
+        Merge::merge(&mut self.token, low.token, force)?;
+        Merge::merge(
+            &mut self.global_credential_providers,
+            low.global_credential_providers,
+            force,
+        )?;
         Ok(())
     }
 }
@@ -218,14 +230,14 @@ impl SetPath for crate::de::RegistryConfig {
 }
 impl Merge for crate::de::SourceConfigValue {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.replace_with.merge(low.replace_with, force)?;
-        self.directory.merge(low.directory, force)?;
-        self.registry.merge(low.registry, force)?;
-        self.local_registry.merge(low.local_registry, force)?;
-        self.git.merge(low.git, force)?;
-        self.branch.merge(low.branch, force)?;
-        self.tag.merge(low.tag, force)?;
-        self.rev.merge(low.rev, force)?;
+        Merge::merge(&mut self.replace_with, low.replace_with, force)?;
+        Merge::merge(&mut self.directory, low.directory, force)?;
+        Merge::merge(&mut self.registry, low.registry, force)?;
+        Merge::merge(&mut self.local_registry, low.local_registry, force)?;
+        Merge::merge(&mut self.git, low.git, force)?;
+        Merge::merge(&mut self.branch, low.branch, force)?;
+        Merge::merge(&mut self.tag, low.tag, force)?;
+        Merge::merge(&mut self.rev, low.rev, force)?;
         Ok(())
     }
 }
@@ -253,10 +265,10 @@ impl SetPath for crate::de::CredentialProvider {
 }
 impl Merge for crate::de::TermConfig {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.quiet.merge(low.quiet, force)?;
-        self.verbose.merge(low.verbose, force)?;
-        self.color.merge(low.color, force)?;
-        self.progress.merge(low.progress, force)?;
+        Merge::merge(&mut self.quiet, low.quiet, force)?;
+        Merge::merge(&mut self.verbose, low.verbose, force)?;
+        Merge::merge(&mut self.color, low.color, force)?;
+        Merge::merge(&mut self.progress, low.progress, force)?;
         Ok(())
     }
 }
@@ -270,8 +282,8 @@ impl SetPath for crate::de::TermConfig {
 }
 impl Merge for crate::de::TermProgress {
     fn merge(&mut self, low: Self, force: bool) -> Result<()> {
-        self.when.merge(low.when, force)?;
-        self.width.merge(low.width, force)?;
+        Merge::merge(&mut self.when, low.when, force)?;
+        Merge::merge(&mut self.width, low.width, force)?;
         Ok(())
     }
 }
