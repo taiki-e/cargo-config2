@@ -64,9 +64,9 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::exhaustive_enums,
     clippy::exhaustive_structs,
     clippy::impl_trait_in_params,
-    // clippy::missing_inline_in_public_items,
     clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
+    // clippy::missing_inline_in_public_items,
 )]
 #![allow(clippy::must_use_candidate)]
 
