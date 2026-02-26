@@ -2,16 +2,16 @@
 
 #![allow(clippy::needless_pass_by_value, clippy::redundant_guards, clippy::wildcard_imports)]
 
-#[macro_use]
-mod file;
-
 use std::{collections::HashSet, path::Path};
 
 use fs_err as fs;
 use quote::{format_ident, quote};
 use syn::{punctuated::Punctuated, *};
+use test_helper::{bin_name, codegen::file, function_name};
 
-use crate::file::*;
+fn workspace_root() -> &'static Path {
+    Path::new(env!("CARGO_MANIFEST_DIR").strip_suffix("tools/codegen").unwrap())
+}
 
 fn main() {
     gen_de();
@@ -31,7 +31,7 @@ fn gen_de() {
     ];
     const SET_PATH_EXCLUDE: &[&str] = &[];
 
-    let workspace_root = &workspace_root();
+    let workspace_root = workspace_root();
 
     let mut tokens = quote! {
         use std::path::Path;
@@ -213,7 +213,13 @@ fn gen_de() {
         );
     }
 
-    write(function_name!(), workspace_root.join("src/gen/de.rs"), tokens).unwrap();
+    file::write(
+        function_name!(),
+        bin_name!(),
+        workspace_root,
+        workspace_root.join("src/gen/de.rs"),
+        tokens,
+    );
 }
 
 /// Checks the attributes contains `#[cfg(feature = "unstable")]`
@@ -250,7 +256,7 @@ fn gen_is_none() {
         "easy::SourceConfigValue",
     ];
 
-    let workspace_root = &workspace_root();
+    let workspace_root = workspace_root();
 
     let mut tokens = quote! {};
 
@@ -316,7 +322,13 @@ fn gen_is_none() {
         assert!(visited_types.contains(t), "unknown type `{t}` specified in EXCLUDE constant");
     }
 
-    write(function_name!(), workspace_root.join("src/gen/is_none.rs"), tokens).unwrap();
+    file::write(
+        function_name!(),
+        bin_name!(),
+        workspace_root,
+        workspace_root.join("src/gen/is_none.rs"),
+        tokens,
+    );
 }
 
 fn serde_skip(attrs: &[syn::Attribute]) -> bool {
@@ -338,8 +350,9 @@ fn serde_skip(attrs: &[syn::Attribute]) -> bool {
 }
 
 fn gen_assert_impl() {
+    let workspace_root = workspace_root();
     let (path, out) = test_helper::codegen::gen_assert_impl(
-        &workspace_root(),
+        workspace_root,
         test_helper::codegen::AssertImplConfig {
             exclude: &[],
             not_send: &[],
@@ -349,13 +362,14 @@ fn gen_assert_impl() {
             not_ref_unwind_safe: &["error::Error", "easy::Config", "resolve::ResolveContext"],
         },
     );
-    write(function_name!(), path, out).unwrap();
+    file::write(function_name!(), bin_name!(), workspace_root, path, out);
 }
 
 fn gen_track_size() {
+    let workspace_root = workspace_root();
     let (path, out) = test_helper::codegen::gen_track_size(
-        &workspace_root(),
+        workspace_root,
         test_helper::codegen::TrackSizeConfig { exclude: &[] },
     );
-    write(function_name!(), path, out).unwrap();
+    file::write(function_name!(), bin_name!(), workspace_root, path, out);
 }
