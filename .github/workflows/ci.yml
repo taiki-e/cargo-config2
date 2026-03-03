@@ -51,6 +51,7 @@ jobs:
       contents: read
       pull-requests: write # for gh pr edit --add-assignee / gh pr review --approve
       repository-projects: read # for gh pr edit --add-assignee
+      security-events: write # for github/codeql-action/*
     secrets: inherit
     with:
       codegen-automerge: true
