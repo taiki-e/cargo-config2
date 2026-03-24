@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.44] - 2026-03-24
+
 - Remove dependency on `windows-sys`.
 
 - Increase the minimum supported Rust version (MSRV) from Rust 1.76 to Rust 1.85.
@@ -217,7 +219,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.43...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.44...HEAD
+[0.1.44]: https://github.com/taiki-e/cargo-config2/compare/v0.1.43...v0.1.44
 [0.1.43]: https://github.com/taiki-e/cargo-config2/compare/v0.1.42...v0.1.43
 [0.1.42]: https://github.com/taiki-e/cargo-config2/compare/v0.1.41...v0.1.42
 [0.1.41]: https://github.com/taiki-e/cargo-config2/compare/v0.1.40...v0.1.41
