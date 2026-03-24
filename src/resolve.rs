@@ -710,7 +710,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+    #[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
     fn version_and_host() {
         let rustc_vv = &verbose_version(cmd!("rustc")).unwrap();
         let cargo_vv = &verbose_version(cmd!("cargo")).unwrap();
@@ -851,7 +851,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+    #[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
     fn parse_cfg_list() {
         // builtin targets
         for target in cmd!("rustc", "--print", "target-list").read().unwrap().lines() {

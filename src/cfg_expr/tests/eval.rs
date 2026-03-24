@@ -3,7 +3,7 @@
 use crate::{cfg_expr::expr::Expression, resolve::CfgMap};
 
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn target_family() {
     let matches_any_family =
         Expression::parse("any(unix, target_family = \"windows\", target_family = \"wasm\")")
@@ -39,7 +39,7 @@ fn tiny() {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn very_specific() {
     let specific = Expression::parse(
         r#"all(
@@ -122,7 +122,7 @@ fn very_specific() {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn complex() {
     let complex = Expression::parse(r#"cfg(all(unix, not(any(target_os="macos", target_os="android", target_os="emscripten"))))"#).unwrap();
 
@@ -219,7 +219,7 @@ fn complex() {
 // }
 
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn wasm_family() {
     let wasm = Expression::parse(r#"cfg(target_family = "wasm")"#).unwrap();
 

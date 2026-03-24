@@ -273,7 +273,7 @@ fn easy_load(dir: &Path, options: ResolveOptions) -> Result<Config, Error> {
     Config::load_with_options(dir, options)
 }
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn easy() {
     use easy_load as de;
 
@@ -294,7 +294,7 @@ fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config, Error> {
     de::Config::load_with_options(dir, None)
 }
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn de() {
     use de_load as de;
 
@@ -310,7 +310,7 @@ fn de() {
 
 #[rustversion::attr(not(nightly), ignore)]
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support file with non-default mode: https://github.com/rust-lang/miri/pull/2720
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn custom_target() {
     use easy_load as de;
     struct IsBuiltin(bool);
@@ -374,7 +374,7 @@ fn custom_target() {
 
 #[rustversion::attr(not(nightly), ignore)]
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 #[cfg_attr(careful, ignore)] // TODO: Unexpected TomlError (bug in toml crate?)
 fn cargo_config_toml() {
     fn de(dir: &Path) -> de::Config {
@@ -395,7 +395,7 @@ fn cargo_config_toml() {
 
 #[rustversion::attr(not(nightly), ignore)]
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn cargo_config_json() {
     fn de(dir: &Path) -> de::Config {
         let output = Command::new("cargo")
@@ -412,7 +412,7 @@ fn cargo_config_json() {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)] // Miri doesn't support pipe2 (inside std::process::Command::output)
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn test_cargo_behavior() {
     let (_tmp, root) = test_project("empty");
     let dir = &root;

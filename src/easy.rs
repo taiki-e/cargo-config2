@@ -404,7 +404,7 @@ impl Config {
     ///
     /// ```
     /// use cargo_config2::{Config, cfg};
-    /// # if cfg!(miri) { return Ok(()) } // Miri doesn't support pipe2 (inside std::process::Command::output)
+    /// # if cfg!(miri) { return Ok(()) } // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
     ///
     /// let config = Config::load()?;
     ///
