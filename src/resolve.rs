@@ -151,7 +151,7 @@ impl ResolveOptions {
 }
 
 #[doc(hidden)] // Not public API.
-#[allow(unknown_lints, unnameable_types)] // Not public API. unnameable_types is available on Rust 1.79+
+#[allow(unnameable_types)] // Not public API.
 #[derive(Debug, Clone)]
 #[must_use]
 pub struct ResolveContext {

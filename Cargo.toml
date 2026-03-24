@@ -3,7 +3,7 @@ name = "cargo-config2"
 version = "0.1.43" #publish:version
 edition = "2021"
 # NB: Sync with msrv badge in README.md
-rust-version = "1.76" # For toml
+rust-version = "1.85" # For toml & fixed home_dir
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/taiki-e/cargo-config2"
 keywords = ["cargo", "config"]
@@ -35,13 +35,6 @@ doc-scrape-examples = false
 serde = "1.0.225"
 serde_derive = "1.0.225"
 toml = { version = "1", default-features = false, features = ["parse", "serde"] }
-
-[target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = [
-    "Win32_Foundation",
-    "Win32_System_Com", # CoTaskMemFree
-    "Win32_UI_Shell", # SHGetKnownFolderPath
-] }
 
 [dev-dependencies]
 anyhow = "1"
