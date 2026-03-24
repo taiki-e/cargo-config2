@@ -3,11 +3,9 @@ asmjs
 bitrig
 cainfo
 cloudabi
-DONT
 elfv
 espressif
 extabi
-FOLDERID
 fxsr
 Libsecret
 nacl

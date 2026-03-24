@@ -12,6 +12,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Remove dependency on `windows-sys`.
+
+- Increase the minimum supported Rust version (MSRV) from Rust 1.76 to Rust 1.85.
+
 ## [0.1.43] - 2026-02-26
 
 - Fix `unstable_name_collisions` warning.

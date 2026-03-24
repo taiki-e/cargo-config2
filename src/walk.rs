@@ -38,62 +38,8 @@ fn config_path(path: &Path) -> Option<PathBuf> {
     None
 }
 
-// Do not use std::env::home_dir only on Windows which std::env::home_dir is not correct.
-// https://github.com/rust-lang/cargo/blob/0.80.0/crates/home/src/lib.rs#L65-L72
-// Do not use home crate since it is no longer a crate for ecosystem use.
-// https://github.com/rust-lang/cargo/pull/14600
-// This is needed until MSRV become Rust 1.85: https://github.com/rust-lang/rust/pull/132515
-#[cfg(windows)]
-pub fn home_dir() -> Option<PathBuf> {
-    // Adapted from https://github.com/rust-lang/cargo/blob/0.83.0/crates/home/src/windows.rs.
-    use std::{
-        env,
-        ffi::{OsString, c_void},
-        os::windows::ffi::OsStringExt as _,
-        ptr, slice,
-    };
-
-    use windows_sys::Win32::{
-        Foundation::S_OK,
-        System::Com::CoTaskMemFree,
-        UI::Shell::{FOLDERID_Profile, KF_FLAG_DONT_VERIFY, SHGetKnownFolderPath},
-    };
-
-    #[cfg(not(target_vendor = "uwp"))]
-    fn home_dir_crt() -> Option<PathBuf> {
-        unsafe {
-            let mut path = ptr::null_mut();
-            match SHGetKnownFolderPath(
-                &FOLDERID_Profile,
-                KF_FLAG_DONT_VERIFY as u32,
-                ptr::null_mut(),
-                &mut path,
-            ) {
-                S_OK => {
-                    let path_slice = slice::from_raw_parts(path, wcslen(path));
-                    let s = OsString::from_wide(&path_slice);
-                    CoTaskMemFree(path.cast::<c_void>());
-                    Some(PathBuf::from(s))
-                }
-                _ => {
-                    // Free any allocated memory even on failure. A null ptr is a no-op for `CoTaskMemFree`.
-                    CoTaskMemFree(path.cast::<c_void>());
-                    None
-                }
-            }
-        }
-    }
-    #[cfg(target_vendor = "uwp")]
-    fn home_dir_crt() -> Option<PathBuf> {
-        None
-    }
-    extern "C" {
-        fn wcslen(buf: *const u16) -> usize;
-    }
-
-    env::var_os("USERPROFILE").filter(|s| !s.is_empty()).map(PathBuf::from).or_else(home_dir_crt)
-}
-#[cfg(not(windows))]
+// This is okay even on Windows since Rust 1.85: https://github.com/rust-lang/rust/pull/132515
+// TODO(semver): Remove this wrapper in next breaking release.
 pub fn home_dir() -> Option<PathBuf> {
     #[allow(deprecated)]
     std::env::home_dir()
