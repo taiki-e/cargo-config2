@@ -439,7 +439,7 @@ pub trait Cfg {
     /// The name of this cfg.
     const KEY: &'static str;
     /// (For use inside [\`Config::cfg\`](crate::Config::cfg).)
-    type Error: Sized + std::error::Error + Send + Sync + 'static;
+    type Error: Sized + core::error::Error + Send + Sync + 'static;
     /// (For use inside [\`Config::cfg\`](crate::Config::cfg).)
     ///
     /// The maximum number of this cfg.

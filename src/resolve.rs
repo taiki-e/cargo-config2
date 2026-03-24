@@ -268,7 +268,7 @@ impl ResolveContext {
     pub(crate) fn env_parse<T>(&self, name: &'static str) -> Result<Option<Value<T>>>
     where
         T: FromStr,
-        T::Err: std::error::Error + Send + Sync + 'static,
+        T::Err: core::error::Error + Send + Sync + 'static,
     {
         match self.env(name)? {
             Some(v) => Ok(Some(

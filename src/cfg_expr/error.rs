@@ -94,4 +94,4 @@ impl fmt::Display for Reason {
     }
 }
 
-impl std::error::Error for ParseError {}
+impl core::error::Error for ParseError {}

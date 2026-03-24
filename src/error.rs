@@ -37,7 +37,7 @@ pub(crate) enum ErrorKind {
     CfgExprParse(crate::cfg_expr::error::ParseError),
 
     Other(Box<str>),
-    WithContext(Box<str>, Option<Box<dyn std::error::Error + Send + Sync>>),
+    WithContext(Box<str>, Option<Box<dyn core::error::Error + Send + Sync>>),
 }
 
 impl Error {
@@ -69,8 +69,8 @@ impl fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for Error {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match &self.0 {
             ErrorKind::Io(e) => e.source(),
             ErrorKind::CfgExprParse(e) => e.source(),
@@ -142,7 +142,7 @@ pub(crate) trait Context<T, E> {
 }
 impl<T, E> Context<T, E> for Result<T, E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: core::error::Error + Send + Sync + 'static,
 {
     fn context<C>(self, context: C) -> Result<T, Error>
     where
