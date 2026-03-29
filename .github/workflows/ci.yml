@@ -51,6 +51,7 @@ jobs:
       contents: write # for creating branch for pr
       pull-requests: write # for gh pr review --approve
       security-events: write # for github/codeql-action/*
-    secrets: inherit
+    secrets:
+      PR_TOKEN_APP_PRIVATE_KEY: ${{ secrets.PR_TOKEN_APP_PRIVATE_KEY }}
     with:
       codegen-automerge: true
