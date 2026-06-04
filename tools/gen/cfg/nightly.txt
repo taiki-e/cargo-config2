@@ -1,5 +1,4 @@
 aarch64-apple-darwin:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -73,7 +72,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-ios:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -117,7 +115,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-ios-macabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -178,7 +175,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-ios-sim:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -239,7 +235,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-tvos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -283,7 +278,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-tvos-sim:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -344,7 +338,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-visionos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -388,7 +381,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-visionos-sim:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -449,7 +441,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-watchos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -493,7 +484,6 @@ target_vendor="apple"
 unix
 
 aarch64-apple-watchos-sim:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -554,7 +544,6 @@ target_vendor="apple"
 unix
 
 aarch64-kmc-solid_asp3:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -593,7 +582,6 @@ target_thread_local
 target_vendor="kmc"
 
 aarch64-linux-android:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -633,7 +621,6 @@ target_vendor="unknown"
 unix
 
 aarch64-nintendo-switch-freestanding:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -674,7 +661,6 @@ target_pointer_width="64"
 target_vendor="nintendo"
 
 aarch64-pc-windows-gnullvm:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -715,7 +701,6 @@ target_vendor="pc"
 windows
 
 aarch64-pc-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -756,7 +741,6 @@ target_vendor="pc"
 windows
 
 aarch64-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -797,7 +781,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-fuchsia:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -842,7 +825,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-helenos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -880,7 +862,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64-unknown-hermit:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -919,7 +900,6 @@ target_thread_local
 target_vendor="unknown"
 
 aarch64-unknown-illumos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -959,7 +939,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1002,7 +981,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-linux-gnu_ilp32:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1044,7 +1022,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1087,7 +1064,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-linux-ohos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1128,7 +1104,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-managarm-mlibc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1169,7 +1144,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1210,7 +1184,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -1248,7 +1221,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64-unknown-none-softfloat:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -1285,7 +1257,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64-unknown-nto-qnx700:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1325,7 +1296,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-nto-qnx710:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1365,7 +1335,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-nto-qnx710_iosock:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1405,7 +1374,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-nto-qnx800:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1445,7 +1413,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-nuttx:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -1485,7 +1452,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1525,7 +1491,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-redox:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1567,7 +1532,6 @@ target_vendor="unknown"
 unix
 
 aarch64-unknown-teeos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -1605,7 +1569,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64-unknown-trusty:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -1644,7 +1607,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64-unknown-uefi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -1682,7 +1644,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64-uwp-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1723,7 +1684,6 @@ target_vendor="uwp"
 windows
 
 aarch64-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1765,7 +1725,6 @@ target_vendor="wrs"
 unix
 
 aarch64_be-unknown-hermit:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -1804,7 +1763,6 @@ target_thread_local
 target_vendor="unknown"
 
 aarch64_be-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1847,7 +1805,6 @@ target_vendor="unknown"
 unix
 
 aarch64_be-unknown-linux-gnu_ilp32:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1889,7 +1846,6 @@ target_vendor="unknown"
 unix
 
 aarch64_be-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1931,7 +1887,6 @@ target_vendor="unknown"
 unix
 
 aarch64_be-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -1972,7 +1927,6 @@ target_vendor="unknown"
 unix
 
 aarch64_be-unknown-none-softfloat:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2009,7 +1963,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64v8r-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2058,7 +2011,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 aarch64v8r-unknown-none-softfloat:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2106,7 +2058,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 amdgcn-amd-amdhsa:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -2139,7 +2090,6 @@ target_pointer_width="64"
 target_vendor="amd"
 
 arm-linux-androideabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2173,7 +2123,6 @@ target_vendor="unknown"
 unix
 
 arm-unknown-linux-gnueabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2212,7 +2161,6 @@ target_vendor="unknown"
 unix
 
 arm-unknown-linux-gnueabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2253,7 +2201,6 @@ target_vendor="unknown"
 unix
 
 arm-unknown-linux-musleabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2293,7 +2240,6 @@ target_vendor="unknown"
 unix
 
 arm-unknown-linux-musleabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2335,7 +2281,6 @@ target_vendor="unknown"
 unix
 
 arm64_32-apple-watchos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2396,7 +2341,6 @@ target_vendor="apple"
 unix
 
 arm64e-apple-darwin:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2470,7 +2414,6 @@ target_vendor="apple"
 unix
 
 arm64e-apple-ios:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2531,7 +2474,6 @@ target_vendor="apple"
 unix
 
 arm64e-apple-tvos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2592,7 +2534,6 @@ target_vendor="apple"
 unix
 
 arm64ec-pc-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2632,7 +2573,6 @@ target_vendor="pc"
 windows
 
 armeb-unknown-linux-gnueabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2677,7 +2617,6 @@ target_vendor="unknown"
 unix
 
 armebv7r-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2719,7 +2658,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armebv7r-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2763,7 +2701,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv4t-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2781,7 +2718,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv4t-unknown-linux-gnueabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2816,7 +2752,6 @@ target_vendor="unknown"
 unix
 
 armv5te-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2835,7 +2770,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv5te-unknown-linux-gnueabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2871,7 +2805,6 @@ target_vendor="unknown"
 unix
 
 armv5te-unknown-linux-musleabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2908,7 +2841,6 @@ target_vendor="unknown"
 unix
 
 armv5te-unknown-linux-uclibceabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -2944,7 +2876,6 @@ target_vendor="unknown"
 unix
 
 armv6-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -2983,7 +2914,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv6-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -3023,7 +2953,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv6-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3065,7 +2994,6 @@ target_vendor="unknown"
 unix
 
 armv6-unknown-netbsd-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3107,7 +3035,6 @@ target_vendor="unknown"
 unix
 
 armv6k-nintendo-3ds:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -3146,7 +3073,6 @@ target_vendor="nintendo"
 unix
 
 armv7-linux-androideabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3195,7 +3121,6 @@ target_vendor="unknown"
 unix
 
 armv7-rtems-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -3244,7 +3169,6 @@ target_vendor="unknown"
 unix
 
 armv7-sony-vita-newlibeabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -3295,7 +3219,6 @@ target_vendor="sony"
 unix
 
 armv7-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3344,7 +3267,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-gnueabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3394,7 +3316,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-gnueabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3443,7 +3364,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-musleabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3494,7 +3414,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-musleabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3544,7 +3463,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-ohos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3593,7 +3511,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-uclibceabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3643,7 +3560,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-linux-uclibceabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3692,7 +3608,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-netbsd-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3741,7 +3656,6 @@ target_vendor="unknown"
 unix
 
 armv7-unknown-trusty:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -3789,7 +3703,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv7-wrs-vxworks-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -3839,7 +3752,6 @@ target_vendor="wrs"
 unix
 
 armv7a-kmc-solid_asp3-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -3887,7 +3799,6 @@ target_thread_local
 target_vendor="kmc"
 
 armv7a-kmc-solid_asp3-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -3934,7 +3845,6 @@ target_thread_local
 target_vendor="kmc"
 
 armv7a-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -3981,7 +3891,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv7a-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4027,7 +3936,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv7a-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4076,7 +3984,6 @@ target_vendor="unknown"
 unix
 
 armv7a-nuttx-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4125,7 +4032,6 @@ target_vendor="unknown"
 unix
 
 armv7a-vex-v5:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4173,7 +4079,6 @@ target_pointer_width="32"
 target_vendor="vex"
 
 armv7k-apple-watchos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4225,7 +4130,6 @@ target_vendor="apple"
 unix
 
 armv7r-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4267,7 +4171,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv7r-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4311,7 +4214,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 armv7s-apple-ios:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4361,7 +4263,6 @@ target_vendor="apple"
 unix
 
 armv8r-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -4407,7 +4308,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 avr-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -4432,7 +4332,6 @@ target_pointer_width="16"
 target_vendor="unknown"
 
 bpfeb-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -4454,7 +4353,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 bpfel-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -4476,7 +4374,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 csky-unknown-linux-gnuabiv2:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4527,7 +4424,6 @@ target_vendor="unknown"
 unix
 
 csky-unknown-linux-gnuabiv2hf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4592,7 +4488,6 @@ target_vendor="unknown"
 unix
 
 hexagon-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4630,7 +4525,6 @@ target_vendor="unknown"
 unix
 
 hexagon-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -4665,7 +4559,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 hexagon-unknown-qurt:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4716,7 +4609,6 @@ target_vendor="unknown"
 unix
 
 i386-apple-ios:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4761,7 +4653,6 @@ target_vendor="apple"
 unix
 
 i586-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4798,7 +4689,6 @@ target_vendor="unknown"
 unix
 
 i586-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4836,7 +4726,6 @@ target_vendor="unknown"
 unix
 
 i586-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4873,7 +4762,6 @@ target_vendor="unknown"
 unix
 
 i586-unknown-redox:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4911,7 +4799,6 @@ target_vendor="unknown"
 unix
 
 i686-apple-darwin:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4956,7 +4843,6 @@ target_vendor="apple"
 unix
 
 i686-linux-android:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -4997,7 +4883,6 @@ target_vendor="unknown"
 unix
 
 i686-pc-nto-qnx700:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5036,7 +4921,6 @@ target_vendor="pc"
 unix
 
 i686-pc-windows-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5076,7 +4960,6 @@ target_vendor="pc"
 windows
 
 i686-pc-windows-gnullvm:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5117,7 +5000,6 @@ target_vendor="pc"
 windows
 
 i686-pc-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5158,7 +5040,6 @@ target_vendor="pc"
 windows
 
 i686-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5198,7 +5079,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-haiku:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5237,7 +5117,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-helenos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -5274,7 +5153,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 i686-unknown-hurd-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5314,7 +5192,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5354,7 +5231,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5395,7 +5271,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5435,7 +5310,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5474,7 +5348,6 @@ target_vendor="unknown"
 unix
 
 i686-unknown-uefi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -5510,7 +5383,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 i686-uwp-windows-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5550,7 +5422,6 @@ target_vendor="uwp"
 windows
 
 i686-uwp-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5591,7 +5462,6 @@ target_vendor="uwp"
 windows
 
 i686-win7-windows-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5631,7 +5501,6 @@ target_vendor="win7"
 windows
 
 i686-win7-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5671,7 +5540,6 @@ target_vendor="win7"
 windows
 
 i686-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5712,7 +5580,6 @@ target_vendor="wrs"
 unix
 
 loongarch32-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -5745,7 +5612,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 loongarch32-unknown-none-softfloat:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -5776,7 +5642,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 loongarch64-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5820,7 +5685,6 @@ target_vendor="unknown"
 unix
 
 loongarch64-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5863,7 +5727,6 @@ target_vendor="unknown"
 unix
 
 loongarch64-unknown-linux-ohos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -5906,7 +5769,6 @@ target_vendor="unknown"
 unix
 
 loongarch64-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -5944,7 +5806,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 loongarch64-unknown-none-softfloat:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -5980,7 +5841,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 m68k-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6015,7 +5875,6 @@ target_vendor="unknown"
 unix
 
 m68k-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -6046,7 +5905,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 mips-mti-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -6077,7 +5935,6 @@ target_pointer_width="32"
 target_vendor="mti"
 
 mips-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6111,7 +5968,6 @@ target_vendor="unknown"
 unix
 
 mips-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6145,7 +6001,6 @@ target_vendor="unknown"
 unix
 
 mips-unknown-linux-uclibc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6179,7 +6034,6 @@ target_vendor="unknown"
 unix
 
 mips64-openwrt-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6217,7 +6071,6 @@ target_vendor="openwrt"
 unix
 
 mips64-unknown-linux-gnuabi64:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6256,7 +6109,6 @@ target_vendor="unknown"
 unix
 
 mips64-unknown-linux-muslabi64:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6294,7 +6146,6 @@ target_vendor="unknown"
 unix
 
 mips64el-unknown-linux-gnuabi64:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6333,7 +6184,6 @@ target_vendor="unknown"
 unix
 
 mips64el-unknown-linux-muslabi64:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6371,7 +6221,6 @@ target_vendor="unknown"
 unix
 
 mipsel-mti-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -6402,7 +6251,6 @@ target_pointer_width="32"
 target_vendor="mti"
 
 mipsel-sony-psp:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -6433,7 +6281,6 @@ target_pointer_width="32"
 target_vendor="sony"
 
 mipsel-sony-psx:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -6450,7 +6297,6 @@ target_pointer_width="32"
 target_vendor="sony"
 
 mipsel-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6484,7 +6330,6 @@ target_vendor="unknown"
 unix
 
 mipsel-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6518,7 +6363,6 @@ target_vendor="unknown"
 unix
 
 mipsel-unknown-linux-uclibc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6552,7 +6396,6 @@ target_vendor="unknown"
 unix
 
 mipsel-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6586,7 +6429,6 @@ target_vendor="unknown"
 unix
 
 mipsel-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -6617,7 +6459,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 mipsisa32r6-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6652,7 +6493,6 @@ target_vendor="unknown"
 unix
 
 mipsisa32r6el-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6687,7 +6527,6 @@ target_vendor="unknown"
 unix
 
 mipsisa64r6-unknown-linux-gnuabi64:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6726,7 +6565,6 @@ target_vendor="unknown"
 unix
 
 mipsisa64r6el-unknown-linux-gnuabi64:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6765,7 +6603,6 @@ target_vendor="unknown"
 unix
 
 msp430-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -6782,7 +6619,6 @@ target_pointer_width="16"
 target_vendor="unknown"
 
 nvptx64-nvidia-cuda:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -6817,7 +6653,6 @@ target_pointer_width="64"
 target_vendor="nvidia"
 
 powerpc-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6850,7 +6685,6 @@ target_vendor="unknown"
 unix
 
 powerpc-unknown-helenos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -6880,7 +6714,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 powerpc-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6913,7 +6746,6 @@ target_vendor="unknown"
 unix
 
 powerpc-unknown-linux-gnuspe:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6947,7 +6779,6 @@ target_vendor="unknown"
 unix
 
 powerpc-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -6980,7 +6811,6 @@ target_vendor="unknown"
 unix
 
 powerpc-unknown-linux-muslspe:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7014,7 +6844,6 @@ target_vendor="unknown"
 unix
 
 powerpc-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7047,7 +6876,6 @@ target_vendor="unknown"
 unix
 
 powerpc-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7079,7 +6907,6 @@ target_vendor="unknown"
 unix
 
 powerpc-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7113,7 +6940,6 @@ target_vendor="wrs"
 unix
 
 powerpc-wrs-vxworks-spe:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7148,7 +6974,6 @@ target_vendor="wrs"
 unix
 
 powerpc64-ibm-aix:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7186,7 +7011,6 @@ target_vendor="ibm"
 unix
 
 powerpc64-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7223,7 +7047,6 @@ target_vendor="unknown"
 unix
 
 powerpc64-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7260,7 +7083,6 @@ target_vendor="unknown"
 unix
 
 powerpc64-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7297,7 +7119,6 @@ target_vendor="unknown"
 unix
 
 powerpc64-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7333,7 +7154,6 @@ target_vendor="unknown"
 unix
 
 powerpc64-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7371,7 +7191,6 @@ target_vendor="wrs"
 unix
 
 powerpc64le-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7414,7 +7233,6 @@ target_vendor="unknown"
 unix
 
 powerpc64le-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7457,7 +7275,6 @@ target_vendor="unknown"
 unix
 
 powerpc64le-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7501,7 +7318,6 @@ target_vendor="unknown"
 unix
 
 riscv32-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7546,7 +7362,6 @@ target_vendor="wrs"
 unix
 
 riscv32e-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7573,7 +7388,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32em-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7601,7 +7415,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32emc-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7631,7 +7444,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32gc-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7675,7 +7487,6 @@ target_vendor="unknown"
 unix
 
 riscv32gc-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -7719,7 +7530,6 @@ target_vendor="unknown"
 unix
 
 riscv32i-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7745,7 +7555,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32im-risc0-zkvm-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7780,7 +7589,6 @@ target_pointer_width="32"
 target_vendor="risc0"
 
 riscv32im-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7807,7 +7615,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32ima-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7842,7 +7649,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32imac-esp-espidf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7881,7 +7687,6 @@ target_vendor="espressif"
 unix
 
 riscv32imac-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -7918,7 +7723,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32imac-unknown-nuttx-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -7957,7 +7761,6 @@ target_vendor="unknown"
 unix
 
 riscv32imac-unknown-xous-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -7994,7 +7797,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32imafc-esp-espidf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8035,7 +7837,6 @@ target_vendor="espressif"
 unix
 
 riscv32imafc-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8074,7 +7875,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32imafc-unknown-nuttx-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8115,7 +7915,6 @@ target_vendor="unknown"
 unix
 
 riscv32imc-esp-espidf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8151,7 +7950,6 @@ target_vendor="espressif"
 unix
 
 riscv32imc-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8180,7 +7978,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 riscv32imc-unknown-nuttx-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="static"
@@ -8216,7 +8013,6 @@ target_vendor="unknown"
 unix
 
 riscv64-linux-android:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8275,7 +8071,6 @@ target_vendor="unknown"
 unix
 
 riscv64-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8323,7 +8118,6 @@ target_vendor="wrs"
 unix
 
 riscv64a23-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8411,7 +8205,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8458,7 +8251,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-fuchsia:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8515,7 +8307,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-hermit:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -8560,7 +8351,6 @@ target_thread_local
 target_vendor="unknown"
 
 riscv64gc-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8608,7 +8398,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8655,7 +8444,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-managarm-mlibc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8701,7 +8489,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8748,7 +8535,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8792,7 +8578,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 riscv64gc-unknown-nuttx-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8838,7 +8623,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8884,7 +8668,6 @@ target_vendor="unknown"
 unix
 
 riscv64gc-unknown-redox:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -8931,7 +8714,6 @@ target_vendor="unknown"
 unix
 
 riscv64im-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -8960,7 +8742,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 riscv64imac-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9000,7 +8781,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 riscv64imac-unknown-nuttx-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9042,7 +8822,6 @@ target_vendor="unknown"
 unix
 
 s390x-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9082,7 +8861,6 @@ target_vendor="unknown"
 unix
 
 s390x-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9121,7 +8899,6 @@ target_vendor="unknown"
 unix
 
 s390x-unknown-none-softfloat:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9157,7 +8934,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 sparc-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9193,7 +8969,6 @@ target_vendor="unknown"
 unix
 
 sparc-unknown-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9224,7 +8999,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 sparc64-unknown-helenos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -9259,7 +9033,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 sparc64-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9298,7 +9071,6 @@ target_vendor="unknown"
 unix
 
 sparc64-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9336,7 +9108,6 @@ target_vendor="unknown"
 unix
 
 sparc64-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9373,7 +9144,6 @@ target_vendor="unknown"
 unix
 
 sparcv9-sun-solaris:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -9410,7 +9180,6 @@ target_vendor="sun"
 unix
 
 thumbv4t-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9429,7 +9198,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv5te-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9449,7 +9217,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv6-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9486,7 +9253,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv6m-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9516,7 +9282,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv6m-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9553,7 +9318,6 @@ target_vendor="unknown"
 unix
 
 thumbv7a-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9601,7 +9365,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv7a-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9648,7 +9411,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv7a-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9698,7 +9460,6 @@ target_vendor="unknown"
 unix
 
 thumbv7a-nuttx-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9748,7 +9509,6 @@ target_vendor="unknown"
 unix
 
 thumbv7a-pc-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -9799,7 +9559,6 @@ target_vendor="pc"
 windows
 
 thumbv7a-uwp-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -9850,7 +9609,6 @@ target_vendor="uwp"
 windows
 
 thumbv7em-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9890,7 +9648,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv7em-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9931,7 +9688,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv7em-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -9973,7 +9729,6 @@ target_vendor="unknown"
 unix
 
 thumbv7em-nuttx-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10016,7 +9771,6 @@ target_vendor="unknown"
 unix
 
 thumbv7m-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10055,7 +9809,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv7m-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10096,7 +9849,6 @@ target_vendor="unknown"
 unix
 
 thumbv7neon-linux-androideabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -10146,7 +9898,6 @@ target_vendor="unknown"
 unix
 
 thumbv7neon-unknown-linux-gnueabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -10197,7 +9948,6 @@ target_vendor="unknown"
 unix
 
 thumbv7neon-unknown-linux-musleabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -10248,7 +9998,6 @@ target_vendor="unknown"
 unix
 
 thumbv7r-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10291,7 +10040,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv7r-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10336,7 +10084,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv8m.base-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10371,7 +10118,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv8m.base-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10408,7 +10154,6 @@ target_vendor="unknown"
 unix
 
 thumbv8m.main-none-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10447,7 +10192,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv8m.main-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10487,7 +10231,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 thumbv8m.main-nuttx-eabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10528,7 +10271,6 @@ target_vendor="unknown"
 unix
 
 thumbv8m.main-nuttx-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10570,7 +10312,6 @@ target_vendor="unknown"
 unix
 
 thumbv8r-none-eabihf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10617,7 +10358,6 @@ target_pointer_width="32"
 target_vendor="unknown"
 
 wasm32-unknown-emscripten:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -10663,7 +10403,6 @@ target_vendor="unknown"
 unix
 
 wasm32-unknown-unknown:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10705,7 +10444,6 @@ target_thread_local
 target_vendor="unknown"
 
 wasm32-wali-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10751,7 +10489,6 @@ target_vendor="unknown"
 unix
 
 wasm32-wasip1:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10794,7 +10531,6 @@ target_thread_local
 target_vendor="unknown"
 
 wasm32-wasip1-threads:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10838,7 +10574,6 @@ target_thread_local
 target_vendor="unknown"
 
 wasm32-wasip2:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -10881,7 +10616,6 @@ target_thread_local
 target_vendor="unknown"
 
 wasm32-wasip3:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -10924,7 +10658,6 @@ target_thread_local
 target_vendor="unknown"
 
 wasm32v1-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -10961,7 +10694,6 @@ target_thread_local
 target_vendor="unknown"
 
 wasm64-unknown-unknown:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -11003,7 +10735,6 @@ target_thread_local
 target_vendor="unknown"
 
 x86_64-apple-darwin:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11052,7 +10783,6 @@ target_vendor="apple"
 unix
 
 x86_64-apple-ios:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11101,7 +10831,6 @@ target_vendor="apple"
 unix
 
 x86_64-apple-ios-macabi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11150,7 +10879,6 @@ target_vendor="apple"
 unix
 
 x86_64-apple-tvos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11199,7 +10927,6 @@ target_vendor="apple"
 unix
 
 x86_64-apple-watchos-sim:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11248,7 +10975,6 @@ target_vendor="apple"
 unix
 
 x86_64-fortanix-unknown-sgx:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11288,7 +11014,6 @@ target_pointer_width="64"
 target_vendor="fortanix"
 
 x86_64-linux-android:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11333,7 +11058,6 @@ target_vendor="unknown"
 unix
 
 x86_64-lynx-lynxos178:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -11373,7 +11097,6 @@ target_vendor="unknown"
 unix
 
 x86_64-pc-cygwin:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11414,7 +11137,6 @@ target_vendor="pc"
 unix
 
 x86_64-pc-nto-qnx710:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11454,7 +11176,6 @@ target_vendor="pc"
 unix
 
 x86_64-pc-nto-qnx710_iosock:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11494,7 +11215,6 @@ target_vendor="pc"
 unix
 
 x86_64-pc-nto-qnx800:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11534,7 +11254,6 @@ target_vendor="pc"
 unix
 
 x86_64-pc-solaris:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11574,7 +11293,6 @@ target_vendor="pc"
 unix
 
 x86_64-pc-windows-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11617,7 +11335,6 @@ target_vendor="pc"
 windows
 
 x86_64-pc-windows-gnullvm:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11664,7 +11381,6 @@ target_vendor="pc"
 windows
 
 x86_64-pc-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11711,7 +11427,6 @@ target_vendor="pc"
 windows
 
 x86_64-unikraft-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -11752,7 +11467,6 @@ target_vendor="unikraft"
 unix
 
 x86_64-unknown-dragonfly:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11793,7 +11507,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-freebsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11834,7 +11547,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-fuchsia:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11885,7 +11597,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-haiku:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -11925,7 +11636,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-helenos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -11963,7 +11673,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 x86_64-unknown-hermit:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -12004,7 +11713,6 @@ target_thread_local
 target_vendor="unknown"
 
 x86_64-unknown-hurd-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12045,7 +11753,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-illumos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12085,7 +11792,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-l4re-uclibc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -12125,7 +11831,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12166,7 +11871,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-gnuasan:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12208,7 +11912,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-gnumsan:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12250,7 +11953,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-gnutsan:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12292,7 +11994,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-gnux32:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12332,7 +12033,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-musl:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12374,7 +12074,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -12415,7 +12114,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-linux-ohos:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12455,7 +12153,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-managarm-mlibc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12496,7 +12193,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-motor:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -12535,7 +12231,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 x86_64-unknown-netbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12576,7 +12271,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-none:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -12612,7 +12306,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 x86_64-unknown-openbsd:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12652,7 +12345,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-redox:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12694,7 +12386,6 @@ target_vendor="unknown"
 unix
 
 x86_64-unknown-trusty:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -12732,7 +12423,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 x86_64-unknown-uefi:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="pic"
@@ -12768,7 +12458,6 @@ target_pointer_width="64"
 target_vendor="unknown"
 
 x86_64-uwp-windows-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12811,7 +12500,6 @@ target_vendor="uwp"
 windows
 
 x86_64-uwp-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12858,7 +12546,6 @@ target_vendor="uwp"
 windows
 
 x86_64-win7-windows-gnu:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12895,7 +12582,6 @@ target_vendor="win7"
 windows
 
 x86_64-win7-windows-msvc:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12936,7 +12622,6 @@ target_vendor="win7"
 windows
 
 x86_64-wrs-vxworks:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -12978,7 +12663,6 @@ target_vendor="wrs"
 unix
 
 x86_64h-apple-darwin:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
@@ -13040,7 +12724,6 @@ target_vendor="apple"
 unix
 
 xtensa-esp32-espidf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -13073,7 +12756,6 @@ target_vendor="espressif"
 unix
 
 xtensa-esp32-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -13104,7 +12786,6 @@ target_pointer_width="32"
 target_vendor="espressif"
 
 xtensa-esp32s2-espidf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -13137,7 +12818,6 @@ target_vendor="espressif"
 unix
 
 xtensa-esp32s2-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -13163,7 +12843,6 @@ target_pointer_width="32"
 target_vendor="espressif"
 
 xtensa-esp32s3-espidf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
@@ -13196,7 +12875,6 @@ target_vendor="espressif"
 unix
 
 xtensa-esp32s3-none-elf:
-emscripten_wasm_eh
 fmt_debug="full"
 panic="abort"
 relocation_model="static"
