@@ -18,19 +18,19 @@ concurrency:
 
 jobs:
   tidy:
-    uses: taiki-e/github-actions/.github/workflows/tidy.yml@1bb80ca038216cd1fb7b6ca6d76240b3772963ab # main
+    uses: taiki-e/github-actions/.github/workflows/tidy.yml@e0291c01c2cc70f9de01fe6906fef81cd4a79e2d # main
     permissions:
       security-events: write # for github/codeql-action/*
   codegen:
     needs: tidy
-    uses: taiki-e/github-actions/.github/workflows/gen.yml@1bb80ca038216cd1fb7b6ca6d76240b3772963ab # main
+    uses: taiki-e/github-actions/.github/workflows/gen.yml@e0291c01c2cc70f9de01fe6906fef81cd4a79e2d # main
     permissions:
       contents: write # for creating branch for pr
     secrets:
       PR_TOKEN_APP_PRIVATE_KEY: ${{ secrets.PR_TOKEN_APP_PRIVATE_KEY }}
   test:
     needs: tidy
-    uses: taiki-e/github-actions/.github/workflows/rust-test.yml@1bb80ca038216cd1fb7b6ca6d76240b3772963ab # main
+    uses: taiki-e/github-actions/.github/workflows/rust-test.yml@e0291c01c2cc70f9de01fe6906fef81cd4a79e2d # main
     with:
       test-args: --exclude cargo-config2-internal-codegen
       no-std: false
