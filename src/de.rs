@@ -695,7 +695,7 @@ pub struct HttpConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub multiplexing: Option<Value<bool>>,
     /// Specifies a custom user-agent header to use.
-    /// The default if not specified is a string that includes Cargo’s version.
+    /// The default if not specified is a string that includes Cargo's version.
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/nightly/cargo/reference/config.html#httpuser-agent)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -989,7 +989,7 @@ pub struct CredentialProvider {
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum CredentialProviderKind {
-    /// Uses Cargo’s credentials file to store tokens unencrypted in plain text.
+    /// Uses Cargo's credentials file to store tokens unencrypted in plain text.
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargotoken)
     CargoToken,
@@ -1009,7 +1009,7 @@ pub enum CredentialProviderKind {
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#cargotoken-from-stdout-command-args)
     CargoTokenFromStdout(PathAndArgs),
-    /// For credential provider plugins that follow Cargo’s credential provider protocol,
+    /// For credential provider plugins that follow Cargo's credential provider protocol,
     /// the configuration value should be a string with the path to the executable (or the executable name if on the PATH).
     ///
     /// [Cargo Reference](https://doc.rust-lang.org/cargo/reference/registry-authentication.html#credential-plugins)
