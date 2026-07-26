@@ -1696,7 +1696,10 @@ pub(crate) fn target_u_upper(target: &str) -> String {
 }
 
 pub(crate) fn split_encoded(s: &str) -> impl Iterator<Item = &str> {
-    s.split('\x1f')
+    // Cargo treats an entirely empty value as no flags,
+    // but preserves empty components in a non-empty value:
+    // https://github.com/rust-lang/cargo/blob/c980f4866141969fab6254a680546a277789d6f0/src/cargo/core/compiler/build_context/target_info.rs#L825-L833
+    (!s.is_empty()).then(|| s.split('\x1f')).into_iter().flatten()
 }
 pub(crate) fn split_space_separated(s: &str) -> impl Iterator<Item = &str> {
     // TODO: tab/line?
