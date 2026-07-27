@@ -28,7 +28,10 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::{
     PathAndArgs, cfg,
-    cfg_expr::expr::{Expression, Predicate},
+    cfg_expr::{
+        error::Reason,
+        expr::{Expression, Predicate},
+    },
     easy,
     error::{Context as _, Error, Result},
     process::ProcessBuilder,
@@ -294,7 +297,13 @@ impl ResolveContext {
         target: &TargetTripleRef<'_>,
         build_config: &easy::BuildConfig,
     ) -> Result<bool> {
-        let expr = Expression::parse(expr).map_err(Error::new)?;
+        // Cargo treats an empty target cfg expression as non-matching.
+        // https://github.com/rust-lang/cargo/blob/e22c5be31b208baa8912aea960d3e73346041a75/crates/cargo-platform/src/cfg.rs#L133-L144
+        let expr = match Expression::parse(expr) {
+            Ok(expr) => expr,
+            Err(error) if matches!(&error.reason, Reason::Empty) => return Ok(false),
+            Err(error) => return Err(Error::new(error)),
+        };
         let mut cfg_map = self.cfg.borrow_mut();
         cfg_map.eval_cfg(&expr, target, &|| self.rustc(build_config).into())
     }
@@ -327,8 +336,14 @@ impl CfgMap {
         Ok(expr.eval(|pred| match pred {
             Predicate::Flag(flag) => {
                 match *flag {
+                    // `true` and `false` literals are supported as of Rust 1.88:
+                    // https://github.com/rust-lang/cargo/pull/14649
+                    //
+                    // `test`, `debug_assertions`, and `proc_macro` trigger warnings
+                    // without being evaluated.
                     // https://github.com/rust-lang/cargo/pull/7660
-                    "test" | "debug_assertions" | "proc_macro" => false,
+                    "true" => true,
+                    "false" | "test" | "debug_assertions" | "proc_macro" => false,
                     flag => cfg.flags.contains(flag),
                 }
             }

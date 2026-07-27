@@ -372,6 +372,53 @@ fn custom_target() {
     }
 }
 
+#[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
+fn target_cfg_boolean_literals() {
+    let (_tmp, root) = test_project("empty");
+    fs::write(
+        root.join(".cargo/config.toml"),
+        r#"
+            [target.'cfg(true)']
+            rustflags = ["--cfg", "cfg_true"]
+
+            [target.'cfg(false)']
+            rustflags = ["--cfg", "cfg_false"]
+
+            [target.'cfg(all(true, not(false)))']
+            rustflags = ["--cfg", "cfg_nested"]
+        "#,
+    )
+    .unwrap();
+
+    // `false` remains a literal even if rustc reports a same-named user cfg.
+    let mut rustc = PathAndArgs::new("rustc");
+    rustc.args(["--cfg", "r#false"]);
+    let options = test_options().rustc(rustc);
+    let config = Config::load_with_options(&root, options).unwrap();
+    assert_eq!(
+        config.rustflags(TARGET).unwrap(),
+        Some(["--cfg", "cfg_nested", "--cfg", "cfg_true",].into())
+    );
+}
+
+#[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
+fn empty_target_cfg_expression_does_not_match() {
+    let (_tmp, root) = test_project("empty");
+    fs::write(
+        root.join(".cargo/config.toml"),
+        r#"
+            [target.'cfg()']
+            rustflags = ["--cfg", "cfg_empty"]
+        "#,
+    )
+    .unwrap();
+
+    let config = Config::load_with_options(&root, test_options()).unwrap();
+    assert_eq!(config.rustflags(TARGET).unwrap(), None);
+}
+
 #[rustversion::attr(not(nightly), ignore)]
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
