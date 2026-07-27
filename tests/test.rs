@@ -207,7 +207,7 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
     );
     assert_eq!(
         config.target("x86_64-unknown-linux-gnu").unwrap().rustdocflags,
-        Some(["d", "dd"].into())
+        Some(["d", "dd", "e", "ee"].into())
     );
     assert_eq!(config.linker("x86_64-unknown-linux-gnu").unwrap().unwrap().as_os_str(), "b");
     assert_eq!(config.runner("x86_64-unknown-linux-gnu").unwrap().unwrap().path.as_os_str(), "b");
@@ -216,7 +216,10 @@ fn assert_reference_example(de: fn(&Path, ResolveOptions) -> Result<Config, Erro
         config.rustflags("x86_64-unknown-linux-gnu").unwrap(),
         Some(["b", "bb", "c", "cc"].into())
     );
-    assert_eq!(config.rustdocflags("x86_64-unknown-linux-gnu").unwrap(), Some(["d", "dd"].into()));
+    assert_eq!(
+        config.rustdocflags("x86_64-unknown-linux-gnu").unwrap(),
+        Some(["d", "dd", "e", "ee"].into())
+    );
     assert_eq!(
         config.rustflags("thumbv8m.main-none-eabi").unwrap(),
         Some(["-Z", "panic-abort-tests"].into())
@@ -287,6 +290,35 @@ fn no_manifest_dir() {
         "",
         toml::to_string(&Config::load_with_options(tmpdir.path(), test_options()).unwrap())
             .unwrap()
+    );
+}
+
+#[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
+fn empty_target_flags_fall_back_to_build() {
+    let (_tmp, root) = test_project("empty");
+    fs::write(
+        root.join(".cargo/config.toml"),
+        r#"
+            [build]
+            rustflags = ["--cfg", "from_build_rustflags"]
+            rustdocflags = ["--cfg", "from_build_rustdocflags"]
+
+            [target.'cfg(target_arch = "x86_64")']
+            rustflags = []
+            rustdocflags = []
+            "#,
+    )
+    .unwrap();
+
+    let config = Config::load_with_options(&root, test_options()).unwrap();
+    assert_eq!(
+        config.rustflags("x86_64-unknown-linux-gnu").unwrap(),
+        Some(["--cfg", "from_build_rustflags"].into())
+    );
+    assert_eq!(
+        config.rustdocflags("x86_64-unknown-linux-gnu").unwrap(),
+        Some(["--cfg", "from_build_rustdocflags"].into())
     );
 }
 

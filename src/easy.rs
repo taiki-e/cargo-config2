@@ -1423,6 +1423,7 @@ impl Flags {
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
     /// - `target.<triple>.rustdocflags` (Cargo 1.78+)
+    /// - `target.<cfg>.rustdocflags` (Cargo 1.96+)
     /// - `build.rustdocflags`
     ///
     /// See also [`encode_space_separated`](Self::encode_space_separated).
@@ -1471,6 +1472,7 @@ impl Flags {
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
     /// - `target.<triple>.rustdocflags` (Cargo 1.78+)
+    /// - `target.<cfg>.rustdocflags` (Cargo 1.96+)
     /// - `build.rustdocflags`
     ///
     /// # Errors

@@ -240,6 +240,7 @@ impl ApplyEnv for BuildConfig {
         // 1. CARGO_ENCODED_RUSTDOCFLAGS
         // 2. RUSTDOCFLAGS
         // 3. target.<triple>.rustdocflags (CARGO_TARGET_<triple>_RUSTDOCFLAGS)
+        //    and target.<cfg>.rustdocflags
         // 4. build.rustdocflags (CARGO_BUILD_RUSTDOCFLAGS)
         // For 3, we handle it in de::Config::resolve_target.
         // https://doc.rust-lang.org/nightly/cargo/reference/config.html#buildrustdocflags

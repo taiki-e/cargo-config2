@@ -331,8 +331,28 @@ impl Config {
                         target_rustflags @ None => *target_rustflags = Some(rustflags.clone()),
                     }
                 }
+                // Applied order (as of 1.97.1):
+                // 1. target.<triple>.rustdocflags
+                // 2. CARGO_TARGET_<triple>_RUSTDOCFLAGS
+                // 3. target.<cfg>.rustdocflags
+                if let Some(rustdocflags) = v.rustdocflags.as_ref() {
+                    match &mut target_rustdocflags {
+                        Some(target_rustdocflags) => {
+                            target_rustdocflags.flags.extend_from_slice(&rustdocflags.flags);
+                        }
+                        target_rustdocflags @ None => {
+                            *target_rustdocflags = Some(rustdocflags.clone());
+                        }
+                    }
+                }
             }
         }
+
+        // Empty target flags do not override build flags, per cargo's behavior as of Rust 1.97.1.
+        target_rustflags = target_rustflags.filter(|rustflags| !rustflags.flags.is_empty());
+        target_rustdocflags =
+            target_rustdocflags.filter(|rustdocflags| !rustdocflags.flags.is_empty());
+
         if let Some(linker) = target_linker {
             target_config.get_or_insert_with(TargetConfig::default).linker = Some(linker);
         }
@@ -1384,6 +1404,7 @@ impl Flags {
     /// - `target.<cfg>.rustflags`
     /// - `build.rustflags`
     /// - `target.<triple>.rustdocflags` (Cargo 1.78+)
+    /// - `target.<cfg>.rustdocflags` (Cargo 1.96+)
     /// - `build.rustdocflags`
     ///
     /// See also `encode_space_separated`.
