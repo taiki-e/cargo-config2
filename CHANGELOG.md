@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.45] - 2026-07-30
+
 - Support `cfg(false) / cfg(true) / cfg()` expressions that [supported in Cargo 1.88](https://github.com/rust-lang/cargo/pull/14649). ([#66](https://github.com/taiki-e/cargo-config2/pull/66), thanks @obi1kenobi)
 
 - Support `target.'cfg(..)'.rustdocflags` that [added in Cargo 1.96](https://github.com/rust-lang/cargo/pull/16846). ([#67](https://github.com/taiki-e/cargo-config2/pull/67), thanks @obi1kenobi)
@@ -227,7 +229,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.44...HEAD
+[Unreleased]: https://github.com/taiki-e/cargo-config2/compare/v0.1.45...HEAD
+[0.1.45]: https://github.com/taiki-e/cargo-config2/compare/v0.1.44...v0.1.45
 [0.1.44]: https://github.com/taiki-e/cargo-config2/compare/v0.1.43...v0.1.44
 [0.1.43]: https://github.com/taiki-e/cargo-config2/compare/v0.1.42...v0.1.43
 [0.1.42]: https://github.com/taiki-e/cargo-config2/compare/v0.1.41...v0.1.42
