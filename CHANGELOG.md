@@ -12,6 +12,14 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Support `cfg(false) / cfg(true) / cfg()` expressions that [supported in Cargo 1.88](https://github.com/rust-lang/cargo/pull/14649). ([#66](https://github.com/taiki-e/cargo-config2/pull/66), thanks @obi1kenobi)
+
+- Support `target.'cfg(..)'.rustdocflags` that [added in Cargo 1.96](https://github.com/rust-lang/cargo/pull/16846). ([#67](https://github.com/taiki-e/cargo-config2/pull/67), thanks @obi1kenobi)
+
+- Handle empty target flags to match the Cargo behavior. ([#67](https://github.com/taiki-e/cargo-config2/pull/67), thanks @obi1kenobi)
+
+- Treat empty encoded flags as a zero-flag override to match the Cargo behavior. ([#68](https://github.com/taiki-e/cargo-config2/pull/68), thanks @obi1kenobi)
+
 ## [0.1.44] - 2026-03-24
 
 - Remove dependency on `windows-sys`.
