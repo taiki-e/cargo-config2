@@ -322,6 +322,43 @@ fn empty_target_flags_fall_back_to_build() {
     );
 }
 
+#[test]
+fn flags_from_encoded() {
+    for (encoded, expected) in [
+        ("", Flags::default()),
+        ("\x1f", ["", ""].into()),
+        ("\x1fa\x1f", ["", "a", ""].into()),
+        ("a\x1fb", ["a", "b"].into()),
+    ] {
+        assert_eq!(Flags::from_encoded(encoded), expected);
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
+fn empty_encoded_flags_override_other_sources() {
+    let (_tmp, root) = test_project("empty");
+    fs::write(
+        root.join(".cargo/config.toml"),
+        r#"
+            [build]
+            rustflags = ["from_build_rustflags"]
+            rustdocflags = ["from_build_rustdocflags"]
+
+            [target.x86_64-unknown-linux-gnu]
+            rustflags = ["from_target_rustflags"]
+            rustdocflags = ["from_target_rustdocflags"]
+            "#,
+    )
+    .unwrap();
+
+    let options =
+        test_options().env([("CARGO_ENCODED_RUSTFLAGS", ""), ("CARGO_ENCODED_RUSTDOCFLAGS", "")]);
+    let config = Config::load_with_options(&root, options).unwrap();
+    assert_eq!(config.rustflags("x86_64-unknown-linux-gnu").unwrap(), Some(Flags::default()));
+    assert_eq!(config.rustdocflags("x86_64-unknown-linux-gnu").unwrap(), Some(Flags::default()));
+}
+
 fn de_load(dir: &Path, _cx: ResolveOptions) -> Result<de::Config, Error> {
     de::Config::load_with_options(dir, None)
 }
