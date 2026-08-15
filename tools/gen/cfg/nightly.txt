@@ -12111,6 +12111,7 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
 target_has_threads
 target_object_format="coff"
 target_os="windows"
@@ -13305,6 +13306,7 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
 target_has_threads
 target_object_format="coff"
 target_os="windows"
@@ -13389,6 +13391,7 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
 target_has_threads
 target_object_format="coff"
 target_os="windows"
