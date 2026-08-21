@@ -40,7 +40,7 @@ pub trait Cfg {
 /// (Rust 1.78+)
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetAbi::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -58,6 +58,7 @@ pub enum TargetAbi {
     ilp32e,
     llvm,
     macabi,
+    pauthtest,
     sim,
     softfloat,
     spe,
@@ -85,6 +86,7 @@ impl TargetAbi {
             Self::ilp32e => "ilp32e",
             Self::llvm => "llvm",
             Self::macabi => "macabi",
+            Self::pauthtest => "pauthtest",
             Self::sim => "sim",
             Self::softfloat => "softfloat",
             Self::spe => "spe",
@@ -193,6 +195,7 @@ impl FromStr for TargetAbi {
             "ilp32e" => Ok(Self::ilp32e),
             "llvm" => Ok(Self::llvm),
             "macabi" => Ok(Self::macabi),
+            "pauthtest" => Ok(Self::pauthtest),
             "sim" => Ok(Self::sim),
             "softfloat" => Ok(Self::softfloat),
             "spe" => Ok(Self::spe),
@@ -232,7 +235,7 @@ impl fmt::Display for TargetAbi {
 /// `cfg(target_arch == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetArch::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -460,7 +463,7 @@ impl fmt::Display for TargetArch {
 /// `cfg(target_endian == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetEndian::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone, PartialEq, Eq)]
 #[allow(clippy::exhaustive_enums)]
@@ -575,7 +578,7 @@ impl fmt::Display for TargetEndian {
 /// `cfg(target_env == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetEnv::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -782,7 +785,7 @@ impl fmt::Display for TargetEnv {
 /// `cfg(target_family == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetFamily::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -931,7 +934,7 @@ impl fmt::Display for TargetFamily {
 /// (Rust 1.60+)
 ///
 /// All values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are constructable without allocation. To construct values, use
+/// to 1.98 are constructable without allocation. To construct values, use
 /// `TargetHasAtomic::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 pub struct TargetHasAtomic(TargetHasAtomicRepr);
@@ -1188,7 +1191,7 @@ impl fmt::Display for TargetHasAtomic {
 /// `cfg(target_os == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetOs::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -1226,6 +1229,7 @@ pub enum TargetOs {
     openbsd,
     psp,
     psx,
+    qnx,
     qurt,
     redox,
     rtems,
@@ -1286,6 +1290,7 @@ impl TargetOs {
             Self::openbsd => "openbsd",
             Self::psp => "psp",
             Self::psx => "psx",
+            Self::qnx => "qnx",
             Self::qurt => "qurt",
             Self::redox => "redox",
             Self::rtems => "rtems",
@@ -1427,6 +1432,7 @@ impl FromStr for TargetOs {
             "openbsd" => Ok(Self::openbsd),
             "psp" => Ok(Self::psp),
             "psx" => Ok(Self::psx),
+            "qnx" => Ok(Self::qnx),
             "qurt" => Ok(Self::qurt),
             "redox" => Ok(Self::redox),
             "rtems" => Ok(Self::rtems),
@@ -1479,7 +1485,7 @@ impl fmt::Display for TargetOs {
 /// `cfg(target_pointer_width == "..")`
 ///
 /// All values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are constructable without allocation. To construct values, use
+/// to 1.98 are constructable without allocation. To construct values, use
 /// `TargetPointerWidth::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 pub struct TargetPointerWidth(TargetPointerWidthRepr);
@@ -1712,7 +1718,7 @@ impl fmt::Display for TargetPointerWidth {
 /// (Rust 1.33+)
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.97 are available as variants. To construct other values, use
+/// to 1.98 are available as variants. To construct other values, use
 /// `TargetVendor::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
