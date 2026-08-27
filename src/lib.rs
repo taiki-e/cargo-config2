@@ -67,7 +67,7 @@ See also the [`get` example](https://github.com/taiki-e/cargo-config2/blob/HEAD/
     clippy::std_instead_of_core,
     // clippy::missing_inline_in_public_items,
 )]
-#![allow(clippy::must_use_candidate)]
+#![allow(clippy::must_use_candidate, clippy::used_underscore_items)]
 
 // Refs:
 // - https://doc.rust-lang.org/nightly/cargo/reference/config.html
