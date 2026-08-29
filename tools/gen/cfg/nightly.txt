@@ -9516,7 +9516,7 @@ sparc-unknown-linux-gnu:
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
-target_abi=""
+target_abi="v8plus"
 target_arch="sparc"
 target_endian="big"
 target_env="gnu"
