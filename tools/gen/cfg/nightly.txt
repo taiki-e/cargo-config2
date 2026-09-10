@@ -12464,7 +12464,6 @@ x86_64-unknown-fuchsia:
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
-sanitize="safestack"
 target_abi=""
 target_arch="x86_64"
 target_endian="little"
