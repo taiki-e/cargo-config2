@@ -7465,6 +7465,7 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
 target_has_threads
@@ -7764,6 +7765,7 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
 target_has_threads
@@ -7807,6 +7809,8 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
+target_has_reliable_f128_math
 target_has_reliable_f16
 target_has_reliable_f16_math
 target_has_threads
@@ -7851,6 +7855,7 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
+target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
 target_has_threads
