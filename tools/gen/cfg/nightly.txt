@@ -64,6 +64,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="macos"
@@ -108,6 +109,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="ios"
@@ -169,6 +171,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="ios"
@@ -230,6 +233,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="ios"
@@ -274,6 +278,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="tvos"
@@ -335,6 +340,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="tvos"
@@ -379,6 +385,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="visionos"
@@ -440,6 +447,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="visionos"
@@ -484,6 +492,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="watchos"
@@ -545,6 +554,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="watchos"
@@ -585,6 +595,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="solid_asp3"
@@ -625,6 +636,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="android"
@@ -667,6 +679,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="horizon"
@@ -708,6 +721,7 @@ target_has_reliable_f128
 target_has_reliable_f128_math
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -749,6 +763,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="coff"
 target_os="windows"
@@ -790,6 +805,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="coff"
 target_os="windows"
@@ -831,6 +847,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="freebsd"
@@ -876,6 +893,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="fuchsia"
@@ -916,6 +934,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="helenos"
@@ -954,6 +973,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="hermit"
@@ -994,6 +1014,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="illumos"
@@ -1034,6 +1055,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="l4re"
@@ -1077,6 +1099,7 @@ target_has_reliable_f128
 target_has_reliable_f128_math
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -1119,6 +1142,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -1162,6 +1186,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -1204,6 +1229,7 @@ target_has_reliable_f128
 target_has_reliable_f128_math
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -1260,6 +1286,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -1301,6 +1328,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="managarm"
@@ -1342,6 +1370,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="netbsd"
@@ -1382,6 +1411,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="none"
@@ -1419,6 +1449,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="none"
@@ -1458,6 +1489,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="nto"
@@ -1498,6 +1530,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="nto"
@@ -1538,6 +1571,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="nto"
@@ -1578,6 +1612,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="nuttx"
@@ -1618,6 +1653,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="openbsd"
@@ -1658,6 +1694,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="qnx"
@@ -1699,6 +1736,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="redox"
@@ -1739,6 +1777,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="teeos"
@@ -1778,6 +1817,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="trusty"
@@ -1816,6 +1856,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_object_format="coff"
 target_os="uefi"
 target_pointer_width="64"
@@ -1854,6 +1895,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="coff"
 target_os="windows"
@@ -1896,6 +1938,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="vxworks"
@@ -1936,6 +1979,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="hermit"
@@ -1978,6 +2022,7 @@ target_has_reliable_f128
 target_has_reliable_f128_math
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -2020,6 +2065,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -2062,6 +2108,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="linux"
@@ -2103,6 +2150,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="netbsd"
@@ -2142,6 +2190,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="none"
@@ -2191,6 +2240,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="none"
@@ -2239,6 +2289,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="elf"
 target_os="none"
@@ -2531,6 +2582,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="watchos"
@@ -2605,6 +2657,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="macos"
@@ -2666,6 +2719,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="ios"
@@ -2727,6 +2781,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="mach-o"
 target_os="tvos"
@@ -2768,6 +2823,7 @@ target_has_atomic_primitive_alignment="ptr"
 target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
+target_has_reliable_f16b
 target_has_threads
 target_object_format="coff"
 target_os="windows"
@@ -7465,7 +7521,6 @@ target_has_atomic_primitive_alignment="32"
 target_has_atomic_primitive_alignment="64"
 target_has_atomic_primitive_alignment="8"
 target_has_atomic_primitive_alignment="ptr"
-target_has_reliable_f128
 target_has_reliable_f16
 target_has_reliable_f16_math
 target_has_threads
