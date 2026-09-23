@@ -7497,7 +7497,7 @@ powerpc64-ibm-aix:
 fmt_debug="full"
 panic="unwind"
 relocation_model="pic"
-target_abi="vec-extabi"
+target_abi="vec-default"
 target_arch="powerpc64"
 target_endian="big"
 target_env=""
