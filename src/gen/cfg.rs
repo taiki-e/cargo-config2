@@ -40,7 +40,7 @@ pub trait Cfg {
 /// (Rust 1.78+)
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetAbi::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -235,7 +235,7 @@ impl fmt::Display for TargetAbi {
 /// `cfg(target_arch == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetArch::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -463,7 +463,7 @@ impl fmt::Display for TargetArch {
 /// `cfg(target_endian == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetEndian::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone, PartialEq, Eq)]
 #[allow(clippy::exhaustive_enums)]
@@ -578,7 +578,7 @@ impl fmt::Display for TargetEndian {
 /// `cfg(target_env == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetEnv::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -785,7 +785,7 @@ impl fmt::Display for TargetEnv {
 /// `cfg(target_family == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetFamily::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -934,7 +934,7 @@ impl fmt::Display for TargetFamily {
 /// (Rust 1.60+)
 ///
 /// All values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are constructable without allocation. To construct values, use
+/// to 1.99 are constructable without allocation. To construct values, use
 /// `TargetHasAtomic::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 pub struct TargetHasAtomic(TargetHasAtomicRepr);
@@ -1191,7 +1191,7 @@ impl fmt::Display for TargetHasAtomic {
 /// `cfg(target_os == "..")`
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetOs::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
@@ -1485,7 +1485,7 @@ impl fmt::Display for TargetOs {
 /// `cfg(target_pointer_width == "..")`
 ///
 /// All values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are constructable without allocation. To construct values, use
+/// to 1.99 are constructable without allocation. To construct values, use
 /// `TargetPointerWidth::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 pub struct TargetPointerWidth(TargetPointerWidthRepr);
@@ -1718,7 +1718,7 @@ impl fmt::Display for TargetPointerWidth {
 /// (Rust 1.33+)
 ///
 /// All non-empty values used in builtin targets in 1.8 (where `rustc --print cfg` was added)
-/// to 1.98 are available as variants. To construct other values, use
+/// to 1.99 are available as variants. To construct other values, use
 /// `TargetVendor::from`/`.into()`; to reference them, use `.as_str()` or comparison to `&str`.
 #[derive(Clone)]
 #[non_exhaustive]
