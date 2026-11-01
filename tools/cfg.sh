@@ -149,6 +149,7 @@ EOF
     if [[ -z "${EXHAUSTIVE:-}" ]]; then
       if [[ -z "${has_num_start}" ]]; then
         printf '    #[doc(hidden)]\n'
+        printf '    #[allow(clippy::deprecated_attributes_without_since)]\n'
         printf '    #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]\n'
       fi
       printf '    __Other(Box<str>),\n'

@@ -66,6 +66,7 @@ pub enum TargetAbi {
     vec_extabi,
     x32,
     #[doc(hidden)]
+    #[allow(clippy::deprecated_attributes_without_since)]
     #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]
     __Other(Box<str>),
 }
@@ -272,6 +273,7 @@ pub enum TargetArch {
     x86_64,
     xtensa,
     #[doc(hidden)]
+    #[allow(clippy::deprecated_attributes_without_since)]
     #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]
     __Other(Box<str>),
 }
@@ -608,6 +610,7 @@ pub enum TargetEnv {
     v5,
     wasi,
     #[doc(hidden)]
+    #[allow(clippy::deprecated_attributes_without_since)]
     #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]
     __Other(Box<str>),
 }
@@ -794,6 +797,7 @@ pub enum TargetFamily {
     wasm,
     windows,
     #[doc(hidden)]
+    #[allow(clippy::deprecated_attributes_without_since)]
     #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]
     __Other(Box<str>),
 }
@@ -1250,6 +1254,7 @@ pub enum TargetOs {
     xous,
     zkvm,
     #[doc(hidden)]
+    #[allow(clippy::deprecated_attributes_without_since)]
     #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]
     __Other(Box<str>),
 }
@@ -1745,6 +1750,7 @@ pub enum TargetVendor {
     win7,
     wrs,
     #[doc(hidden)]
+    #[allow(clippy::deprecated_attributes_without_since)]
     #[deprecated(note = "do not use this variant directly; use as_str or compare with a string instead")]
     __Other(Box<str>),
 }
