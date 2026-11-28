@@ -879,7 +879,7 @@ mod tests {
             fs::read_dir(fixtures_dir().join("target-specs")).unwrap().map(|e| e.unwrap().path())
         {
             let res = Cfg::from_rustc(cmd!("rustc"), &spec_path.to_str().unwrap().into());
-            if rustversion::cfg!(nightly) {
+            if build_context::RUSTC_NIGHTLY {
                 let _cfg = res.unwrap();
             } else {
                 let _e = res.unwrap_err();

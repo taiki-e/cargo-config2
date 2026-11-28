@@ -42,12 +42,10 @@ build-context = "0.1"
 clap = { version = "4", default-features = false, features = ["std", "derive"] }
 fs-err = "3"
 lexopt = "0.3"
-rustversion = "1"
 serde_json = "1"
 shell-escape = "0.1"
-static_assertions = "1"
 tempfile = { version = "3", default-features = false }
-test-helper = { features = ["git"], git = "https://github.com/taiki-e/test-helper.git", rev = "b931ac1a34794aede5b019c613e50157a35a7ec4" }
+taiki-e-test-helper = { version = "0.1", features = ["git"] }
 toml = "1"
 
 [lints]

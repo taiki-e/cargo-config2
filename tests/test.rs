@@ -377,7 +377,6 @@ fn de() {
     assert_eq!("", toml::to_string(&de::Config::default()).unwrap());
 }
 
-#[rustversion::attr(not(nightly), ignore)]
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn custom_target() {
@@ -430,13 +429,16 @@ fn custom_target() {
         let _config = toml::to_string(&config).unwrap();
     }
 
-    if rustversion::cfg!(since(1.87)) {
+    if !build_context::RUSTC_NIGHTLY {
+        return;
+    }
+    if build_context::RUSTC_MINOR_VERSION >= 87 {
         t("avr-none", IsBuiltin(true));
     } else {
         t("avr-unknown-gnu-atmega328", IsBuiltin(true));
     }
-    // Skip pre-1.91 because target-pointer-width change
-    if rustversion::cfg!(since(1.91)) {
+    // Skip pre-1.91 because target-pointer-width change.
+    if build_context::RUSTC_MINOR_VERSION >= 91 {
         t("avr-unknown-gnu-atmega2560", IsBuiltin(false));
     }
 }
@@ -488,7 +490,6 @@ fn empty_target_cfg_expression_does_not_match() {
     assert_eq!(config.rustflags(TARGET).unwrap(), None);
 }
 
-#[rustversion::attr(not(nightly), ignore)]
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 #[cfg_attr(careful, ignore)] // TODO: Unexpected TomlError (bug in toml crate?)
@@ -506,10 +507,12 @@ fn cargo_config_toml() {
         toml::from_str(s).unwrap()
     }
 
+    if !build_context::RUSTC_NIGHTLY {
+        return;
+    }
     let _config = de(&fixtures_dir().join("reference"));
 }
 
-#[rustversion::attr(not(nightly), ignore)]
 #[test]
 #[cfg_attr(miri, ignore)] // Miri doesn't support std::process::Command: https://github.com/rust-lang/miri/issues/3374
 fn cargo_config_json() {
@@ -524,6 +527,9 @@ fn cargo_config_json() {
         serde_json::from_str(s).unwrap()
     }
 
+    if !build_context::RUSTC_NIGHTLY {
+        return;
+    }
     let _config = de(&fixtures_dir().join("reference"));
 }
 

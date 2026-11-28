@@ -4,385 +4,220 @@
 // It is not intended for manual editing.
 
 #![cfg_attr(rustfmt, rustfmt::skip)]
-#![allow(
-    dead_code,
-    unused_macros,
-    clippy::std_instead_of_alloc,
-    clippy::std_instead_of_core,
-)]
-fn assert_send<T: ?Sized + Send>() {}
-fn assert_sync<T: ?Sized + Sync>() {}
-fn assert_unpin<T: ?Sized + Unpin>() {}
-fn assert_unwind_safe<T: ?Sized + std::panic::UnwindSafe>() {}
-fn assert_ref_unwind_safe<T: ?Sized + std::panic::RefUnwindSafe>() {}
-/// `Send` & `!Sync`
-struct NotSync(core::cell::UnsafeCell<()>);
-/// `!Send` & `Sync`
-struct NotSend(std::sync::MutexGuard<'static, ()>);
-/// `!Send` & `!Sync`
-struct NotSendSync(*const ());
-/// `!Unpin`
-struct NotUnpin(core::marker::PhantomPinned);
-/// `!UnwindSafe`
-struct NotUnwindSafe(&'static mut ());
-/// `!RefUnwindSafe`
-struct NotRefUnwindSafe(core::cell::UnsafeCell<()>);
-macro_rules! assert_not_send {
-    ($ty:ty) => {
-        static_assertions::assert_not_impl_all!($ty : Send);
-    };
-}
-macro_rules! assert_not_sync {
-    ($ty:ty) => {
-        static_assertions::assert_not_impl_all!($ty : Sync);
-    };
-}
-macro_rules! assert_not_unpin {
-    ($ty:ty) => {
-        static_assertions::assert_not_impl_all!($ty : Unpin);
-    };
-}
-macro_rules! assert_not_unwind_safe {
-    ($ty:ty) => {
-        static_assertions::assert_not_impl_all!($ty : std::panic::UnwindSafe);
-    };
-}
-macro_rules! assert_not_ref_unwind_safe {
-    ($ty:ty) => {
-        static_assertions::assert_not_impl_all!($ty : std::panic::RefUnwindSafe);
-    };
-}
-const _: fn() = || {
-    assert_send::<crate::de::Config>();
-    assert_sync::<crate::de::Config>();
-    assert_unpin::<crate::de::Config>();
-    assert_unwind_safe::<crate::de::Config>();
-    assert_ref_unwind_safe::<crate::de::Config>();
-    assert_send::<crate::de::BuildConfig>();
-    assert_sync::<crate::de::BuildConfig>();
-    assert_unpin::<crate::de::BuildConfig>();
-    assert_unwind_safe::<crate::de::BuildConfig>();
-    assert_ref_unwind_safe::<crate::de::BuildConfig>();
-    assert_send::<crate::de::TargetConfig>();
-    assert_sync::<crate::de::TargetConfig>();
-    assert_unpin::<crate::de::TargetConfig>();
-    assert_unwind_safe::<crate::de::TargetConfig>();
-    assert_ref_unwind_safe::<crate::de::TargetConfig>();
-    assert_send::<crate::de::DocConfig>();
-    assert_sync::<crate::de::DocConfig>();
-    assert_unpin::<crate::de::DocConfig>();
-    assert_unwind_safe::<crate::de::DocConfig>();
-    assert_ref_unwind_safe::<crate::de::DocConfig>();
-    assert_send::<crate::de::EnvConfigValue>();
-    assert_sync::<crate::de::EnvConfigValue>();
-    assert_unpin::<crate::de::EnvConfigValue>();
-    assert_unwind_safe::<crate::de::EnvConfigValue>();
-    assert_ref_unwind_safe::<crate::de::EnvConfigValue>();
-    assert_send::<crate::de::FutureIncompatReportConfig>();
-    assert_sync::<crate::de::FutureIncompatReportConfig>();
-    assert_unpin::<crate::de::FutureIncompatReportConfig>();
-    assert_unwind_safe::<crate::de::FutureIncompatReportConfig>();
-    assert_ref_unwind_safe::<crate::de::FutureIncompatReportConfig>();
-    assert_send::<crate::de::CargoNewConfig>();
-    assert_sync::<crate::de::CargoNewConfig>();
-    assert_unpin::<crate::de::CargoNewConfig>();
-    assert_unwind_safe::<crate::de::CargoNewConfig>();
-    assert_ref_unwind_safe::<crate::de::CargoNewConfig>();
-    assert_send::<crate::de::VersionControlSoftware>();
-    assert_sync::<crate::de::VersionControlSoftware>();
-    assert_unpin::<crate::de::VersionControlSoftware>();
-    assert_unwind_safe::<crate::de::VersionControlSoftware>();
-    assert_ref_unwind_safe::<crate::de::VersionControlSoftware>();
-    assert_send::<crate::de::HttpConfig>();
-    assert_sync::<crate::de::HttpConfig>();
-    assert_unpin::<crate::de::HttpConfig>();
-    assert_unwind_safe::<crate::de::HttpConfig>();
-    assert_ref_unwind_safe::<crate::de::HttpConfig>();
-    assert_send::<crate::de::NetConfig>();
-    assert_sync::<crate::de::NetConfig>();
-    assert_unpin::<crate::de::NetConfig>();
-    assert_unwind_safe::<crate::de::NetConfig>();
-    assert_ref_unwind_safe::<crate::de::NetConfig>();
-    assert_send::<crate::de::RegistriesConfigValue>();
-    assert_sync::<crate::de::RegistriesConfigValue>();
-    assert_unpin::<crate::de::RegistriesConfigValue>();
-    assert_unwind_safe::<crate::de::RegistriesConfigValue>();
-    assert_ref_unwind_safe::<crate::de::RegistriesConfigValue>();
-    assert_send::<crate::de::RegistriesProtocol>();
-    assert_sync::<crate::de::RegistriesProtocol>();
-    assert_unpin::<crate::de::RegistriesProtocol>();
-    assert_unwind_safe::<crate::de::RegistriesProtocol>();
-    assert_ref_unwind_safe::<crate::de::RegistriesProtocol>();
-    assert_send::<crate::de::RegistryConfig>();
-    assert_sync::<crate::de::RegistryConfig>();
-    assert_unpin::<crate::de::RegistryConfig>();
-    assert_unwind_safe::<crate::de::RegistryConfig>();
-    assert_ref_unwind_safe::<crate::de::RegistryConfig>();
-    assert_send::<crate::de::SourceConfigValue>();
-    assert_sync::<crate::de::SourceConfigValue>();
-    assert_unpin::<crate::de::SourceConfigValue>();
-    assert_unwind_safe::<crate::de::SourceConfigValue>();
-    assert_ref_unwind_safe::<crate::de::SourceConfigValue>();
-    assert_send::<crate::de::GlobalCredentialProviders>();
-    assert_sync::<crate::de::GlobalCredentialProviders>();
-    assert_unpin::<crate::de::GlobalCredentialProviders>();
-    assert_unwind_safe::<crate::de::GlobalCredentialProviders>();
-    assert_ref_unwind_safe::<crate::de::GlobalCredentialProviders>();
-    assert_send::<crate::de::CredentialProvider>();
-    assert_sync::<crate::de::CredentialProvider>();
-    assert_unpin::<crate::de::CredentialProvider>();
-    assert_unwind_safe::<crate::de::CredentialProvider>();
-    assert_ref_unwind_safe::<crate::de::CredentialProvider>();
-    assert_send::<crate::de::CredentialProviderKind>();
-    assert_sync::<crate::de::CredentialProviderKind>();
-    assert_unpin::<crate::de::CredentialProviderKind>();
-    assert_unwind_safe::<crate::de::CredentialProviderKind>();
-    assert_ref_unwind_safe::<crate::de::CredentialProviderKind>();
-    assert_send::<crate::de::TermConfig>();
-    assert_sync::<crate::de::TermConfig>();
-    assert_unpin::<crate::de::TermConfig>();
-    assert_unwind_safe::<crate::de::TermConfig>();
-    assert_ref_unwind_safe::<crate::de::TermConfig>();
-    assert_send::<crate::de::TermProgress>();
-    assert_sync::<crate::de::TermProgress>();
-    assert_unpin::<crate::de::TermProgress>();
-    assert_unwind_safe::<crate::de::TermProgress>();
-    assert_ref_unwind_safe::<crate::de::TermProgress>();
-    assert_send::<crate::de::Color>();
-    assert_sync::<crate::de::Color>();
-    assert_unpin::<crate::de::Color>();
-    assert_unwind_safe::<crate::de::Color>();
-    assert_ref_unwind_safe::<crate::de::Color>();
-    assert_send::<crate::de::When>();
-    assert_sync::<crate::de::When>();
-    assert_unpin::<crate::de::When>();
-    assert_unwind_safe::<crate::de::When>();
-    assert_ref_unwind_safe::<crate::de::When>();
-    assert_send::<crate::de::Frequency>();
-    assert_sync::<crate::de::Frequency>();
-    assert_unpin::<crate::de::Frequency>();
-    assert_unwind_safe::<crate::de::Frequency>();
-    assert_ref_unwind_safe::<crate::de::Frequency>();
-    assert_send::<crate::de::Flags>();
-    assert_sync::<crate::de::Flags>();
-    assert_unpin::<crate::de::Flags>();
-    assert_unwind_safe::<crate::de::Flags>();
-    assert_ref_unwind_safe::<crate::de::Flags>();
-    assert_send::<crate::de::ConfigRelativePath>();
-    assert_sync::<crate::de::ConfigRelativePath>();
-    assert_unpin::<crate::de::ConfigRelativePath>();
-    assert_unwind_safe::<crate::de::ConfigRelativePath>();
-    assert_ref_unwind_safe::<crate::de::ConfigRelativePath>();
-    assert_send::<crate::de::PathAndArgs>();
-    assert_sync::<crate::de::PathAndArgs>();
-    assert_unpin::<crate::de::PathAndArgs>();
-    assert_unwind_safe::<crate::de::PathAndArgs>();
-    assert_ref_unwind_safe::<crate::de::PathAndArgs>();
-    assert_send::<crate::de::StringList>();
-    assert_sync::<crate::de::StringList>();
-    assert_unpin::<crate::de::StringList>();
-    assert_unwind_safe::<crate::de::StringList>();
-    assert_ref_unwind_safe::<crate::de::StringList>();
-    assert_send::<crate::de::StringOrArray>();
-    assert_sync::<crate::de::StringOrArray>();
-    assert_unpin::<crate::de::StringOrArray>();
-    assert_unwind_safe::<crate::de::StringOrArray>();
-    assert_ref_unwind_safe::<crate::de::StringOrArray>();
-    assert_send::<crate::easy::Config>();
-    assert_not_sync!(crate::easy::Config);
-    assert_unpin::<crate::easy::Config>();
-    assert_unwind_safe::<crate::easy::Config>();
-    assert_not_ref_unwind_safe!(crate::easy::Config);
-    assert_send::<crate::easy::BuildConfig>();
-    assert_sync::<crate::easy::BuildConfig>();
-    assert_unpin::<crate::easy::BuildConfig>();
-    assert_unwind_safe::<crate::easy::BuildConfig>();
-    assert_ref_unwind_safe::<crate::easy::BuildConfig>();
-    assert_send::<crate::easy::TargetConfig>();
-    assert_sync::<crate::easy::TargetConfig>();
-    assert_unpin::<crate::easy::TargetConfig>();
-    assert_unwind_safe::<crate::easy::TargetConfig>();
-    assert_ref_unwind_safe::<crate::easy::TargetConfig>();
-    assert_send::<crate::easy::DocConfig>();
-    assert_sync::<crate::easy::DocConfig>();
-    assert_unpin::<crate::easy::DocConfig>();
-    assert_unwind_safe::<crate::easy::DocConfig>();
-    assert_ref_unwind_safe::<crate::easy::DocConfig>();
-    assert_send::<crate::easy::EnvConfigValue>();
-    assert_sync::<crate::easy::EnvConfigValue>();
-    assert_unpin::<crate::easy::EnvConfigValue>();
-    assert_unwind_safe::<crate::easy::EnvConfigValue>();
-    assert_ref_unwind_safe::<crate::easy::EnvConfigValue>();
-    assert_send::<crate::easy::FutureIncompatReportConfig>();
-    assert_sync::<crate::easy::FutureIncompatReportConfig>();
-    assert_unpin::<crate::easy::FutureIncompatReportConfig>();
-    assert_unwind_safe::<crate::easy::FutureIncompatReportConfig>();
-    assert_ref_unwind_safe::<crate::easy::FutureIncompatReportConfig>();
-    assert_send::<crate::easy::CargoNewConfig>();
-    assert_sync::<crate::easy::CargoNewConfig>();
-    assert_unpin::<crate::easy::CargoNewConfig>();
-    assert_unwind_safe::<crate::easy::CargoNewConfig>();
-    assert_ref_unwind_safe::<crate::easy::CargoNewConfig>();
-    assert_send::<crate::easy::HttpConfig>();
-    assert_sync::<crate::easy::HttpConfig>();
-    assert_unpin::<crate::easy::HttpConfig>();
-    assert_unwind_safe::<crate::easy::HttpConfig>();
-    assert_ref_unwind_safe::<crate::easy::HttpConfig>();
-    assert_send::<crate::easy::NetConfig>();
-    assert_sync::<crate::easy::NetConfig>();
-    assert_unpin::<crate::easy::NetConfig>();
-    assert_unwind_safe::<crate::easy::NetConfig>();
-    assert_ref_unwind_safe::<crate::easy::NetConfig>();
-    assert_send::<crate::easy::RegistriesConfigValue>();
-    assert_sync::<crate::easy::RegistriesConfigValue>();
-    assert_unpin::<crate::easy::RegistriesConfigValue>();
-    assert_unwind_safe::<crate::easy::RegistriesConfigValue>();
-    assert_ref_unwind_safe::<crate::easy::RegistriesConfigValue>();
-    assert_send::<crate::easy::RegistryConfig>();
-    assert_sync::<crate::easy::RegistryConfig>();
-    assert_unpin::<crate::easy::RegistryConfig>();
-    assert_unwind_safe::<crate::easy::RegistryConfig>();
-    assert_ref_unwind_safe::<crate::easy::RegistryConfig>();
-    assert_send::<crate::easy::SourceConfigValue>();
-    assert_sync::<crate::easy::SourceConfigValue>();
-    assert_unpin::<crate::easy::SourceConfigValue>();
-    assert_unwind_safe::<crate::easy::SourceConfigValue>();
-    assert_ref_unwind_safe::<crate::easy::SourceConfigValue>();
-    assert_send::<crate::easy::GlobalCredentialProviders>();
-    assert_sync::<crate::easy::GlobalCredentialProviders>();
-    assert_unpin::<crate::easy::GlobalCredentialProviders>();
-    assert_unwind_safe::<crate::easy::GlobalCredentialProviders>();
-    assert_ref_unwind_safe::<crate::easy::GlobalCredentialProviders>();
-    assert_send::<crate::easy::CredentialProvider>();
-    assert_sync::<crate::easy::CredentialProvider>();
-    assert_unpin::<crate::easy::CredentialProvider>();
-    assert_unwind_safe::<crate::easy::CredentialProvider>();
-    assert_ref_unwind_safe::<crate::easy::CredentialProvider>();
-    assert_send::<crate::easy::TermConfig>();
-    assert_sync::<crate::easy::TermConfig>();
-    assert_unpin::<crate::easy::TermConfig>();
-    assert_unwind_safe::<crate::easy::TermConfig>();
-    assert_ref_unwind_safe::<crate::easy::TermConfig>();
-    assert_send::<crate::easy::TermProgressConfig>();
-    assert_sync::<crate::easy::TermProgressConfig>();
-    assert_unpin::<crate::easy::TermProgressConfig>();
-    assert_unwind_safe::<crate::easy::TermProgressConfig>();
-    assert_ref_unwind_safe::<crate::easy::TermProgressConfig>();
-    assert_send::<crate::easy::Flags>();
-    assert_sync::<crate::easy::Flags>();
-    assert_unpin::<crate::easy::Flags>();
-    assert_unwind_safe::<crate::easy::Flags>();
-    assert_ref_unwind_safe::<crate::easy::Flags>();
-    assert_send::<crate::easy::PathAndArgs>();
-    assert_sync::<crate::easy::PathAndArgs>();
-    assert_unpin::<crate::easy::PathAndArgs>();
-    assert_unwind_safe::<crate::easy::PathAndArgs>();
-    assert_ref_unwind_safe::<crate::easy::PathAndArgs>();
-    assert_send::<crate::easy::StringList>();
-    assert_sync::<crate::easy::StringList>();
-    assert_unpin::<crate::easy::StringList>();
-    assert_unwind_safe::<crate::easy::StringList>();
-    assert_ref_unwind_safe::<crate::easy::StringList>();
-    assert_send::<crate::error::Error>();
-    assert_sync::<crate::error::Error>();
-    assert_unpin::<crate::error::Error>();
-    assert_not_unwind_safe!(crate::error::Error);
-    assert_not_ref_unwind_safe!(crate::error::Error);
-    assert_send::<crate::cfg::TargetAbi>();
-    assert_sync::<crate::cfg::TargetAbi>();
-    assert_unpin::<crate::cfg::TargetAbi>();
-    assert_unwind_safe::<crate::cfg::TargetAbi>();
-    assert_ref_unwind_safe::<crate::cfg::TargetAbi>();
-    assert_send::<crate::cfg::TargetArch>();
-    assert_sync::<crate::cfg::TargetArch>();
-    assert_unpin::<crate::cfg::TargetArch>();
-    assert_unwind_safe::<crate::cfg::TargetArch>();
-    assert_ref_unwind_safe::<crate::cfg::TargetArch>();
-    assert_send::<crate::cfg::TargetEndian>();
-    assert_sync::<crate::cfg::TargetEndian>();
-    assert_unpin::<crate::cfg::TargetEndian>();
-    assert_unwind_safe::<crate::cfg::TargetEndian>();
-    assert_ref_unwind_safe::<crate::cfg::TargetEndian>();
-    assert_send::<crate::cfg::TargetEnv>();
-    assert_sync::<crate::cfg::TargetEnv>();
-    assert_unpin::<crate::cfg::TargetEnv>();
-    assert_unwind_safe::<crate::cfg::TargetEnv>();
-    assert_ref_unwind_safe::<crate::cfg::TargetEnv>();
-    assert_send::<crate::cfg::TargetFamily>();
-    assert_sync::<crate::cfg::TargetFamily>();
-    assert_unpin::<crate::cfg::TargetFamily>();
-    assert_unwind_safe::<crate::cfg::TargetFamily>();
-    assert_ref_unwind_safe::<crate::cfg::TargetFamily>();
-    assert_send::<crate::cfg::TargetHasAtomic>();
-    assert_sync::<crate::cfg::TargetHasAtomic>();
-    assert_unpin::<crate::cfg::TargetHasAtomic>();
-    assert_unwind_safe::<crate::cfg::TargetHasAtomic>();
-    assert_ref_unwind_safe::<crate::cfg::TargetHasAtomic>();
-    assert_send::<crate::cfg::TargetOs>();
-    assert_sync::<crate::cfg::TargetOs>();
-    assert_unpin::<crate::cfg::TargetOs>();
-    assert_unwind_safe::<crate::cfg::TargetOs>();
-    assert_ref_unwind_safe::<crate::cfg::TargetOs>();
-    assert_send::<crate::cfg::TargetPointerWidth>();
-    assert_sync::<crate::cfg::TargetPointerWidth>();
-    assert_unpin::<crate::cfg::TargetPointerWidth>();
-    assert_unwind_safe::<crate::cfg::TargetPointerWidth>();
-    assert_ref_unwind_safe::<crate::cfg::TargetPointerWidth>();
-    assert_send::<crate::cfg::TargetVendor>();
-    assert_sync::<crate::cfg::TargetVendor>();
-    assert_unpin::<crate::cfg::TargetVendor>();
-    assert_unwind_safe::<crate::cfg::TargetVendor>();
-    assert_ref_unwind_safe::<crate::cfg::TargetVendor>();
-    assert_send::<crate::resolve::ResolveOptions>();
-    assert_sync::<crate::resolve::ResolveOptions>();
-    assert_unpin::<crate::resolve::ResolveOptions>();
-    assert_unwind_safe::<crate::resolve::ResolveOptions>();
-    assert_ref_unwind_safe::<crate::resolve::ResolveOptions>();
-    assert_send::<crate::resolve::ResolveContext>();
-    assert_not_sync!(crate::resolve::ResolveContext);
-    assert_unpin::<crate::resolve::ResolveContext>();
-    assert_unwind_safe::<crate::resolve::ResolveContext>();
-    assert_not_ref_unwind_safe!(crate::resolve::ResolveContext);
-    assert_send::<crate::resolve::TargetTripleRef<'_>>();
-    assert_sync::<crate::resolve::TargetTripleRef<'_>>();
-    assert_unpin::<crate::resolve::TargetTripleRef<'_>>();
-    assert_unwind_safe::<crate::resolve::TargetTripleRef<'_>>();
-    assert_ref_unwind_safe::<crate::resolve::TargetTripleRef<'_>>();
-    assert_send::<crate::resolve::TargetTriple>();
-    assert_sync::<crate::resolve::TargetTriple>();
-    assert_unpin::<crate::resolve::TargetTriple>();
-    assert_unwind_safe::<crate::resolve::TargetTriple>();
-    assert_ref_unwind_safe::<crate::resolve::TargetTriple>();
-    assert_send::<crate::resolve::RustcVersion>();
-    assert_sync::<crate::resolve::RustcVersion>();
-    assert_unpin::<crate::resolve::RustcVersion>();
-    assert_unwind_safe::<crate::resolve::RustcVersion>();
-    assert_ref_unwind_safe::<crate::resolve::RustcVersion>();
-    assert_send::<crate::resolve::CargoVersion>();
-    assert_sync::<crate::resolve::CargoVersion>();
-    assert_unpin::<crate::resolve::CargoVersion>();
-    assert_unwind_safe::<crate::resolve::CargoVersion>();
-    assert_ref_unwind_safe::<crate::resolve::CargoVersion>();
-    assert_send::<crate::value::Value<()>>();
-    assert_send::<crate::value::Value<NotSync>>();
-    assert_not_send!(crate::value::Value<NotSend>);
-    assert_sync::<crate::value::Value<()>>();
-    assert_sync::<crate::value::Value<NotSend>>();
-    assert_not_sync!(crate::value::Value<NotSync>);
-    assert_unpin::<crate::value::Value<()>>();
-    assert_not_unpin!(crate::value::Value<NotUnpin>);
-    assert_unwind_safe::<crate::value::Value<()>>();
-    assert_not_unwind_safe!(crate::value::Value<NotUnwindSafe>);
-    assert_ref_unwind_safe::<crate::value::Value<()>>();
-    assert_not_ref_unwind_safe!(crate::value::Value<NotRefUnwindSafe>);
-    assert_send::<crate::value::Definition>();
-    assert_sync::<crate::value::Definition>();
-    assert_unpin::<crate::value::Definition>();
-    assert_unwind_safe::<crate::value::Definition>();
-    assert_ref_unwind_safe::<crate::value::Definition>();
-    assert_send::<crate::walk::Walk<'_>>();
-    assert_sync::<crate::walk::Walk<'_>>();
-    assert_unpin::<crate::walk::Walk<'_>>();
-    assert_unwind_safe::<crate::walk::Walk<'_>>();
-    assert_ref_unwind_safe::<crate::walk::Walk<'_>>();
-};
+test_helper::assert_value!(
+    crate ::de::Config : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::BuildConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::TargetConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::DocConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::EnvConfigValue : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::FutureIncompatReportConfig : Send & Sync & Unpin & UnwindSafe &
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::CargoNewConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::VersionControlSoftware : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::HttpConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::NetConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::RegistriesConfigValue : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::RegistriesProtocol : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::RegistryConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::SourceConfigValue : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::GlobalCredentialProviders : Send & Sync & Unpin & UnwindSafe &
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::CredentialProvider : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::CredentialProviderKind : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::TermConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::TermProgress : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::Color : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::When : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::Frequency : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::Flags : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::ConfigRelativePath : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::PathAndArgs : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::StringList : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::de::StringOrArray : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::Config : Send & ! Sync & Unpin & UnwindSafe & ! RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::BuildConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::TargetConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::DocConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::EnvConfigValue : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::FutureIncompatReportConfig : Send & Sync & Unpin & UnwindSafe &
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::CargoNewConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::HttpConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::NetConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::RegistriesConfigValue : Send & Sync & Unpin & UnwindSafe &
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::RegistryConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::SourceConfigValue : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::GlobalCredentialProviders : Send & Sync & Unpin & UnwindSafe &
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::CredentialProvider : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::TermConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::TermProgressConfig : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::Flags : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::PathAndArgs : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::easy::StringList : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::error::Error : Send & Sync & Unpin & ! UnwindSafe & ! RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetAbi : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetArch : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetEndian : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetEnv : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetFamily : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetHasAtomic : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetOs : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetPointerWidth : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::cfg::TargetVendor : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::resolve::ResolveOptions : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::resolve::ResolveContext : Send & ! Sync & Unpin & UnwindSafe & !
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::resolve::TargetTripleRef < '_ > : Send & Sync & Unpin & UnwindSafe &
+    RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::resolve::TargetTriple : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::resolve::RustcVersion : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::resolve::CargoVersion : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::value::Value < () > : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::value::Value < test_helper::marker::NotSend > : ! Send & Sync
+);
+test_helper::assert_value!(
+    crate ::value::Value < test_helper::marker::NotSync > : ! Sync & Send
+);
+test_helper::assert_value!(
+    crate ::value::Value < test_helper::marker::NotUnpin > : ! Unpin
+);
+test_helper::assert_value!(
+    crate ::value::Value < test_helper::marker::NotUnwindSafe > : ! UnwindSafe
+);
+test_helper::assert_value!(
+    crate ::value::Value < test_helper::marker::NotRefUnwindSafe > : ! RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::value::Definition : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
+test_helper::assert_value!(
+    crate ::walk::Walk < '_ > : Send & Sync & Unpin & UnwindSafe & RefUnwindSafe
+);
